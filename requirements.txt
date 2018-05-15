@@ -1,5 +1,5 @@
 OpenDSSDirect.py
-dateutil
+python-dateutil
 pandas
 scipy
 numpy

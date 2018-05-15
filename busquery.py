@@ -2,6 +2,7 @@ from krangsuit import _elk
 import numpy as np
 from components import um
 
+
 def get_fun(fun_name):
     g = globals()
     return g[fun_name]
@@ -20,7 +21,7 @@ def nloads(oek, busview, busname):
 
 
 def absvoltage(oek, busview, busname):
-    return np.abs(voltage(oek, busview, busname))
+    return [np.abs(v) for v in voltage(oek, busview, busname)]
 
 
 def totload(oek, busview, busname):
@@ -30,3 +31,6 @@ def totload(oek, busview, busname):
     for e in els:
         tkw += e.kW()
         tkvar += e.kvar()
+
+    return tkw, tkvar
+

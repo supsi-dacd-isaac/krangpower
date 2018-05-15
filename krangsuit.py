@@ -4,6 +4,7 @@ from functools import singledispatch
 import networkx as nx
 import pandas
 import json
+import copy
 from tqdm import tqdm
 
 import components as co
@@ -13,11 +14,12 @@ from enhancer import OpendssdirectEnhancer
 from logging.handlers import RotatingFileHandler
 import logging
 import os.path
+import busquery as bq
 
 _elk = 'el'
 
 
-class KrangSuit:
+class Krang:
 
     def __init__(self):
         self.oe = OpendssdirectEnhancer()
@@ -34,7 +36,7 @@ class KrangSuit:
         master_string = 'new object = circuit.' + name + ' '
         main_source_dec = vsource.fcs(buses=('sourcebus', 'earth'))
         main_dec = re.sub('.*source ', '', main_source_dec)
-        # main_dec = re.sub('bus2=[^ ]+ ', '', main_dec)
+        main_dec = re.sub('bus2=[^ ]+ ', '', main_dec)
         master_string += ' ' + main_dec + '\n'
 
         self.command(master_string)
@@ -81,7 +83,7 @@ class KrangSuit:
     def snap(self):
         self.command('set mode=snap\nsolve\nset mode=duty')
 
-    def _drag_solve(self):
+    def drag_solve(self):
         nmbr = self.oe.Solution.Number()
         self.oe.Solution.Number(1)
         v = pandas.DataFrame(
@@ -124,10 +126,28 @@ class KrangSuit:
     @property
     def graph(self):
 
+        def _update_node(self, gr, bs, name):
+            try:
+                exel = gr.nodes[bs][_elk]
+            except KeyError:
+                gr.add_node(bs, **{_elk: [self.oe[name]]})
+                return
+            exel.append(self.oe[name])
+            return
+
+        def _update_edge(self, gr, ed, name):
+            try:
+                exel = gr.edges[ed][_elk]
+            except KeyError:
+                gr.add_edge(*ed, **{_elk: [self.oe[name]]})
+                return
+            exel.append(self.oe[name])
+            return
+
         if False:
             return self.last_gr
         else:
-            gr = nx.MultiGraph()
+            gr = nx.Graph()
             ns = self.oe.Circuit.AllElementNames()
             for name in ns:
                 try:
@@ -138,18 +158,24 @@ class KrangSuit:
                 #todo encode term perms in the graph
                 if len(buses) == 1:
                     bs, _ = self._bus_resolve(buses[0])
-                    gr.add_node(bs, **{_elk: self.oe[name]})
+
+                    _update_node(self, gr, bs, name)
+
+                    # gr.add_node(bs, **{_elk: self.oe[name]})
                 elif len(buses) == 2:
                     bs0, _ = self._bus_resolve(buses[0])
                     bs1, _ = self._bus_resolve(buses[1])
-                    gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
+
+                    _update_edge(self, gr, (bs0, bs1), name)
+
+                    # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
                 else:
                     raise IndexError('Buses were > 2. This is a big problem.')
 
             self.up_to_date = True
             self.last_gr = gr
 
-            return gr
+            return copy.deepcopy(gr)
 
     @property
     def bus_coords(self):
@@ -227,7 +253,7 @@ class _DepGraph(nx.DiGraph):
 
 class _BusView:
 
-    def __init__(self, oek: KrangSuit, bustermtuples):
+    def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
         self.tp = dict(bustermtuples)
         self.buses = tuple(self.tp.keys())
@@ -265,7 +291,18 @@ class _BusView:
         return self.content[item]
 
     def __getattr__(self, item):
-        raise NotImplementedError
+        try:
+            # attributes requested via getattr are searched in busquery
+            f = bq.get_fun(item)
+        except KeyError:
+            raise AttributeError('Attribute/query function {0} is not implemented')
+
+        if self.nb == 1:
+            return f(self.oek, self, self.buses[0])
+        elif self.nb == 2:
+            return f(self.oek, self, self.buses)
+        else:
+            raise AttributeError
 
     def __str__(self):
         return '<BusView' + str(self.buses) + '>'
@@ -281,7 +318,7 @@ def from_json(path):
         master_dict = json.load(ofile)
 
     # init the krang with the source, then remove it
-    l_ckt = KrangSuit()
+    l_ckt = Krang()
     l_ckt.initialize(master_dict['cktname'], au.dejsonize(master_dict['elements']['source']))
     del master_dict['elements']['source']
 
@@ -314,15 +351,14 @@ def from_json(path):
     return l_ckt
 
 
-
 def _main():
 
-    moe = KrangSuit()
+    moe = Krang()
     moe.gen_echo = True
-    pish = co.LineCode_S('thefaggy', r0=100.0 * um.ohm / um.unitlength)
+    pish = co.LineCode_S('thefaggy', r0=1.0 * um.ohm / um.unitlength)
     posh = co.LineCode_A('thefiggy', units='m')
 
-    moe.initialize('myckt', co.Vsource(basekv=11.0 * um.kV).aka('source'))
+    moe.initialize('myckt', co.Vsource().aka('source'))
     moe + pish
     moe + posh
     moe['sourcebus', 'a'] + co.Line(length=120 * um.unitlength).aka('theline') * posh
@@ -333,34 +369,29 @@ def _main():
 
     # moe['line.theotherline']['length'] = 200 * um.yard
 
-
     lish = co.CsvLoadshape(r"D:\d\ams_data\loads" + r'\Y6' + r"\node_" + str(5438) + ".csv", column_scheme={'mult': 1, 'qmult': 2}, use_actual=True, interval=15 * um.min)
 
-
-    pee = co.WireData('caggi', runits='m', rac=123 * um.ohm / um.m)
+    pee = co.WireData('caggi', runits='m', rac=3 * um.ohm / um.m)
     wee = co.WireData('aaggi')
     gee = co.LineGeometry_O('faggi', nconds=2, nphases=2, x=[0, 0], h=[0, 0], units=['m', 'km']) * [pee, wee]
-
 
     moe + pee
     moe + wee
     moe + gee
 
-    fofo = co.Load(kw=1.2345 * um.MW)  # * lish
+    fofo = co.Load(kw=1.2345 * um.kW)  # * lish
     moe[('b',)] + fofo.aka('wow') * lish
+    moe[('b',)] + fofo.aka('bow') * lish
 
     tt = moe['load.wow'].unpack(verbose=False)
 
     moe.command('makebuslist')
-    print(moe.oe.Circuit.AllBusNames())
-    print(moe[('b',)])
-    print(moe.graph.edges)
 
-    i,v = moe._drag_solve()
+    i,v = moe.drag_solve()
+    print(moe[('b',)].totload)
 
     moe.save_json(r'D:\temp\krang.json')
     # cs = from_json(r'D:\temp\krang.json')
-
 
 
 if __name__ == '__main__':
