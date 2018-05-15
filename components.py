@@ -2,7 +2,7 @@ import configparser as cfp
 import copy
 import csv
 import json
-import logging
+from logging.handlers import RotatingFileHandler
 import os.path
 import re
 import xml.etree.ElementTree as Xe
@@ -10,7 +10,7 @@ from abc import abstractmethod
 from collections import OrderedDict, namedtuple
 from functools import lru_cache
 from sys import modules
-import warnings
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,6 +34,7 @@ um.define('mt = meter')
 _pint_qty_type = type(1 * um.m)
 
 
+
 # OPENDSS WRAPPER - WRITTEN BY FEDERICO ROSATO
 # -------------------------------------------------------------
 
@@ -46,6 +47,37 @@ config = cfp.ConfigParser()
 config.read(os.path.join(thisdir, 'krang.cfg'))
 default_settings_path_config = os.path.join(thisdir, config.get('data_files', 'default_settings'))
 default_entities_path = os.path.join(thisdir, config.get('data_files', 'default_entities'))
+
+
+# -------------------------------------------------------------
+# MAIN LOGGER
+# -------------------------------------------------------------
+
+logformat = '%(asctime)s - %(levelname)s (%(funcName)s) -------------> %(message)s'
+logger = logging.getLogger('krangpower')
+logger.setLevel(logging.DEBUG)
+logformatter = logging.Formatter(logformat)
+
+# streamhandler
+_ch = logging.StreamHandler()
+_ch.setLevel(logging.WARN)
+_ch.setFormatter(logformatter)
+logger.addHandler(_ch)
+
+# filehandler
+try:
+    logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'path'))
+    if not os.path.exists(os.path.dirname(logpath)):
+        os.makedirs(os.path.dirname(logpath))
+    fh = RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
+    fh.setFormatter(logformatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+except PermissionError:
+    # this is handled to the console stream
+    logger.warning('Permission to write log file denied')
+
+
 
 # <editor-fold desc="AUX FUNCTIONS">
 
@@ -424,6 +456,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     def isnamed(cls):
         return False
 
+    @classmethod
+    def isai(cls):
+        return False
+
     def __mul__(self, other):
         if self.toe in [x.lower() for x in self._softmuldict.keys()]:
 
@@ -579,8 +615,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             if parameter.lower() in self.params.keys():
                 target_list = self.params
+                default_dict = 'properties'
             elif parameter.lower() in self._associated.keys():
+                default_dict = 'associated'
                 target_list = self._associated
+
             else:
                 raise AttributeError('Tried to set unknown parameter {0}.'.format(parameter))
                 # self.logger.warning('Tried to set unknown parameter %s. Blatantly ignored.', parameter)
@@ -612,6 +651,17 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                                     .format(parameter.lower(),
                                             type(value),
                                             target_type))
+
+            if isinstance(value, np.matrix):
+                test = np.array_equal(value, default_comp['default_' + self.toe][default_dict][parameter])
+            elif isinstance(value, list):
+                test = value == default_comp['default_' + self.toe][default_dict][parameter]
+            else:
+                test = value == default_comp['default_' + self.toe][default_dict][parameter]
+
+            if test:
+                logger.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
+                return
 
             # finally setting the parameter
             target_list[parameter.lower()] = value
@@ -685,7 +735,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         for parameter, value in self.params.items():
             print('<' + '{0} {1} = {2}'.format(type(value), parameter, value)[7:])
 
-    def jsonize(self, all_params=False, flatten_mtx=True, using=None):
+    def jsonize(self, all_params=False, flatten_mtx=True, using=default_entities_path):
         super_dikt = {'type': self.toe, 'name': self.name}
         if not self.isnamed():
             super_dikt['term_perm'] = self.term_perm
@@ -809,10 +859,10 @@ class CsvLoadshape:
             self.intkey = 'interval'
             self.interval = 0.0
         else:  # using different properties just for cosmetic purposes
-            if self.interval < 300 * um.s:
+            if interval < 300 * um.s:
                 self.intkey = 'sinterval'
                 self.interval = interval.to(um.s).magnitude
-            elif self.interval < 180 * um.min:
+            elif interval < 180 * um.min:
                 self.intkey = 'minterval'
                 self.interval = interval.to(um.min).magnitude
             else:
@@ -1534,21 +1584,22 @@ class _CircuitElementNBus(_CircuitElement):
     def fcs(self, **hookup):
 
         buses = hookup['buses']
+        term_perm = hookup.get('terminals', None)
 
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name  # _ splitting to allow name personalization outside dss
         s3 = ' '
         idox = 0
         for busno in range(1, self.nbuses + 1):
-            if self.term_perm is not None:
-                if isinstance(self.term_perm[(buses[busno - 1])], (tuple, int)):
+            if term_perm is not None:
+                if isinstance(term_perm[(buses[busno - 1])], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
-                        self.term_perm[(buses[busno - 1])]) + ' '
-                elif isinstance(self.term_perm[(buses[busno - 1])],
+                        term_perm[(buses[busno - 1])]) + ' '
+                elif isinstance(term_perm[(buses[busno - 1])],
                                 list):  # this happens when you specify more than one set of terminal connections at one bus
-                    nthterminal = self.term_perm[(buses[busno - 1])][idox]
+                    nthterminal = term_perm[(buses[busno - 1])][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
                     idox += 1
-                elif self.term_perm[(buses[busno - 1])] is None:
+                elif term_perm[(buses[busno - 1])] is None:
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
             else:
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
@@ -2525,7 +2576,7 @@ class Switch(_CircuitElementNBus):
 # 4 quadrant, update capable component
 class DecisionModel:
     @abstractmethod
-    def decide_pq(self, circuit, mynode):
+    def decide_pq(self, oek, mynode):
         """Takes a graph and the node where the decision model has to interpret. Returns P(active power) and Q
         (reactive power), in that order, as a tuple. P and Q are not constrained in any way one to the other."""
         pass
@@ -2533,13 +2584,17 @@ class DecisionModel:
 
 class FourQ(Generator):
 
+    @classmethod
+    def isai(cls):
+        return True
+
     def __init__(self, xml_rep=None, **kwargs):
         self._dm = None
         super().__init__(xml_rep, **kwargs)
 
-    def update_pq(self, ckt, mybus):
+    def update_pq(self, oek, mybus):
         assert self._dm is not None
-        p, q = self._dm.decide_pq(ckt, mybus)
+        p, q = self._dm.decide_pq(oek, mybus)
         return p, q
 
     def fcs(self, **hookup):
@@ -2572,9 +2627,9 @@ class FourQ(Generator):
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s3 + s2
 
-    def _form_update_string(self, circuit, myname):
-        mybus = circuit.find_by_name(myname)
-        p, q = self.update_pq(circuit, mybus)
+    def fus(self, oek, myname):
+        mybus = oek[myname].topological['bus1']
+        p, q = self.update_pq(oek, mybus)
         s = 'edit generator.' + myname + ' kw=' + str(p) + ' kvar=' + str(q)
         return s
 

@@ -1,0 +1,32 @@
+from krangsuit import _elk
+import numpy as np
+from components import um
+
+def get_fun(fun_name):
+    g = globals()
+    return g[fun_name]
+
+
+def voltage(oek, busview, busname):
+    return oek['bus.' + busname].Voltages()
+
+
+def voltageangle(oek, busview, busname):
+    return oek['bus.' + busname].VMagAngle()
+
+
+def nloads(oek, busview, busname):
+    return len([element for element in busview.content if element.type == 'load'])
+
+
+def absvoltage(oek, busview, busname):
+    return np.abs(voltage(oek, busview, busname))
+
+
+def totload(oek, busview, busname):
+    els = [element for element in busview.content if element.type == 'load']
+    tkw = 0.0 * um.kW
+    tkvar = 0.0 * um.kVA
+    for e in els:
+        tkw += e.kW()
+        tkvar += e.kvar()

@@ -11,7 +11,7 @@ import numpy as np
 import opendssdirect as odr
 from pandas import DataFrame
 import components as co
-from components import um
+from components import um, logger
 from components import _resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
 
 from utils.aux_fcn import lower as _lower
@@ -561,7 +561,11 @@ class _PackedOpendssElement:
     @property
     def topological(self):
         top_par_names = _default_entities['default_' + self._eltype]['topological']
-        return tuple(top_par_names.keys())
+        return tuple(self[t] for t in top_par_names.keys())
+
+    @property
+    def type(self):
+        return self._eltype
 
     @property
     def fullname(self):
@@ -614,7 +618,7 @@ class _PackedOpendssElement:
         if verbose:
             dep_prop = {k.lower(): v for k, v in all_props.items() if k.lower() in valid_props.keys()}
         else:
-            dep_prop = {k.lower(): v for k, v in all_props.items() if k.lower() in valid_props.keys() and v != valid_props[k.lower()]}
+            dep_prop = {k.lower(): v for k, v in all_props.items() if k.lower() in valid_props.keys() and np.matrix(v != valid_props[k.lower()]).any()}
 
         if myclass.isnamed():
             obj = myclass(self._name, **dep_prop)
@@ -715,6 +719,7 @@ class _CallFinalizer(Callable):
         for sel in self._selectors:
             sel(self._name_to_select)
 
+        logger.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
 
     @property

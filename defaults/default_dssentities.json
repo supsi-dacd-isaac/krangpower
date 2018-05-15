@@ -292,10 +292,6 @@
         "properties": {
             "nconds": 1,
             "nphases": 1,
-            "wire": [
-                "",
-                ""
-            ],
             "cncable": [
                 "",
                 ""
@@ -331,10 +327,6 @@
         "properties": {
             "nconds": 1,
             "nphases": 1,
-            "wire": [
-                "",
-                ""
-            ],
             "x": [
                 [
                     0
@@ -575,7 +567,7 @@
             "basefreq": 50.0
         },
 		"units": {
-            "basekv": "volt",
+            "basekv": "kV",
             "angle": "deg",
             "frequency": "Hz",
             "mvasc3": "MW",
@@ -586,8 +578,6 @@
             "x1": "ohm",
             "r0": "ohm",
             "x0": "ohm",
-            "scantype": "pos",
-            "sequence": "pos",
             "z1": "ohm",
             "z0": "ohm",
             "z2": "ohm",
@@ -595,7 +585,8 @@
             "basefreq": "Hz"
         },
         "associated": {"duty": ""},
-        "topological": {"bus1": ""}
+        "topological": {"bus1": "",
+                        "bus2": ""}
     },
     "default_transformer": {
         "type": "transformer",

@@ -1,3 +1,7 @@
+import components as co
+import json
+
+
 def ebus(bus: str, nt: int):
     return bus + '_' + str(nt)
 
@@ -28,3 +32,30 @@ def pairwise(iterable):
     # "s -> (s0, s1), (s2, s3), (s4, s5), ..."
     a = iter(iterable)
     return zip(a, a)
+
+
+def dejsonize(obj_repr: dict):
+
+    classmap = co.get_classmap()
+
+    # determines class
+    elcls = classmap[obj_repr['type']]
+
+    if 'path' in obj_repr.keys():
+        with open(obj_repr['path'], 'r') as file:
+            dik = json.load(file)
+            obj_repr['properties'] = dik[obj_repr['name']]['properties']
+
+    # restore matrices
+    for prop, value in obj_repr['properties'].items():
+        if isinstance(value, list):
+            obj_repr['properties'][prop] = co._matricize(value)
+
+    # add in the adjointed parameters
+    obj_repr['properties'].update(obj_repr['depends'])
+
+    # returns object
+    if elcls.isnamed():
+        return elcls(obj_repr['name'], xml_rep=obj_repr['properties'])
+    else:
+        return elcls(obj_repr['properties'])

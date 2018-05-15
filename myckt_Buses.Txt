@@ -1,0 +1,9 @@
+
+BUSES AND NODES IN ACTIVE CIRCUIT: myckt
+
+                                    Coord                                 Number of     Nodes
+  Bus          Base kV             (x, y)                      Keep?       Nodes        connected ...
+
+"sourcebus"    NA           (           NA,            NA )     No           3          1    2    3 
+"a"            NA           (           NA,            NA )     No           3          1    2    3 
+"b"            NA           (           NA,            NA )     No           3          3    2    1 
