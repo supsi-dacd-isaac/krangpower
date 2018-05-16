@@ -6,32 +6,29 @@ import logging
 import os.path
 import platform
 import re
-import xml.etree.ElementTree as Xe
 from abc import abstractmethod
 from collections import OrderedDict, namedtuple
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from sys import modules
 
-import matplotlib.pyplot as plt
 import numpy as np
-import opendssdirect as odr
 import pint
 import scipy.io as sio
 from dateutil.parser import parse as dateparse
-from opendssdirect.utils import run_command as engine_command
-from pandas import DataFrame, read_csv
+from pandas import read_csv
 
-import utils.aux_fcn
+from .utils.nxtable import NxTable
+
+# COMPONENTS FOR KRANGSUIT - WRITTEN BY FEDERICO ROSATO
+# -------------------------------------------------------------
+
 
 __all__ = ['load_entities', 'load_dictionary_json', 'CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve', 'Vsource',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol','Reactor',
            'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'default_comp', 'logpath',
            'um', 'resolve_unit', 'default_settings']
-
-# from .odd import opendssdirect_treat
-# odr = opendssdirect_treat()
 
 um = pint.UnitRegistry()
 um.define('percent = 0.01 * dimensionless = pct')
@@ -40,18 +37,19 @@ um.define('mt = meter')
 
 _pint_qty_type = type(1 * um.m)
 
-# OPENDSS WRAPPER - WRITTEN BY FEDERICO ROSATO
-# -------------------------------------------------------------
+
 
 # -------------------------------------------------------------
 # CONFIG LOAD
 # -------------------------------------------------------------
-
 thisdir = os.path.dirname(os.path.realpath(__file__))
+
 config = cfp.ConfigParser()
-config.read(os.path.join(thisdir, 'krang_config.cfg'))
+config.read(os.path.join(thisdir, 'config\krang_config.cfg'))
+
 default_settings_path_config = os.path.join(thisdir, config.get('data_files', 'default_settings'))
 default_entities_path = os.path.join(thisdir, config.get('data_files', 'default_entities'))
+association_types_path = os.path.join(thisdir, config.get('data_files', 'association_types'))
 
 
 # -------------------------------------------------------------
@@ -432,105 +430,61 @@ default_comp = load_dictionary_json(default_entities_path)
 with open(default_settings_path_config, 'r') as f:
     default_settings = json.load(f)
 
+
 # -------------------------------------------------------------
 # GENERIC DSSENTITY AND ITS NAMED VERSION
 # -------------------------------------------------------------
-
 class _DSSentity:  # implements the dictionary param, the xmlc drive for load and the on-the-fly overwrite
-    
-    _softmuldict = {'generator': {'CsvLoadshape': 'duty'},
-                    'load': {'CsvLoadshape': 'duty'},
-                    'vsource': {'CsvLoadshape': 'duty'},
-                    'isource': {'CsvLoadshape': 'duty'},
-                    'fourq': {'CsvLoadshape': 'duty',
-                              'DecisionModel': '_dm'},
-                    'linegeometry_c': {'CNData': 'cncable'},
-                    'linegeometry_t': {'TSData': 'tscable'},
-                    'linegeometry_o': {'WireData': 'wire'},
-                    'line': {'LineGeometry_C': 'geometry',
-                             'LineGeometry_O': 'geometry',
-                             'LineGeometry_T': 'geometry',
-                             'LineCode_S': 'linecode',
-                             'LineCode_A': 'linecode'
-                             },
-                    'pvsystem': {'CsvLoadshape': 'duty',
-                                 'PtCurve': 'p-tcurve',
-                                 'EffCurve': 'effcurve'}
-                    }
 
-    _hardmuldict = {'Regcontrol': {'element': ('Transformer',)},
-                    'Capcontrol': {'element': ('Capacitor',)},
-                    'StorageController': {'element': ('CircuitElement',),
-                                          'elementlist': ('list', 'Storage')},
-                    'Monitor': {'element': ('_CircuitElementNBus',)}
-                    }
+    muldict = NxTable()
+    muldict.from_csv(association_types_path)
 
     @classmethod
     def isnamed(cls):
         return False
 
     @classmethod
+    def isabove(cls):
+        return False
+
+    @classmethod
     def isai(cls):
         return False
 
+    @property
+    def fullname(self):
+        return (self.toe + '.' + self.name).lower()
+
     def __mul__(self, other):
-        if self.toe in [x.lower() for x in self._softmuldict.keys()]:
 
-            mytypemap = self._softmuldict[self.toe]
+        i1 = self.toe
+        i2 = other.__class__.__name__
 
-            if isinstance(other, list):
-                datatype = other[0].__class__.__name__
-                assert datatype in mytypemap.keys()
-                assert all([x.__class__.__name__ == datatype for x in other])
-                value = [x.name for x in other]
-            else:
-                datatype = other.__class__.__name__
-                value = other.name
+        prop_to_set = self.muldict[i1, i2]
+        # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
+        # does not depend on input
+        assert prop_to_set in self._associated.keys()
 
-            prop_to_set = mytypemap[datatype]
-            assert prop_to_set in self._associated.keys()
-            self[prop_to_set] = value
-
-            return self
-
-        elif self.toe in [x.lower() for x in self._hardmuldict.keys()]:
-            mypropmap = self._softmuldict[self.toe]
-            for prop, proptype in mypropmap.items():
-
-                g = other
-                for chaintype in proptype:  # broken for storagecon
-                    assert g.__class__.__name__ == chaintype
-                    g = g[0]
-
-                if isinstance(other, list):
-                    value = [x.name for x in other]
-                else:
-                    value = other.name
-
-                self[prop] = value
-            return self
-
+        if isinstance(other, list):
+            self[prop_to_set] = [o.fullname for o in other]
         else:
-            raise TypeError
+            self[prop_to_set] = other.fullname
 
-    def __init__(self, xml_rep, **kwargs):
+        return self
+
+    def __init__(self, **kwargs):
         self.term_perm = None
         self.name = ''
 
         self.toe = self.__class__.__name__.lower()
-        self.params = None
+        self._params = None
         self.editedParams = None
         self.default_units = None
         self._load_default_parameters()
         self.last_edited = []
-        if not (xml_rep is None):
-            try:
-                self._setparameters(**xml_rep.load())
-            except AttributeError:
-                self._setparameters(**xml_rep)
+
         # todo write automation of typization (don't force the user to use types such as np.matrix, etc)
         self._setparameters(**kwargs)
-        self.logger = logging.Logger('dummy')  # circuit's addc gives the component a logger after initializazion
 
     def __call__(self, **kwargs):
         # a call returns a copy of the object edited on the fly with the kwargs passed
@@ -541,67 +495,17 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     # def __getattr__(self, item):
     #     # fallback getattr tries to call getparameters
     #     try:
-    #         tp = self.params[item]
+    #         tp = self._params[item]
     #     except KeyError:
     #         raise AttributeError
     #
     #     return tp
 
-    def edit(self, **kwargs):
-        """
-        Edits the parameters passed by kwargs. Requirements:
-
-        - The parameter name specified is among the characteristic parameters of the object. See the documentation for
-          the specific object for a review of the available parameters and their types.
-        - The parameter value is of the appropriate type
-
-        Passes when called with no arguments.
-        """
-        if kwargs:  # if arguments are provided, this is just an alias for setparameters
-            self._setparameters(**kwargs)
-        else:
-            self.logger.info('Edit was invoked blank on a %s', self.toe)
-
-        self.last_edited = list(kwargs.keys())
-
     def __getitem__(self, item):
-        try:
-            return self._getparameters(item)
-        except KeyError:
-            try:
-                return self._associated[item]
-            except KeyError:
-                raise KeyError('Item {0} was not found in own parameters or associated entities'.format(item))
+        return self._getparameter(item)
 
     def __setitem__(self, key, value):
-
-        #move in setpar
-
-        try:
-            self._setparameters(**{key: value})
-        except AttributeError:
-            try:
-                self._associated[key] = value
-            except KeyError:
-                raise KeyError('Item {0} was not found in own parameters or associated entities'.format(item))
-
-    # def p(self, param, *default):  # just a getParameters alias for better usability
-    #     """
-    #     Gets the object parameter specified by param. A default return value can be specified in *default, should the
-    #     original parameter be None. Throws KeyError if an invalid parameter is requested.
-    #     DEPRECATED IN FAVOUR OF DEFAULT __getattr__
-    #
-    #     :param param: the parameter name
-    #     :type param: string
-    #     """
-    #
-    #     tp = self._getparameters(param)
-    #     if tp is not None or len(default) == 0:
-    #         return tp
-    #     else:
-    #         if len(default) > 1:
-    #             raise IndexError
-    #         return default[0]
+        self._setparameters(**{key: value})
 
     def _setparameters(self, **kwargs):
 
@@ -626,8 +530,9 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             else:
                 parameter = parameter_raw
 
-            if parameter.lower() in self.params.keys():
-                target_list = self.params
+            # select what dict regards the parameter: _params, _associated?
+            if parameter.lower() in self._params.keys():
+                target_list = self._params
                 default_dict = 'properties'
             elif parameter.lower() in self._associated.keys():
                 default_dict = 'associated'
@@ -640,7 +545,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # pint quantity check and conversion
             if isinstance(value_raw, _pint_qty_type):
-                unt = resolve_unit(self.default_units[parameter], self._get_matching_unit)
+                unt = resolve_unit(self.default_units[parameter], self._get_prop_from_matchobj)
                 if unt == um.none:
                     pass
                     # assert parameter_raw == 'length'
@@ -680,10 +585,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             target_list[parameter.lower()] = value
             self.editedParams.append(parameter.lower())
 
-    def _getparameters(self, param):
+    def _getparameter(self, param):
 
-        if param.lower() in self.params.keys():
-            target_list = self.params
+        if param.lower() in self._params.keys():
+            target_list = self._params
         elif param.lower() in self._associated.keys():
             target_list = self._associated
         else:
@@ -694,30 +599,18 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         unt = self.default_units.get(param, None)
         if unt is not None:
             if isinstance(target_list[param], np.matrix):
-                unit_matrix = np.eye(len(target_list[param])) * resolve_unit(unt, self._get_matching_unit)
+                unit_matrix = np.eye(len(target_list[param])) * resolve_unit(unt, self._get_prop_from_matchobj)
                 return target_list[param] * unit_matrix
             else:
-                return target_list[param] * resolve_unit(unt, self._get_matching_unit)
+                return target_list[param] * resolve_unit(unt, self._get_prop_from_matchobj)
         else:
             return target_list[param]
 
-    def _get_matching_unit(self, matchobj, indx=None):
+    def _get_prop_from_matchobj(self, matchobj, indx=None):
         if indx is None:
             return self[matchobj.group(2)]
         else:
             return self[matchobj.group(2)][indx]
-
-    # def _load_default_parameters_xml(self):
-    #     """
-    #     Loads the default parameter dictionary from the file specified in odsswr.conf. The default dictionary
-    #     determines also what type the parameters should be.
-    #     """
-    #     self.editedParams = []  # reset
-    #
-    #     default_comp = Xmlc('default', self.toe)
-    #
-    #     self.params = default_comp.load()
-    #     self.params_types = default_comp.typedic()
 
     def _load_default_parameters(self):
         """
@@ -728,7 +621,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         for elname, el in default_comp.items():
             if el['type'] == self.toe:
-                self.params = copy.deepcopy(el['properties'])
+                self._params = copy.deepcopy(el['properties'])
                 self.default_units = copy.deepcopy(el['units'])
                 try:
                     self._associated = copy.deepcopy(el['associated'])
@@ -739,14 +632,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             raise TypeError('Could not  find a suitable reference object for {0} in the default file ("{1}")'
                             .format(self.toe, default_entities_path))
 
-        self.params_types_raw = {k: type(v) for k, v in list(self.params.items()) + list(self._associated.items())}
-
-    def _dump(self):
-        """
-        Prints all the parameters names and values. Debug use.
-        """
-        for parameter, value in self.params.items():
-            print('<' + '{0} {1} = {2}'.format(type(value), parameter, value)[7:])
+        self.params_types_raw = {k: type(v) for k, v in list(self._params.items()) + list(self._associated.items())}
 
     def jsonize(self, all_params=False, flatten_mtx=True, using=default_entities_path):
         super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
@@ -756,7 +642,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         pls_flat = {}
         pls_mtx = {}
 
-        for parameter, value in self.params.items():
+        for parameter, value in self._params.items():
             if not all_params:
                 if parameter not in self.editedParams:
                     continue
@@ -766,7 +652,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                 pls_flat[parameter] = value
             pls_mtx[parameter] = value
 
-        # all units in params are in standard units. Therefore, we pass standard units.
+        # all units in _params are in standard units. Therefore, we pass standard units.
         super_dikt['units'] = {k: v for k, v in default_comp['default_' + self.toe]['units'].items()
                                if k in self.editedParams}
 
@@ -825,18 +711,14 @@ class _NamedDSSentity(_DSSentity):
     def isnamed(cls):
         return True
 
-    def __init__(self, name, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
         self.name = name
 
-    def fcs(self, **hookup):
-        return super().fcs(**hookup)
 
 # -------------------------------------------------------------
-# LOADSHAPE CLASS WITH XML LOADER
+# LOADSHAPE CLASS
 # -------------------------------------------------------------
-
-
 class CsvLoadshape:
     """
     Allows to specify a Loadshape that refers to a CSV file. Requires a path.
@@ -847,10 +729,8 @@ class CsvLoadshape:
     :type csv_path: str
     :param column_scheme: A dictionary of one or more int:<'hour'|'mult'|'qmult'> couples that associate the column with one of the hour, mult and qmult properties.
     :type column_scheme: dict
-    :param interval: the number of base units (see below) that constitute a step in the data. If unspecified or None the first column of the csv will be used as the vector of times, that can be, in general, non uniformly spaced.
-    :type interval: float
-    :param hour_fraction: the fraction of 1 HOUR that constitutes the base unit. Defaults to 60.0, that is 1/60th of an hour, that is, a minute.
-    :type hour_fraction: float
+    :param interval: length of step in the data as a pint unit with dimension [time]. If unspecified or None the first column of the csv will be used as the vector of times, that can be, in general, non uniformly spaced.
+    :type interval: _pint_qty_type
     :param use_actual: setting this to False indicates that you want to use the data values in the csv to rescale the base value of the DSS object, rather than using the values directly.
     :type use_actual: bool
     :param npts: the number of points to load from the csv. If None, all the lines in the csv will be loaded in the loadshape. If greater than the number of lines in the csv, the lines will be tiled from the beginning. Please note that, since the automatic determination of the number of datapoints requires opening the csv and counting the rows, specifying this parameter, when possible, will grant a speed-up, especially for big files and/or multiple imports.
@@ -919,6 +799,14 @@ class CsvLoadshape:
     def isnamed():
         return True
 
+    @staticmethod
+    def isabove():
+        return False
+
+    @property
+    def fullname(self):
+        return 'csvloadshape.' + self.name
+
     @lru_cache()
     def get_at_row(self, row_no):
 
@@ -983,153 +871,6 @@ class CsvLoadshape:
         super_dikt['units']['interval'] = str(self.true_interval.units)
 
         return super_dikt
-
-
-class Loadshape:
-    """Loadshape definition.
-     DEPRECATED IN FAVOR OF CSVLOADSHAPE"""
-
-    # diz = {'h': 'Interval',
-    #        'm': 'mInterval',
-    #        's': 'sInterval'}
-
-    def __init__(self, name, p_shape_or_path=None, q_shape=None, interval_hours=1.0,
-                 useactual=False):
-        # yes, I know that this polimorphism is horrid, yet I did it
-
-        assert isinstance(p_shape_or_path, (list, str))
-        assert isinstance(name, str)
-        self.name = name
-
-        if isinstance(p_shape_or_path, list):  # if powers are specified, perform computed initialization
-            p_shape = p_shape_or_path
-            assert all([isinstance(item, float) for item in p_shape])
-
-            self.p_mult = p_shape
-            if q_shape is not None:  # if q_shape isn't specified, the same values of p.mult are used
-                assert all([isinstance(item, float) for item in q_shape])
-                self.q_mult = q_shape
-            assert len(self.q_mult) == len(self.p_mult)
-
-            if len([interval_hours]) != 1:  # a list was passed
-                assert len(self.p_mult) == len([interval_hours])
-                self.interval = 0.0  # in this case, interval has to be set to 0
-                self.hour = interval_hours
-
-            else:
-                self.interval = interval_hours  # in this case, only interval is passed
-                self.hour = None
-
-            self.useactual = useactual
-
-        else:  # if a path is specified, perform loading
-            path = p_shape_or_path
-            self.load(path, name)
-
-    def load(self, path, name):
-        # todo: for big loadshapes, it'd be useful to save the loadshape as a "stupid" csv and then writing mult=<file>
-
-        try:
-            parsedcontent = Xe.parse(path)
-        except Xe.ParseError:
-            raise
-        except FileNotFoundError:
-            raise
-
-        root = parsedcontent.getroot()
-
-        ls = root.find(".//loadshape[@name='{0}']".format(name))
-
-        if ls is None:
-            raise KeyError("Unable to find loadshape in the specified file")
-
-        mult = ls.find('mult')
-        interval = float(ls.find('interval').text)
-        raw_useactual = ls.find('useactual').text
-        if raw_useactual is None:
-            self.useactual = False
-        else:
-            assert ls.find('useactual').text.lower() in ('true', 'false')
-            if ls.find('useactual').text.lower() == 'true':
-                self.useactual = True
-            else:
-                self.useactual = False
-
-        # without checks, so an incomplete or empty curve raises exception
-        self.p_mult = [float(pnt.find('p').text) for pnt in mult.iter('point')]
-
-        raw_q_mult = [pnt.find('q').text for pnt in mult.iter('point')]
-        if all(isinstance(a, str) for a in raw_q_mult):
-            self.q_mult = list(map(lambda x: float(x), raw_q_mult))
-        elif not (any(isinstance(a, str) for a in raw_q_mult)):
-            self.q_mult = None
-        else:
-            raise ValueError("Data for the reactive power curve are incomplete")
-
-        raw_hours = [pnt.find('t').text for pnt in mult.iter('point')]
-        if all(isinstance(a, str) for a in raw_hours):
-            self.hour = list(map(lambda x: float(x), raw_hours))
-            self.interval = 0.0
-        elif not (any(list(isinstance(a, str) for a in raw_hours))):
-            self.hour = None
-            assert isinstance(interval, float)
-            assert interval > 0.0
-            self.interval = interval
-        else:
-            raise ValueError("Data for the hours curve are incomplete")
-
-    def npts(self):
-        return len(self.p_mult)
-
-    def fcs(self):
-        s = 'New loadshape.' + self.name + ' '
-        s += 'npts= ' + str(self.npts) + ' '
-        s += 'interval= ' + str(self.interval) + ' '
-        s += 'useactual= ' + str(self.useactual) + ' '
-
-        shave = lambda array: '(' + str(array).replace(',', ' ').replace('[', '').replace(']', '') + ')'
-        s += 'mult=' + shave(self.p_mult) + ' '
-
-        if self.q_mult is not None:
-            s += 'qmult=' + shave(self.q_mult) + ' '
-
-        if self.hour is not None:
-            s += 'hour=' + shave(self.hour)
-
-        return s
-
-    def plot(self):
-        """Plots the loadshape"""
-        # todo: add labels, correct ticks, title, etc
-        # extend array head for plot correctness
-        x = [0.0] + self.hour
-        x = np.cumsum(x)
-        y1 = [self.p_mult[0]] + self.p_mult
-        if self.q_mult is None:
-            y2 = y1
-        else:
-            y2 = [self.q_mult[0]] + self.q_mult
-
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        ax.spines['bottom'].set_color('grey')
-        ax.spines['top'].set_color('grey')
-        ax.spines['right'].set_color('grey')
-        ax.spines['left'].set_color('grey')
-        ax.tick_params(axis='x', colors='#eeeeee')
-        ax.tick_params(axis='y', colors='#eeeeee')
-        ax.set_facecolor('#303030')
-        ax.set_title('Loadshape [{0}]'.format(self.name), color='white')
-        fig.patch.set_facecolor('#303030')
-        fig.set_facecolor('#303030')
-        plt.step(x, y1, label='Active load', color='#39ff14')
-        plt.step(x, y2, label='Reactive load', color='#4cbb17', linestyle='--')
-        plt.xlabel('Hours', color='white')
-        plt.ylabel('Nominal power multiplier', color='white')
-        plt.legend()
-        plt.grid(True, 'both', linestyle='--', color='grey')
-        plt.minorticks_on()
-        plt.show()
 
 
 # SUPPORT OBJECTS
@@ -1343,15 +1084,15 @@ class TSData(_NamedDSSentity):
 
 
 class _LineGeometry(_NamedDSSentity):
-    def __init__(self, name, xml_rep=None, **kwargs):
-        super().__init__(name, xml_rep, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
         ncond = self['nconds']
         self.specialparams = (self.wiretype, 'x', 'h', 'units')
         # for p in self.specialparams:
-        #     if isinstance(self.params[p], np.matrix):
-        #         assert self.params[p].size == ncond
+        #     if isinstance(self._params[p], np.matrix):
+        #         assert self._params[p].size == ncond
         #     else:
-        #         assert len(self.params[p]) == ncond
+        #         assert len(self._params[p]) == ncond
 
     def fcs(self, **hookup):
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
@@ -1372,8 +1113,11 @@ class _LineGeometry(_NamedDSSentity):
                     idx = 0, ind  # matricial indicization necessary
                 else:
                     idx = ind
-                s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
-
+                try:
+                    # for fullnames of the wires
+                    s2 += str(parameter) + '=' + str(true_param[idx]).split('.')[1] + ' '
+                except IndexError:
+                    s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
         return s1 + s2
 
 
@@ -1401,9 +1145,9 @@ class LineGeometry_O(_LineGeometry):
     +----------------------+-------------+----------------+
     """
 
-    def __init__(self, name, xml_rep=None, **kwargs):
+    def __init__(self, name, **kwargs):
         self.wiretype = 'wire'
-        super().__init__(name, xml_rep, **kwargs)
+        super().__init__(name, **kwargs)
 
 
 class LineGeometry_T(_LineGeometry):
@@ -1430,9 +1174,9 @@ class LineGeometry_T(_LineGeometry):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, name, xml_rep=None, **kwargs):
+    def __init__(self, name, **kwargs):
         self.wiretype = 'tscable'
-        super().__init__(name, xml_rep, **kwargs)
+        super().__init__(name, **kwargs)
 
 
 class LineGeometry_C(_LineGeometry):
@@ -1459,9 +1203,9 @@ class LineGeometry_C(_LineGeometry):
     +----------------------+-------------+----------------+
     """
 
-    def __init__(self, name, xml_rep=None, **kwargs):
+    def __init__(self, name, **kwargs):
         self.wiretype = 'cncable'
-        super().__init__(name, xml_rep, **kwargs)
+        super().__init__(name, **kwargs)
 
 
 class Curve:
@@ -1574,17 +1318,10 @@ class EffCurve(Curve):
 # -------------------------------------------------------------
 class _CircuitElement(_DSSentity):
 
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
-
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         # after loading from xml the line if appropriate, I go on with the kwargs in order to allow further on-the-fly
         # editing
-
-        # self.current = None
-        # self.voltage = None
-        self.logger = None
-
-        self._associated_elements = None
 
     def aka(self, name):
         try:
@@ -1614,8 +1351,8 @@ class _CircuitElementNBus(_CircuitElement):
     # Format:
     # New elem.name bus1='a' bus2='b' ...busx='z' prop1=val1 prop2=val2....
 
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.nbuses = self._nbusesdict[self.toe]  # todo broken for transformers
 
     def fcs(self, **hookup):
@@ -1648,7 +1385,7 @@ class _CircuitElementNBus(_CircuitElement):
         return s1 + s3 + s2
 
     def _fes(self, params_to_indicate=None):
-        # this function returns in the edit string all the requested params, even if not different from their default
+        # this function returns in the edit string all the requested _params, even if not different from their default
         # values
         s1 = 'Edit ' + self.toe + '.' + self.name
         s2 = ''
@@ -1659,8 +1396,8 @@ class _CircuitElementNBus(_CircuitElement):
             params_selected = params_to_indicate
 
         for parameter in params_selected:
-            if not (parameter in self.params):
-                self.logger.warning('Unknown parameter %s requested in edit string. Blatantly ignored.', parameter)
+            if not (parameter in self._params):
+                logger.warning('Unknown parameter %s requested in edit string. Blatantly ignored.', parameter)
             else:
                 s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s2
@@ -1767,9 +1504,9 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
 
     """
 
-    def __init__(self, xml_rep=None, **kwargs):
+    def __init__(self, **kwargs):
         self.toe = 'transformer'
-        super().__init__(xml_rep, **kwargs)
+        super().__init__(**kwargs)
         self.specialparams = ('conns', 'kvs', 'kvas', 'taps', '%rs')
 
     def fcs(self, **hookup):
@@ -1852,9 +1589,9 @@ class Line(_CircuitElementNBus):
     | emergamps            | float       | 600.0                      |
     +----------------------+-------------+----------------------------+
     """
-    def __init__(self, xml_rep=None, **kwargs):
+    def __init__(self, **kwargs):
         # assert isinstance(data, (LineCode_A, LineCode_S, LineGeometry_C, LineGeometry_O, LineGeometry_T))
-        super().__init__(xml_rep, **kwargs)
+        super().__init__(**kwargs)
 
     def __call__(self, **kwargs):
         if 'data' in kwargs.keys():
@@ -2414,7 +2151,7 @@ class Load(_CircuitElementNBus):
 
     def __mul__(self, other):
         if isinstance(other, CsvLoadshape):
-            self.edit(duty=other.name)
+            self['duty'] = other.name
             return self
         else:
             raise ValueError('Object {0} is not addable to a Load'.format(str(other)))
@@ -2518,12 +2255,12 @@ class PvSystem(_CircuitElementNBus):
 #     """
 #
 #
-#     def __init__(self, xml_rep=None, line=Line(), loads=None, **kwargs):
+#     def __init__(self, line=Line(), loads=None, **kwargs):
 #         assert isinstance(line, Line)
 #         if loads is not None:
 #             for ld in loads.values():
 #                 assert isinstance(ld, Load)
-#         super().__init__(xml_rep, **kwargs)
+#         super().__init__(**kwargs)
 #         self.line = line
 #         self.loads = loads
 #
@@ -2585,8 +2322,8 @@ class PvSystem(_CircuitElementNBus):
 #         for idxbus, bus in enumerate(bus_sequence):
 #             if load_proportions[idxbus] != 0:
 #                 for idxphase, (tm, ld) in enumerate(self.loads.items()):
-#                     power = ld.params['kw']
-#                     rpower = ld.params['kvar']
+#                     power = ld._params['kw']
+#                     rpower = ld._params['kvar']
 #                     s += ld(kw=power * load_proportions[idxbus], kvar=rpower * load_proportions[idxbus]).fcs(
 #                         (bus,), '_V{0}({2})_{1}'.format(bus, cname, idxphase + 1), {bus: tm}) + '\n'
 #
@@ -2607,7 +2344,7 @@ class Switch(_CircuitElementNBus):
     | emergamps            | float       | 600.0                      |
     +----------------------+-------------+----------------------------+
     """
-    def __init__(self, xml_rep=None, nphases=None, open=False):
+    def __init__(self, nphases=None, open=False):
         if open:
             self.disablestring = 'Disable = True'
         else:
@@ -2660,9 +2397,9 @@ class FourQ(Generator):
     def isai(cls):
         return True
 
-    def __init__(self, xml_rep=None, **kwargs):
+    def __init__(self, **kwargs):
         self._dm = None
-        super().__init__(xml_rep, **kwargs)
+        super().__init__(**kwargs)
 
     def update_pq(self, oek, mybus):
         assert self._dm is not None
@@ -2711,14 +2448,19 @@ class FourQ(Generator):
 
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
+class _AboveCircuitElement(_CircuitElement):
+    @classmethod
+    def isabove(cls):
+        return True
 
-class Capcontrol(_CircuitElement):
+
+class Capcontrol(_AboveCircuitElement):
     pass
 
-class Energymeter(_CircuitElement):
+class Energymeter(_AboveCircuitElement):
     pass
 
-class Regcontrol(_CircuitElement):
+class Regcontrol(_AboveCircuitElement):
     """Regcontrol object
 
     +----------------------+-------------+----------------------------+
@@ -2780,8 +2522,8 @@ class Regcontrol(_CircuitElement):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def fcs(self, **hookup):
         transformer = hookup.get('trf')
@@ -2793,7 +2535,7 @@ class Regcontrol(_CircuitElement):
         return s3 + s1
 
 
-class Monitor(_CircuitElement):
+class Monitor(_AboveCircuitElement):
     """Monitor object. Several methods of odsswr.Circuit.py allow for exportation of the recordings of the monitors.
 
     +----------------------+-------------+----------------------------+
@@ -2813,30 +2555,33 @@ class Monitor(_CircuitElement):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def fcs(self, **hookup):
 
-        eltype = hookup.get('eltype')
-        elname = hookup.get('elname')
-        terminal = hookup.get('terminal')
-        alias = hookup.get('alias')
+        # eltype = hookup.get('eltype')
+        # elname = hookup.get('elname')
+        # terminal = hookup.get('terminal')
+        # alias = hookup.get('alias')
+        #
+        # if alias is not None:
+        #     name = alias
+        # else:
+        #     name = 'mntr_' + eltype + '_' + elname
 
-        if alias is not None:
-            name = alias
-        else:
-            name = 'mntr_' + eltype + '_' + elname
+        name = self.name
 
-        return 'New monitor.' + name + ' element=' + eltype + '.' + elname + \
-               ' terminal=' + str(terminal) + ' mode=' + str(self['mode']) + \
+        return 'New monitor.' + name + ' element=' + self['element'] + \
+               ' mode=' + str(self['mode']) + \
                ' vipolar=no ppolar=no'
 
+             # ' terminal=' + str(terminal) +\
 
 
-class BusVoltageMonitor(_CircuitElement):
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+class BusVoltageMonitor(_AboveCircuitElement):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self['mode'] = 0
 
     def fcs(self, **hookup):
@@ -2855,7 +2600,7 @@ class BusVoltageMonitor(_CircuitElement):
                '!END FICTITIOUS LOAD'
 
 
-class StorageController(_CircuitElement):
+class StorageController(_AboveCircuitElement):
     """StorageController object
 
     +----------------------+-------------+----------------------------+
@@ -2929,8 +2674,8 @@ class StorageController(_CircuitElement):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, xml_rep=None, **kwargs):
-        super().__init__(xml_rep, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def fcs(self, **hookup):
 

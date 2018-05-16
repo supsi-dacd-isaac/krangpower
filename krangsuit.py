@@ -1,20 +1,24 @@
-import re
-from functools import singledispatch
-
-import networkx as nx
-import pandas
+import copy
 import json
-from tqdm import tqdm
-import numpy as np
-
-import components as co
-from components import um, config, _pint_qty_type
-import utils.aux_fcn as au
-from enhancer import OpendssdirectEnhancer
-from logging.handlers import RotatingFileHandler
 import logging
 import os.path
-import busquery as bq
+import re
+from functools import singledispatch as _singledispatch
+from logging.handlers import RotatingFileHandler as _RotatingFileHandler
+
+import networkx as nx
+import numpy as np
+import pandas
+from tqdm import tqdm as _tqdm
+
+from . import busquery as bq
+from . import components as co
+from .utils import aux_fcn as au
+from .components import um, config, _pint_qty_type
+from .enhancer import OpendssdirectEnhancer
+
+
+__all__ = ['Krang', 'from_json']
 
 _elk = 'el'
 
@@ -32,6 +36,7 @@ class Krang:
 
     def initialize(self, name, vsource: co.Vsource):
         self.clog = _create_command_logger(name)
+        self.clog.debug('\n' + '$%&' * 30)
         self.command('clear')
         master_string = 'new object = circuit.' + name + ' '
         vsource.name = 'source'  # we force the name, so an already named vsource can be used as source.
@@ -51,14 +56,27 @@ class Krang:
         return _oe_getitem(item, self)
 
     def __getattr__(self, item):
-        # OEShell.lines gets you a view of the lines
-        raise NotImplementedError
+        """Krang.item, aside from retrieving the built.in attributes, wraps by default the calls to opendssdirect's
+        'class_to_dataframe' utility function. These are accessible via capital letter calls. Both singular and plural
+        are accepted (e.g., 'Line' or 'Lines', 'RegControl' , 'Regcontrol', 'RegControls', but not 'transformers')"""
+        try:
+            assert item[0].isupper()
+            dep_item = re.sub('s$', '', item).lower()
+            return self.oe.utils.class_to_dataframe(dep_item)
+        except (AssertionError, NotImplementedError):
+            raise AttributeError('{0} is neither a valid attribute nor a valid identifier for the class-views.'.format(
+                item
+            ))
 
-    def __add__(self, other):
-        assert other.isnamed()
+    def __lshift__(self, other):
+        try:
+            assert other.isnamed()
+            self.named_entities.append(other)
+        except AssertionError:
+            assert other.isabove()
+
         assert other.name != ''
         self.command(other.fcs())
-        self.named_entities.append(other)
         return self
 
     def __bool__(self):
@@ -109,7 +127,9 @@ class Krang:
         i = pandas.DataFrame(
             columns=[x.lower() for x in self.oe.Circuit.YNodeOrder()])
 
-        for _ in tqdm(range(nmbr)):
+        self.clog.info('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
+                       ' Wait for end message...'.format(nmbr))
+        for _ in _tqdm(range(nmbr)):
             for ai_el in self.ai_list:
                 self.command(ai_el.element.fus(self, ai_el.name))
 
@@ -117,6 +137,7 @@ class Krang:
             v = v.append(self.oe.Circuit.YNodeVArray(), ignore_index=True)
             i = i.append(self.oe.Circuit.YCurrents(), ignore_index=True)
 
+        self.clog.info('Drag_solve ended')
         self.oe.Solution.Number(nmbr)
 
         return v, i
@@ -127,12 +148,13 @@ class Krang:
     def make_json_dict(self):
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
-        for nm in self.oe.Circuit.AllElementNames():
-            master_dict['elements'][nm.split('.')[1]] = self[nm].unpack().jsonize()
-            master_dict['elements'][nm.split('.')[1]]['topological'] = self[nm].topological
+        for Nm in self.oe.Circuit.AllElementNames():
+            nm = Nm.lower()
+            master_dict['elements'][nm] = self[nm].unpack().jsonize()
+            master_dict['elements'][nm]['topological'] = self[nm].topological
 
         for ne in self.named_entities:
-            master_dict['elements'][ne.name] = ne.jsonize()
+            master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # options
         opts = self.get(*list(co.default_settings['values'].keys()))
@@ -234,7 +256,7 @@ class Krang:
         return bus, terminals
 
 
-@singledispatch
+@_singledispatch
 def _oe_getitem(item, oeshell):
     # no default implementation
     raise TypeError('Invalid identificator passed. You can specify fully qualified element names as str, or bus/'
@@ -264,7 +286,7 @@ def _create_command_logger(name):
         logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'commands_log_path'))
         if not os.path.exists(os.path.dirname(logpath)):
             os.makedirs(os.path.dirname(logpath))
-        fh = RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
+        fh = _RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
@@ -311,9 +333,12 @@ class _BusView:
 
         self.fcs_kwargs = {buskey: self.buses, tkey: self.tp}
 
-    def __add__(self, other):
+    def __lshift__(self, other):
         assert not other.isnamed()
-        assert other.name != ''
+        try:
+            assert other.name != ''
+        except AssertionError:
+            raise ValueError('Did you name the element before adding it?')
         self.oek.command(other.fcs(**self.fcs_kwargs))
 
         # remember ai elements
@@ -354,8 +379,8 @@ def from_json(path):
 
     # init the krang with the source, then remove it
     l_ckt = Krang()
-    l_ckt.initialize(master_dict['cktname'], au.dejsonize(master_dict['elements']['source']))
-    del master_dict['elements']['source']
+    l_ckt.initialize(master_dict['cktname'], au.dejsonize(master_dict['elements']['vsource.source']))
+    del master_dict['elements']['vsource.source']
 
     # load and declare options
     opt_dict = master_dict['settings']
@@ -391,7 +416,7 @@ def from_json(path):
     for jobj in master_dict['elements'].values():
         # if the element has no dependencies, we just add a node with iths name
         if jobj['depends'] == {} or all([d == '' for d in jobj['depends'].values()]):
-            dep_graph.add_node(jobj['name'])
+            dep_graph.add_node(jobj['type'] + '.' + jobj['name'])
         else:
             # if an element parameter depends on another name, or a list of other names, we create all the edges
             # necessary
@@ -399,22 +424,28 @@ def from_json(path):
                 if isinstance(dvalue, list):
                     for dv in dvalue:
                         if dv != '':
-                            dep_graph.add_edge(jobj['name'], dv)
+                            dep_graph.add_edge(jobj['type'] + '.' +jobj['name'], dv)
                 else:
                     if dvalue != '':
-                        dep_graph.add_edge(jobj['name'], dvalue)
+                        dep_graph.add_edge(jobj['type'] + '.' + jobj['name'], dvalue)
 
     # we cyclically consider all "leaves", add the objects at the leaves, then trim the leaves and go on with
     # the new leaves.
     # In this way we are sure that, whenever a name is mentioned in a fcs, its entity was already declared.
     while dep_graph.leaves:
         for nm in dep_graph.leaves:
-            jobj = master_dict['elements'][nm]
+            try:
+                jobj = copy.deepcopy(master_dict['elements'][nm])
+            except KeyError:
+                mdmod = {k.split('.')[1]: v for k, v in master_dict['elements'].items()}
+                jobj = copy.deepcopy(mdmod[nm])
             dssobj = au.dejsonize(jobj)
             if dssobj.isnamed():
-                l_ckt + dssobj
+                l_ckt << dssobj
+            elif dssobj.isabove():
+                l_ckt << dssobj.aka(jobj['name'])
             else:
-                l_ckt[tuple(jobj['topological'])] + dssobj.aka(jobj['name'])
+                l_ckt[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
                 # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
         dep_graph.trim()
 
@@ -422,64 +453,7 @@ def from_json(path):
 
 
 def _main():
-
-    moe = Krang()
-    moe.gen_echo = True
-
-    moe.initialize('myckt', co.Vsource(basekv=15.0 * um.kV).aka('source'))
-    moe.set(number=55, stepsize='15m')
-
-    moe['sourcebus', 'a'] + co.Line(length=120 * um.unitlength).aka('theline')
-    moe[('a.1.3.2', 'b.3.2.1')] + co.Line(units='m', length=0.72 * um.km).aka('theotherline')
-
-    vls = np.matrix([15.0, 7.0]) * um.kV
-
-    ui = co.Transformer(windings=2, kvs=vls).aka('trans')
-
-    # moe[('b', 'c')] + ui
-    #  EEEEEEEEEEEEEEEEEEEEEEEEEE
-
-    # print(moe['line.theotherline']['rmatrix'])
-
-    # moe['line.theotherline']['length'] = 200 * um.yard
-
-    lish = co.CsvLoadshape('mylsh', r"D:\d\ams_data\loads" + r'\Y6' + r"\node_" + str(5413) + ".csv", column_scheme={'mult': 1, 'qmult': 2}, use_actual=True, interval=15 * um.min)
-
-    pee = co.WireData('caggi', runits='m', rac=3 * um.ohm / um.m)
-    wee = co.WireData('aaggi')
-    gee = co.LineGeometry_O('faggi', nconds=2, nphases=2, x=[0, 0], h=[0.1, 0], units=['m', 'km']) * [pee, wee]
-
-    print(gee['units'])
-
-    moe + lish
-    moe + pee
-    moe + wee
-    moe + gee
-
-    au.dejsonize(lish.jsonize())
-
-    fofo = co.Load(kw=18.2345 * um.kW, kv=15 * um.kV)  # * lish
-    moe[('b',)] + fofo.aka('wow') * lish
-    moe[('b',)] + fofo.aka('bow') * lish
-
-
-    tt = moe['load.wow'].unpack(verbose=False)
-
-    moe.command('makebuslist')
-
-    i, v = moe.drag_solve()
-    print(i)
-    print(moe[('b',)].voltage)
-
-    moe.save_json(r'D:\temp\krang.json')
-    moe.save_dss(r'D:\temp\krang.dss')
-    print(moe['vsource.source']['isc3'])
-    cs = from_json(r'D:\temp\krang.json')
-    # print(moe.graph.nodes)
-    # print(cs.graph.nodes)
-
-
-    i, v = cs.drag_solve()
+    pass
 
 
 if __name__ == '__main__':

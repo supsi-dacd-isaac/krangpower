@@ -1,4 +1,4 @@
-import components as co
+from .. import components as co
 import json
 import numpy as np
 
@@ -81,4 +81,4 @@ def dejsonize(obj_repr: dict):
     if elcls.isnamed():
         return elcls(obj_repr['name'], **obj_repr['properties'])
     else:
-        return elcls(obj_repr['properties'])
+        return elcls(**obj_repr['properties'])

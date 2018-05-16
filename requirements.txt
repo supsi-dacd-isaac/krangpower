@@ -1,9 +1,9 @@
 OpenDSSDirect.py
-python-dateutil
-pandas
-scipy
-numpy
-matplotlib
 networkx
 pint
+numpy
+pandas
+scipy
+matplotlib
+python-dateutil
 tqdm

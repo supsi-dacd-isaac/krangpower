@@ -1,6 +1,5 @@
-from krangsuit import _elk
 import numpy as np
-from components import um
+from .components import um
 
 
 def get_fun(fun_name):

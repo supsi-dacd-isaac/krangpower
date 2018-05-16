@@ -1,5 +1,6 @@
-# this is a function meant to be run una-tantum in order to get all the interface identifiers from the documents.
-# It is not meant to be run dynamically.
+# this is a function meant to be run una-tantum in order to get all the interface identifiers from the documentation of
+# opendssdirect.py and it is not meant to be run dynamically.
+
 
 def get_methods_from_docs(doc_dir):
     

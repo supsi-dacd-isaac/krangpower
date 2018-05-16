@@ -1281,7 +1281,8 @@
 		"units": {
             "basefreq": "Hz"
         },
-        "associated": {"element": ""}
+        "associated": {"element": ""},
+        "topological": {}
     },
     "default_dload": {
         "type": "dload",

@@ -11,12 +11,12 @@ import numpy as np
 import re
 import opendssdirect as odr
 from pandas import DataFrame
-import components as co
-from components import um, logger
-from components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
+from . import components as co
+from .components import um, logger
+from .components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
 
-from utils.aux_fcn import lower as _lower
-from utils.aux_fcn import pairwise as _pairwise
+from .utils.aux_fcn import lower as _lower
+from .utils.aux_fcn import pairwise as _pairwise
 
 __all__ = ['OpendssdirectEnhancer']
 
@@ -585,6 +585,10 @@ class _PackedOpendssElement:
     @property
     def fullname(self):
         return self._eltype + '.' + self._name
+
+    @property
+    def name(self):
+        return self._name
 
     def _craft_member(self, item: str):
         
