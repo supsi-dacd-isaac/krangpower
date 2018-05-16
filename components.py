@@ -15,6 +15,7 @@ from sys import modules
 
 import matplotlib.pyplot as plt
 import numpy as np
+from nxtable import NxTable
 import opendssdirect as odr
 import pint
 import scipy.io as sio
@@ -437,7 +438,34 @@ with open(default_settings_path_config, 'r') as f:
 # -------------------------------------------------------------
 
 class _DSSentity:  # implements the dictionary param, the xmlc drive for load and the on-the-fly overwrite
-    
+
+    muldict = NxTable()
+    muldict['generator', 'CsvLoadsape'] = 'duty'
+    muldict['load', 'CsvLoadsape'] = 'duty'
+    muldict['vsource', 'CsvLoadsape'] = 'duty'
+    muldict['isource', 'CsvLoadsape'] = 'duty'
+    muldict['fourq', 'CsvLoadsape'] = 'duty'
+    muldict['fourq', 'DecisionModel'] = '_dm'
+    muldict['linegeometry_o', 'WireData'] = 'wire'
+    muldict['linegeometry_o', 'list'] = 'wire'
+    muldict['linegeometry_c', 'CNData'] = 'cncable'
+    muldict['linegeometry_c', 'list'] = 'cncable'
+    muldict['linegeometry_t', 'TSData'] = 'tscable'
+    muldict['linegeometry_t', 'list'] = 'tscable'
+    muldict['line', 'LineGeometry_C'] = 'geometry'
+    muldict['line', 'LineGeometry_O'] = 'geometry'
+    muldict['line', 'LineGeometry_T'] = 'geometry'
+    muldict['line', 'LineCode_S'] = 'geometry'
+    muldict['line', 'LineCode_A'] = 'geometry'
+    muldict['pvsystem', 'CsvLoadsape'] = 'duty'
+    muldict['pvsystem', 'PtCurve'] = 'p-tcurve'
+    muldict['pvsystem', 'EffCurve'] = 'effcurve'
+    muldict['monitor', 'Line'] = 'element'
+    muldict['monitor', 'Load'] = 'element'
+    # todo continue...
+    muldict['storagecontroller', 'list'] = 'elementlist'
+
+
     _softmuldict = {'generator': {'CsvLoadshape': 'duty'},
                     'load': {'CsvLoadshape': 'duty'},
                     'vsource': {'CsvLoadshape': 'duty'},
@@ -458,11 +486,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                                  'EffCurve': 'effcurve'}
                     }
 
-    _hardmuldict = {'Regcontrol': {'element': ('Transformer',)},
-                    'Capcontrol': {'element': ('Capacitor',)},
-                    'StorageController': {'element': ('CircuitElement',),
+    _hardmuldict = {'regcontrol': {'element': ('Transformer',)},
+                    'capcontrol': {'element': ('Capacitor',)},
+                    'storagecontroller': {'element': ('CircuitElement',),
                                           'elementlist': ('list', 'Storage')},
-                    'Monitor': {'element': ('_CircuitElementNBus',)}
+                    'monitor': {'element': ('Line',)}
                     }
 
     @classmethod
@@ -470,48 +498,33 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         return False
 
     @classmethod
+    def isabove(cls):
+        return False
+
+    @classmethod
     def isai(cls):
         return False
 
+    @property
+    def fullname(self):
+        return (self.toe + '.' + self.name).lower()
+
     def __mul__(self, other):
-        if self.toe in [x.lower() for x in self._softmuldict.keys()]:
 
-            mytypemap = self._softmuldict[self.toe]
+        i1 = self.toe
+        i2 = other.__class__.__name__
 
-            if isinstance(other, list):
-                datatype = other[0].__class__.__name__
-                assert datatype in mytypemap.keys()
-                assert all([x.__class__.__name__ == datatype for x in other])
-                value = [x.name for x in other]
-            else:
-                datatype = other.__class__.__name__
-                value = other.name
+        prop_to_set = self.muldict[i1, i2]
+        # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
+        # does not depend on input
+        assert prop_to_set in self._associated.keys()
 
-            prop_to_set = mytypemap[datatype]
-            assert prop_to_set in self._associated.keys()
-            self[prop_to_set] = value
-
-            return self
-
-        elif self.toe in [x.lower() for x in self._hardmuldict.keys()]:
-            mypropmap = self._softmuldict[self.toe]
-            for prop, proptype in mypropmap.items():
-
-                g = other
-                for chaintype in proptype:  # broken for storagecon
-                    assert g.__class__.__name__ == chaintype
-                    g = g[0]
-
-                if isinstance(other, list):
-                    value = [x.name for x in other]
-                else:
-                    value = other.name
-
-                self[prop] = value
-            return self
-
+        if isinstance(other, list):
+            self[prop_to_set] = [o.fullname for o in other]
         else:
-            raise TypeError
+            self[prop_to_set] = other.fullname
+
+        return self
 
     def __init__(self, xml_rep, **kwargs):
         self.term_perm = None
@@ -577,13 +590,9 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         #move in setpar
 
-        try:
-            self._setparameters(**{key: value})
-        except AttributeError:
-            try:
-                self._associated[key] = value
-            except KeyError:
-                raise KeyError('Item {0} was not found in own parameters or associated entities'.format(item))
+
+        self._setparameters(**{key: value})
+
 
     # def p(self, param, *default):  # just a getParameters alias for better usability
     #     """
@@ -918,6 +927,14 @@ class CsvLoadshape:
     @staticmethod
     def isnamed():
         return True
+
+    @staticmethod
+    def isabove():
+        return False
+
+    @property
+    def fullname(self):
+        return 'csvloadshape.' + self.name
 
     @lru_cache()
     def get_at_row(self, row_no):
@@ -1372,8 +1389,11 @@ class _LineGeometry(_NamedDSSentity):
                     idx = 0, ind  # matricial indicization necessary
                 else:
                     idx = ind
-                s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
-
+                try:
+                    # for fullnames of the wires
+                    s2 += str(parameter) + '=' + str(true_param[idx]).split('.')[1] + ' '
+                except IndexError:
+                    s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
         return s1 + s2
 
 
@@ -2711,14 +2731,19 @@ class FourQ(Generator):
 
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
+class _AboveCircuitElement(_CircuitElement):
+    @classmethod
+    def isabove(cls):
+        return True
 
-class Capcontrol(_CircuitElement):
+
+class Capcontrol(_AboveCircuitElement):
     pass
 
-class Energymeter(_CircuitElement):
+class Energymeter(_AboveCircuitElement):
     pass
 
-class Regcontrol(_CircuitElement):
+class Regcontrol(_AboveCircuitElement):
     """Regcontrol object
 
     +----------------------+-------------+----------------------------+
@@ -2793,7 +2818,7 @@ class Regcontrol(_CircuitElement):
         return s3 + s1
 
 
-class Monitor(_CircuitElement):
+class Monitor(_AboveCircuitElement):
     """Monitor object. Several methods of odsswr.Circuit.py allow for exportation of the recordings of the monitors.
 
     +----------------------+-------------+----------------------------+
@@ -2818,23 +2843,26 @@ class Monitor(_CircuitElement):
 
     def fcs(self, **hookup):
 
-        eltype = hookup.get('eltype')
-        elname = hookup.get('elname')
-        terminal = hookup.get('terminal')
-        alias = hookup.get('alias')
+        # eltype = hookup.get('eltype')
+        # elname = hookup.get('elname')
+        # terminal = hookup.get('terminal')
+        # alias = hookup.get('alias')
+        #
+        # if alias is not None:
+        #     name = alias
+        # else:
+        #     name = 'mntr_' + eltype + '_' + elname
 
-        if alias is not None:
-            name = alias
-        else:
-            name = 'mntr_' + eltype + '_' + elname
+        name = self.name
 
-        return 'New monitor.' + name + ' element=' + eltype + '.' + elname + \
-               ' terminal=' + str(terminal) + ' mode=' + str(self['mode']) + \
+        return 'New monitor.' + name + ' element=' + self['element'] + \
+               ' mode=' + str(self['mode']) + \
                ' vipolar=no ppolar=no'
 
+             # ' terminal=' + str(terminal) +\
 
 
-class BusVoltageMonitor(_CircuitElement):
+class BusVoltageMonitor(_AboveCircuitElement):
     def __init__(self, xml_rep=None, **kwargs):
         super().__init__(xml_rep, **kwargs)
         self['mode'] = 0
@@ -2855,7 +2883,7 @@ class BusVoltageMonitor(_CircuitElement):
                '!END FICTITIOUS LOAD'
 
 
-class StorageController(_CircuitElement):
+class StorageController(_AboveCircuitElement):
     """StorageController object
 
     +----------------------+-------------+----------------------------+

@@ -586,6 +586,10 @@ class _PackedOpendssElement:
     def fullname(self):
         return self._eltype + '.' + self._name
 
+    @property
+    def name(self):
+        return self._name
+
     def _craft_member(self, item: str):
         
         def pckdss_mthd(*args):
