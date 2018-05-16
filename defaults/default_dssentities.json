@@ -667,8 +667,8 @@
             "normmaxhkva": "kW",
             "emergmaxhkva": "kW",
             "thermal": "h",
-            "flrise": "degC",
-            "hsrise": "degC",
+            "flrise": "delta_degC",
+            "hsrise": "delta_degC",
             "normhkva": "kW",
             "emerghkva": "kW",
             "normamps": "A",
@@ -676,7 +676,8 @@
             "repair": "h",
             "basefreq": "Hz"
         },
-        "associated": {"xfmrdata": ""}
+        "associated": {"xfmrdata": ""},
+        "topological": {"buses": ["", ""]}
     },
     "default_isource": {
         "type": "isource",
@@ -1327,10 +1328,6 @@
             "cfactor": 4.0,
             "cvrcurve": "",
             "numcust": 1,
-            "zipv": [
-                0.0,
-                0.0
-            ],
             "%seriesrl": 50.0,
             "relweight": 1.0,
             "vlowpu": 0.5,
@@ -1433,5 +1430,19 @@
         },
 		"units": {
         }
+    },
+    "default_csvloadshape":{
+        "type": "csvloadshape",
+        "properties":{
+            "csvpath": "",
+            "columnscheme": {"mult": 0},
+            "interval": 15.0,
+            "use_actual": false,
+            "npts": 0
+        },
+        "units": {
+            "interval": "min"
+        }
+
     }
 }

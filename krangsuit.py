@@ -4,11 +4,11 @@ from functools import singledispatch
 import networkx as nx
 import pandas
 import json
-import copy
 from tqdm import tqdm
+import numpy as np
 
 import components as co
-from components import um, config
+from components import um, config, _pint_qty_type
 import utils.aux_fcn as au
 from enhancer import OpendssdirectEnhancer
 from logging.handlers import RotatingFileHandler
@@ -25,17 +25,18 @@ class Krang:
         self.oe = OpendssdirectEnhancer()
         self.up_to_date = False
         self.last_gr = None
-        self.gen_echo = False
         self.named_entities = []
         self.ai_list = []
         self.clog = None
+        self.com = ''
 
     def initialize(self, name, vsource: co.Vsource):
         self.clog = _create_command_logger(name)
         self.command('clear')
         master_string = 'new object = circuit.' + name + ' '
-        main_source_dec = vsource.fcs(buses=('sourcebus', 'earth'))
-        main_dec = re.sub('.*source ', '', main_source_dec)
+        vsource.name = 'source'  # we force the name, so an already named vsource can be used as source.
+        main_source_dec = vsource.fcs(buses=('sourcebus', 'sourcebus.0.0.0'))
+        main_dec = re.sub('New vsource\.source ', '', main_source_dec)
         main_dec = re.sub('bus2=[^ ]+ ', '', main_dec)
         master_string += ' ' + main_dec + '\n'
 
@@ -66,19 +67,36 @@ class Krang:
     def command(self, cmd_str: str, echo=True):
         rslt = self.oe.utils.run_command(cmd_str)
         self.up_to_date = False
-        if self.gen_echo and echo:
-            print(cmd_str)
-            if rslt != '':
-                print(str('\033[94m' + rslt + '\033[0m'))
-
-        self.clog.debug('[' + cmd_str.replace('\n', '\n' + ' '*(30 + len(self.name)))
-                        + ']-->[' + rslt.replace('\n', '') + ']')
+        if echo:
+            self.com += cmd_str + '\n'
+            self.clog.debug('[' + cmd_str.replace('\n', '\n' + ' '*(30 + len(self.name)))
+                            + ']-->[' + rslt.replace('\n', '') + ']')
 
         return rslt
 
     def set(self, **opts_vals):
         for option, value in opts_vals.items():
-            self.command('set {0}={1}'.format(option, value))
+            if isinstance(value, _pint_qty_type):
+                vl = value.to(um.parse_units(co.default_settings['units'][option])).magnitude
+            else:
+                vl = value
+            self.command('set {0}={1}'.format(option, vl))
+
+    def get(self, *opts):
+
+        assert all([x in list(co.default_settings['values'].keys()) for x in opts])
+        r_opts = {opt: self.command('get {0}'.format(opt), echo=False).split('!')[0] for opt in opts}
+
+        for op in r_opts.keys():
+            tt = type(co.default_settings['values'][op])
+            if tt is list:
+                r_opts[op] = eval(r_opts[op])  # lists are literals like [13]
+            else:
+                r_opts[op] = tt(r_opts[op])
+            if op in co.default_settings['units'].keys():
+                r_opts[op] *= um.parse_units(co.default_settings['units'][op])
+
+        return r_opts
 
     def snap(self):
         self.command('set mode=snap\nsolve\nset mode=duty')
@@ -103,8 +121,11 @@ class Krang:
 
         return v, i
 
+    def solve(self):
+        self.command('solve')
+
     def make_json_dict(self):
-        master_dict = {'cktname': self.name, 'elements': {}}
+        master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
         for nm in self.oe.Circuit.AllElementNames():
             master_dict['elements'][nm.split('.')[1]] = self[nm].unpack().jsonize()
@@ -113,11 +134,26 @@ class Krang:
         for ne in self.named_entities:
             master_dict['elements'][ne.name] = ne.jsonize()
 
+        # options
+        opts = self.get(*list(co.default_settings['values'].keys()))
+        for on, ov in opts.items():
+            if isinstance(ov, _pint_qty_type):
+                opts[on] = ov.to(um.parse_units(co.default_settings['units'][on])).magnitude
+                if isinstance(opts[on], (np.ndarray, np.matrix)):
+                    opts[on] = opts[on].tolist()
+
+        master_dict['settings']['values'] = opts
+        master_dict['settings']['units'] = co.default_settings['units']
+
         return master_dict
 
     def save_json(self, path):
         with open(path, 'w') as ofile:
             json.dump(self.make_json_dict(), ofile, indent=4)
+
+    def save_dss(self, path):
+        with open(path, 'w') as ofile:
+            ofile.write(self.com)
 
     @property
     def name(self):
@@ -174,13 +210,12 @@ class Krang:
 
             self.up_to_date = True
             self.last_gr = gr
-
-            return copy.deepcopy(gr)
+        return gr
 
     @property
     def bus_coords(self):
         bp = {}
-        for bn in self.oe.Circuit.AllBusNames():  # todo enhance the name getting
+        for bn in self.oe.Circuit.AllBusNames():
             if self.oe['bus.' + bn].Coorddefined():
                 bp[bn] = (self.oe[bn].X(), self.oe[bn].Y())
             else:
@@ -322,12 +357,44 @@ def from_json(path):
     l_ckt.initialize(master_dict['cktname'], au.dejsonize(master_dict['elements']['source']))
     del master_dict['elements']['source']
 
-    # reconstruction of dependency graph
+    # load and declare options
+    opt_dict = master_dict['settings']
+    for on, ov in opt_dict['values'].items():
+        # we try in any way to see if the value is the same as the default and, if so, we continue
+        # todo there is an edge case where the value of a measured quantity is the same, but the unit is different
+        if ov == co.default_settings['values'][on]:
+            continue
+        try:
+            if np.isclose(ov, co.default_settings['values'][on]):
+                continue
+        except ValueError:
+            if np.isclose(ov, co.default_settings['values'][on]).all():
+                continue
+        except TypeError:
+            pass
+
+        try:
+            if ov.lower() == co.default_settings['values'][on].lower():
+                continue
+        except AttributeError:
+            pass
+
+        if on in opt_dict['units'].keys():
+            d_ov = ov * um.parse_units(opt_dict['units'][on])
+        else:
+            d_ov = ov
+
+        l_ckt.set(**{on: d_ov})
+
+    # reconstruction of dependency graph and declarations
     dep_graph = _DepGraph()
     for jobj in master_dict['elements'].values():
+        # if the element has no dependencies, we just add a node with iths name
         if jobj['depends'] == {} or all([d == '' for d in jobj['depends'].values()]):
             dep_graph.add_node(jobj['name'])
         else:
+            # if an element parameter depends on another name, or a list of other names, we create all the edges
+            # necessary
             for dvalue in jobj['depends'].values():
                 if isinstance(dvalue, list):
                     for dv in dvalue:
@@ -337,6 +404,9 @@ def from_json(path):
                     if dvalue != '':
                         dep_graph.add_edge(jobj['name'], dvalue)
 
+    # we cyclically consider all "leaves", add the objects at the leaves, then trim the leaves and go on with
+    # the new leaves.
+    # In this way we are sure that, whenever a name is mentioned in a fcs, its entity was already declared.
     while dep_graph.leaves:
         for nm in dep_graph.leaves:
             jobj = master_dict['elements'][nm]
@@ -355,43 +425,61 @@ def _main():
 
     moe = Krang()
     moe.gen_echo = True
-    pish = co.LineCode_S('thefaggy', r0=1.0 * um.ohm / um.unitlength)
-    posh = co.LineCode_A('thefiggy', units='m')
 
-    moe.initialize('myckt', co.Vsource().aka('source'))
-    moe + pish
-    moe + posh
-    moe['sourcebus', 'a'] + co.Line(length=120 * um.unitlength).aka('theline') * posh
+    moe.initialize('myckt', co.Vsource(basekv=15.0 * um.kV).aka('source'))
+    moe.set(number=55, stepsize='15m')
+
+    moe['sourcebus', 'a'] + co.Line(length=120 * um.unitlength).aka('theline')
     moe[('a.1.3.2', 'b.3.2.1')] + co.Line(units='m', length=0.72 * um.km).aka('theotherline')
 
+    vls = np.matrix([15.0, 7.0]) * um.kV
+
+    ui = co.Transformer(windings=2, kvs=vls).aka('trans')
+
+    # moe[('b', 'c')] + ui
+    #  EEEEEEEEEEEEEEEEEEEEEEEEEE
+
     # print(moe['line.theotherline']['rmatrix'])
-    yyyy = co.Line(length=120).aka('theline') * posh
 
     # moe['line.theotherline']['length'] = 200 * um.yard
 
-    lish = co.CsvLoadshape(r"D:\d\ams_data\loads" + r'\Y6' + r"\node_" + str(5438) + ".csv", column_scheme={'mult': 1, 'qmult': 2}, use_actual=True, interval=15 * um.min)
+    lish = co.CsvLoadshape('mylsh', r"D:\d\ams_data\loads" + r'\Y6' + r"\node_" + str(5413) + ".csv", column_scheme={'mult': 1, 'qmult': 2}, use_actual=True, interval=15 * um.min)
 
     pee = co.WireData('caggi', runits='m', rac=3 * um.ohm / um.m)
     wee = co.WireData('aaggi')
-    gee = co.LineGeometry_O('faggi', nconds=2, nphases=2, x=[0, 0], h=[0, 0], units=['m', 'km']) * [pee, wee]
+    gee = co.LineGeometry_O('faggi', nconds=2, nphases=2, x=[0, 0], h=[0.1, 0], units=['m', 'km']) * [pee, wee]
 
+    print(gee['units'])
+
+    moe + lish
     moe + pee
     moe + wee
     moe + gee
 
-    fofo = co.Load(kw=1.2345 * um.kW)  # * lish
+    au.dejsonize(lish.jsonize())
+
+    fofo = co.Load(kw=18.2345 * um.kW, kv=15 * um.kV)  # * lish
     moe[('b',)] + fofo.aka('wow') * lish
     moe[('b',)] + fofo.aka('bow') * lish
+
 
     tt = moe['load.wow'].unpack(verbose=False)
 
     moe.command('makebuslist')
 
-    i,v = moe.drag_solve()
-    print(moe[('b',)].totload)
+    i, v = moe.drag_solve()
+    print(i)
+    print(moe[('b',)].voltage)
 
     moe.save_json(r'D:\temp\krang.json')
-    # cs = from_json(r'D:\temp\krang.json')
+    moe.save_dss(r'D:\temp\krang.dss')
+    print(moe['vsource.source']['isc3'])
+    cs = from_json(r'D:\temp\krang.json')
+    # print(moe.graph.nodes)
+    # print(cs.graph.nodes)
+
+
+    i, v = cs.drag_solve()
 
 
 if __name__ == '__main__':

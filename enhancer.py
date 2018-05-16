@@ -8,11 +8,12 @@ from operator import getitem
 from typing import Callable
 
 import numpy as np
+import re
 import opendssdirect as odr
 from pandas import DataFrame
 import components as co
 from components import um, logger
-from components import _resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
+from components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
 
 from utils.aux_fcn import lower as _lower
 from utils.aux_fcn import pairwise as _pairwise
@@ -124,8 +125,19 @@ def _cast_dumbstring(string: str, type):
                           .replace(' ]', '')
                           .replace(']', '')
                           .replace(' ', ','))
+    elif type == list:
+        dp_str = re.sub('[\,|\ ]*(\]|"|\))', '', string)
+        dp_str = re.sub('(\[|"|\()\ *', '', dp_str)
+        items = dp_str.split(',')
+        try:
+            return [int(x) for x in items]
+        except ValueError:
+            try:
+                return [float(x) for x in items]
+            except ValueError:
+                return items
     else:
-        raise TypeError('Could not cast the DSS property string: type {0} unknown'.format(str(type)))
+        raise TypeError('Could not cast the DSS property string "{1}": type {0} unknown'.format(str(type), string))
 
 
 # there's no XYCurves.AllNames() or similar, so we have to mock up one ourselves
@@ -468,49 +480,7 @@ class OpendssdirectEnhancer:
             return self._chain_getattr(stack[1:], getattr(start_obj, stack[0]))
 
 
-# p_odr = odr
-
-class _PackedOpendssElement:
-
-    def __init__(self, eltype, name, p_odr):
-
-        # todo complete and verify these dicts
-        interfaces = {'bus': (p_odr.Bus,),
-                      'load': (p_odr.Loads, p_odr.CktElement),
-                      'monitor': (p_odr.Monitors, p_odr.CktElement),
-                      'line': (p_odr.Lines, p_odr.CktElement, p_odr.PDElements),
-                      'capcontrol': (p_odr.CapControls,),
-                      'capacitor': (p_odr.Capacitors, p_odr.CktElement, p_odr.PDElements),
-                      'isource': (p_odr.Isource, p_odr.CktElement),
-                      'meter': (p_odr.Meters, p_odr.CktElement),
-                      'vsource': (p_odr.Vsources, p_odr.CktElement),
-                      'pvsystem': (p_odr.PVsystems, p_odr.CktElement),
-                      'regcontrol': (p_odr.RegControls,),
-                      'xycurve': (p_odr.XYCurves,),
-                      'transformer': (p_odr.Transformers, p_odr.CktElement, p_odr.PDElements),
-                      'storage': (p_odr.CktElement,),
-                      'loadshape': (p_odr.LoadShape,),
-                      'reactor': (p_odr.PDElements,)
-                      }
-
-        selectors = {'load': (p_odr.Loads.Name, p_odr.Circuit.SetActiveElement),
-                     'bus': (p_odr.Circuit.SetActiveBus,),
-                     'monitor': (p_odr.Monitors.Name, p_odr.Circuit.SetActiveElement),
-                     'line': (p_odr.Lines.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
-                     'capcontrol': (p_odr.CapControls,),
-                     'capacitor': (p_odr.Capacitors.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
-                     'isource': (p_odr.Isource.Name, p_odr.Circuit.SetActiveElement),
-                     'meter': (p_odr.Meters.Name,),
-                     'vsource': (p_odr.Vsources.Name, p_odr.Circuit.SetActiveElement),
-                     'pvsystem': (p_odr.PVsystems.Name, p_odr.Circuit.SetActiveElement),
-                     'regcontrol': (p_odr.RegControls.Name,),
-                     'xycurve': (p_odr.XYCurves.Name,),
-                     'transformer': (p_odr.Transformers.Name(), p_odr.Circuit.SetActiveElement),
-                     'storage': (p_odr.Circuit.SetActiveElement,),
-                     'loadshape': (p_odr.LoadShape.Name()),
-                     'reactor': (p_odr.PDElements.Name,)}
-
-        interface_methods = {('ActiveClass',): ['ActiveClassName', 'AllNames', 'Count', 'First', 'Name', 'Next', 'NumElements'],
+_interface_methods = {('ActiveClass',): ['ActiveClassName', 'AllNames', 'Count', 'First', 'Name', 'Next', 'NumElements'],
                              ('Basic',): ['AllowForms', 'Classes', 'ClearAll', 'DataPath', 'DefaultEditor', 'NewCircuit', 'NumCircuits', 'NumClasses', 'NumUserClasses', 'Reset', 'ShowPanel', 'Start', 'UserClasses', 'Version'],
                              ('Bus',): ['Coorddefined', 'CplxSeqVoltages', 'Distance', 'GetUniqueNodeNumber', 'Isc', 'Lambda', 'Name', 'Nodes', 'NumNodes', 'PuVoltage', 'SectionID', 'SeqVoltages', 'TotalMiles', 'VLL', 'VMagAngle', 'Voc', 'Voltages', 'X', 'Y', 'YscMatrix', 'Zsc0', 'Zsc1', 'ZscMatrix', 'ZscRefresh', 'kVBase', 'puVLL', 'puVmagAngle'],
                              ('Capacitors',): ['AddStep', 'AllNames', 'AvailableSteps', 'Close', 'Count', 'First', 'IsDelta', 'Name', 'Next', 'NumSteps', 'Open', 'States', 'SubtractStep', 'kV', 'kvar'],
@@ -544,6 +514,46 @@ class _PackedOpendssElement:
                              ('Vsources',): ['AllNames', 'AngleDeg', 'BasekV', 'Count', 'First', 'Frequency', 'Name', 'Next', 'PU', 'Phases'],
                              ('XYCurves',): ['Count', 'First', 'Name', 'Next', 'Npts', 'X', 'XArray', 'XScale', 'XShift', 'Y', 'YArray', 'YScale', 'YShift']}
 
+
+class _PackedOpendssElement:
+    def __init__(self, eltype, name, p_odr):
+
+        # todo complete and verify these dicts
+        interfaces = {'bus': (p_odr.Bus,),
+                      'load': (p_odr.Loads, p_odr.CktElement),
+                      'monitor': (p_odr.Monitors, p_odr.CktElement),
+                      'line': (p_odr.Lines, p_odr.CktElement, p_odr.PDElements),
+                      'capcontrol': (p_odr.CapControls,),
+                      'capacitor': (p_odr.Capacitors, p_odr.CktElement, p_odr.PDElements),
+                      'isource': (p_odr.Isource, p_odr.CktElement),
+                      'meter': (p_odr.Meters, p_odr.CktElement),
+                      'vsource': (p_odr.Vsources, p_odr.CktElement),
+                      'pvsystem': (p_odr.PVsystems, p_odr.CktElement),
+                      'regcontrol': (p_odr.RegControls,),
+                      'xycurve': (p_odr.XYCurves,),
+                      'transformer': (p_odr.Transformers, p_odr.CktElement, p_odr.PDElements),
+                      'storage': (p_odr.CktElement,),
+                      'loadshape': (p_odr.LoadShape,),
+                      'reactor': (p_odr.PDElements,)
+                      }
+
+        selectors = {'load': (p_odr.Loads.Name, p_odr.Circuit.SetActiveElement),
+                     'bus': (p_odr.Circuit.SetActiveBus,),
+                     'monitor': (p_odr.Monitors.Name, p_odr.Circuit.SetActiveElement),
+                     'line': (p_odr.Lines.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
+                     'capcontrol': (p_odr.CapControls,),
+                     'capacitor': (p_odr.Capacitors.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
+                     'isource': (p_odr.Isource.Name, p_odr.Circuit.SetActiveElement),
+                     'meter': (p_odr.Meters.Name,),
+                     'vsource': (p_odr.Vsources.Name, p_odr.Circuit.SetActiveElement),
+                     'pvsystem': (p_odr.PVsystems.Name, p_odr.Circuit.SetActiveElement),
+                     'regcontrol': (p_odr.RegControls.Name,),
+                     'xycurve': (p_odr.XYCurves.Name,),
+                     'transformer': (p_odr.Transformers.Name, p_odr.Circuit.SetActiveElement),
+                     'storage': (p_odr.Circuit.SetActiveElement,),
+                     'loadshape': (p_odr.LoadShape.Name,),
+                     'reactor': (p_odr.PDElements.Name,)}
+
         self._available_interfaces = interfaces[eltype]
         self._name = name
         # full qualified name
@@ -555,13 +565,18 @@ class _PackedOpendssElement:
 
         # dynamically add methods to expose
         for i in self._available_interfaces:
-            for m in interface_methods.get(tuple(i.__name__.split('.')[-1]), []):
+            for m in _interface_methods.get(tuple(i.__name__.split('.')[-1]), []):
                 setattr(self, m, self._craft_member(m))
 
     @property
     def topological(self):
         top_par_names = _default_entities['default_' + self._eltype]['topological']
-        return tuple(self[t] for t in top_par_names.keys())
+
+        rt = [self[t] for t in top_par_names.keys()]
+        if len(rt) == 1 and isinstance(rt[0], list):
+            return tuple(rt[0])
+        else:
+            return tuple(rt)
 
     @property
     def type(self):
@@ -604,8 +619,6 @@ class _PackedOpendssElement:
         return {p: self._p_odr[self.fullname][p] for p in props}
 
     def unpack(self, verbose=False):
-
-        # todo use associated
 
         classmap = co.get_classmap()
         myclass = classmap[self._eltype]
@@ -661,14 +674,17 @@ class _PackedOpendssElement:
             return rslt * unt
 
     def _get_datatype(self, item):
-        return type(_default_entities['default_' + self._eltype]['properties'][item.lower()])
+        try:
+            return type(_default_entities['default_' + self._eltype]['properties'][item.lower()])
+        except KeyError:
+            return type(_default_entities['default_' + self._eltype]['topological'][item.lower()])
 
     def _get_builtin_units(self, item):
         raw_unit = _default_entities['default_' + self._eltype]['units'].get(item.lower(), None)
         if raw_unit is None:
             return None
         else:
-            return _resolve_unit(raw_unit, self._get_matching_unit)
+            return resolve_unit(raw_unit, self._get_matching_unit)
 
     def _get_matching_unit(self, matchobj):
 
@@ -717,7 +733,11 @@ class _CallFinalizer(Callable):
         # this is the key bit: the PackedOpendssElement that instances this class is capable of retaining its name and
         # auto select itself before calling the underlying odr.
         for sel in self._selectors:
-            sel(self._name_to_select)
+            try:
+                sel(self._name_to_select)
+            except TypeError:
+                pass
+
 
         logger.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)

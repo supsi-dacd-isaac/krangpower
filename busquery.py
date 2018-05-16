@@ -29,8 +29,8 @@ def totload(oek, busview, busname):
     tkw = 0.0 * um.kW
     tkvar = 0.0 * um.kVA
     for e in els:
-        tkw += e.kW()
-        tkvar += e.kvar()
+        tkw += e['kw']
+        tkvar += e['kvar']
 
     return tkw, tkvar
 

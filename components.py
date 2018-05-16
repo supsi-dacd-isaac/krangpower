@@ -2,32 +2,33 @@ import configparser as cfp
 import copy
 import csv
 import json
-from logging.handlers import RotatingFileHandler
+import logging
 import os.path
+import platform
 import re
 import xml.etree.ElementTree as Xe
 from abc import abstractmethod
 from collections import OrderedDict, namedtuple
 from functools import lru_cache
+from logging.handlers import RotatingFileHandler
 from sys import modules
-import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
 import opendssdirect as odr
+import pint
 import scipy.io as sio
 from dateutil.parser import parse as dateparse
 from opendssdirect.utils import run_command as engine_command
 from pandas import DataFrame, read_csv
 
 import utils.aux_fcn
-import pint
-
 
 __all__ = ['load_entities', 'load_dictionary_json', 'CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve', 'Vsource',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol','Reactor',
-           'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'default_comp', 'logpath']
+           'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'default_comp', 'logpath',
+           'um', 'resolve_unit', 'default_settings']
 
 # from .odd import opendssdirect_treat
 # odr = opendssdirect_treat()
@@ -39,8 +40,6 @@ um.define('mt = meter')
 
 _pint_qty_type = type(1 * um.m)
 
-
-
 # OPENDSS WRAPPER - WRITTEN BY FEDERICO ROSATO
 # -------------------------------------------------------------
 
@@ -50,7 +49,7 @@ _pint_qty_type = type(1 * um.m)
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
 config = cfp.ConfigParser()
-config.read(os.path.join(thisdir, 'krang.cfg'))
+config.read(os.path.join(thisdir, 'krang_config.cfg'))
 default_settings_path_config = os.path.join(thisdir, config.get('data_files', 'default_settings'))
 default_entities_path = os.path.join(thisdir, config.get('data_files', 'default_entities'))
 
@@ -72,14 +71,19 @@ logger.addHandler(_ch)
 
 # filehandler
 try:
-    logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'path'))
+    if platform.system() == 'Windows':
+        logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'general_log_path'))
+    elif platform.system() == 'Linux':
+        logpath = os.path.join('/var/log', config.get('log_file', 'general_log_path'))
+    else:
+        raise OSError('Could not find a valid log path.')
     if not os.path.exists(os.path.dirname(logpath)):
         os.makedirs(os.path.dirname(logpath))
     fh = RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
     fh.setFormatter(logformatter)
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
-except PermissionError:
+except (PermissionError, OSError):
     # this is handled to the console stream
     logger.warning('Permission to write log file denied')
 
@@ -370,7 +374,7 @@ def load_entities(path):
     return dicky
 
 
-def _resolve_unit(ustring: str, match_unit_getter):
+def resolve_unit(ustring: str, match_unit_getter):
 
     # resolution of self-referencing units, of the type "ohm / this.units" where "units" is a string parameter
     # of the _DSSObj
@@ -419,11 +423,14 @@ def _type_recovery(value, target_type):
                                 target_type))
     return recovered_value
 
+
 # -------------------------------------------------------------
 # GLOBAL DEFAULT ENTITIES DICT
 # -------------------------------------------------------------
 default_comp = load_dictionary_json(default_entities_path)
 
+with open(default_settings_path_config, 'r') as f:
+    default_settings = json.load(f)
 
 # -------------------------------------------------------------
 # GENERIC DSSENTITY AND ITS NAMED VERSION
@@ -633,7 +640,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # pint quantity check and conversion
             if isinstance(value_raw, _pint_qty_type):
-                unt = _resolve_unit(self.default_units[parameter], self._get_matching_unit)
+                unt = resolve_unit(self.default_units[parameter], self._get_matching_unit)
                 if unt == um.none:
                     pass
                     # assert parameter_raw == 'length'
@@ -667,7 +674,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             if test:
                 logger.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
-                return
+                continue
 
             # finally setting the parameter
             target_list[parameter.lower()] = value
@@ -687,10 +694,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         unt = self.default_units.get(param, None)
         if unt is not None:
             if isinstance(target_list[param], np.matrix):
-                unit_matrix = np.eye(len(target_list[param])) * _resolve_unit(unt, self._get_matching_unit)
+                unit_matrix = np.eye(len(target_list[param])) * resolve_unit(unt, self._get_matching_unit)
                 return target_list[param] * unit_matrix
             else:
-                return target_list[param] * _resolve_unit(unt, self._get_matching_unit)
+                return target_list[param] * resolve_unit(unt, self._get_matching_unit)
         else:
             return target_list[param]
 
@@ -742,7 +749,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             print('<' + '{0} {1} = {2}'.format(type(value), parameter, value)[7:])
 
     def jsonize(self, all_params=False, flatten_mtx=True, using=default_entities_path):
-        super_dikt = {'type': self.toe, 'name': self.name}
+        super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
         if not self.isnamed():
             super_dikt['term_perm'] = self.term_perm
 
@@ -758,6 +765,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             else:
                 pls_flat[parameter] = value
             pls_mtx[parameter] = value
+
+        # all units in params are in standard units. Therefore, we pass standard units.
+        super_dikt['units'] = {k: v for k, v in default_comp['default_' + self.toe]['units'].items()
+                               if k in self.editedParams}
 
         if using is not None:
             pr_cmp = {'properties': pls_mtx, 'type': self.toe}
@@ -847,7 +858,7 @@ class CsvLoadshape:
 
     """
 
-    def __init__(self, csv_path: str, column_scheme: dict, interval=_pint_qty_type, use_actual=True, npts=None):
+    def __init__(self, name, csv_path: str, column_scheme: dict, interval=_pint_qty_type, use_actual=True, npts=None):
 
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
@@ -859,21 +870,29 @@ class CsvLoadshape:
         self._data = None
         self.column_scheme = column_scheme
         self.csv_path = os.path.abspath(csv_path)
-        self.name = str(os.path.basename(csv_path)).split('.')[0]
+        if name == '':
+            self.name = str(os.path.basename(csv_path)).split('.')[0]
+        else:
+            self.name = name
         self.use_actual = use_actual
+        if isinstance(interval, _pint_qty_type):
+            self.true_interval = interval
+        else:
+            self.true_interval = interval * um.min
+
         if interval is None:
             self.intkey = 'interval'
             self.interval = 0.0
         else:  # using different properties just for cosmetic purposes
-            if interval < 300 * um.s:
+            if self.true_interval < (300 * um.s):
                 self.intkey = 'sinterval'
-                self.interval = interval.to(um.s).magnitude
-            elif interval < 180 * um.min:
+                self.interval = self.true_interval.to(um.s).magnitude
+            elif self.true_interval < (180 * um.min):
                 self.intkey = 'minterval'
-                self.interval = interval.to(um.min).magnitude
+                self.interval = self.true_interval.to(um.min).magnitude
             else:
                 self.intkey = 'interval'
-                self.interval = interval.to(um.h).magnitude
+                self.interval = self.true_interval.to(um.h).magnitude
 
         # auto-header recognition
         head = next(csv.reader(open(csv_path)))
@@ -942,7 +961,7 @@ class CsvLoadshape:
         return self.use_actual
 
     def fcs(self, **hookup):
-        s = "New loadshape." + self.name + " npts=" + str(self.npts)
+        s = "New loadshape." + self.name + " npts=" + str(self.npts) + " "
 
         s += self.intkey + "=" + str(self.interval)
 
@@ -952,6 +971,18 @@ class CsvLoadshape:
             s += " " + qty + "=(file=\"" + self.csv_path + "\", Column=" + str(ncol) + ", Header=" + self.header_string + ")"
 
         return s
+
+    def jsonize(self):
+
+        super_dikt = {'type': 'csvloadshape', 'name': self.name, 'depends': {}, 'properties': {}, 'units': {}}
+        super_dikt['properties']['csv_path'] = self.csv_path
+        super_dikt['properties']['column_scheme'] = self.column_scheme
+        super_dikt['properties']['npts'] = int(self.npts)
+        super_dikt['properties']['use_actual'] = self.use_actual
+        super_dikt['properties']['interval'] = self.true_interval.to('min').magnitude
+        super_dikt['units']['interval'] = str(self.true_interval.units)
+
+        return super_dikt
 
 
 class Loadshape:
@@ -1739,26 +1770,61 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
     def __init__(self, xml_rep=None, **kwargs):
         self.toe = 'transformer'
         super().__init__(xml_rep, **kwargs)
+        self.specialparams = ('conns', 'kvs', 'kvas', 'taps', '%rs')
 
-    def fcs(self, trname, windings, terminaldic):
-        s2 = 'New transformer.' + trname
+    def fcs(self, **hookup):
 
-        for parameter in [x for x in self.editedParams if x not in ('conns', 'kvs', 'kvas', 'taps', '%rs')]:
+        buses = hookup['buses']
+
+        s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
+
+        s2 = ''
+        for parameter in [p for p in self.editedParams if p not in self.specialparams]:
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
-        s1 = ''
-        for wdg, propdic in windings.items():
-            if wdg[0] != trname + '_b':
-                outbus = wdg[0]
-            else:
-                outbus = wdg[1]
-            wgstr = '\n~ wdg=' + str(wdg[2] + 1) + ' '
-            wgstr += 'bus=' + outbus + _termrep(terminaldic[wdg]) + ' '
-            for propname, propvalue in propdic.items():
-                wgstr += propname + '=' + _odssrep(propvalue) + ' '
-            s1 += wgstr
+        for ind in range(0, self['windings']):
+            s2 += '\n~ wdg={0} bus={1}'.format(ind + 1, buses[ind]) + ' '
+            for parameter in self.specialparams:
+                if isinstance(self[parameter], _pint_qty_type):
+                    true_param = self[parameter].magnitude
+                else:
+                    true_param = self[parameter]
 
-        return s2 + s1
+                if isinstance(true_param, np.matrix):
+                    idx = 0, ind  # matricial indicization necessary
+                else:
+                    idx = ind
+                s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
+
+        return s1 + s2
+
+        # s2 = 'New transformer.' + self.name
+        #
+        # for parameter in [x for x in self.editedParams if x not in ('conns', 'kvs', 'kvas', 'taps', '%rs')]:
+        #     s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
+        #
+        # s1 = ''
+        # for wdg, propdic in windings.items():
+        #     if wdg[0] != trname + '_b':
+        #         outbus = wdg[0]
+        #     else:
+        #         outbus = wdg[1]
+        #     wgstr = '\n~ wdg=' + str(wdg[2] + 1) + ' '
+        #     wgstr += 'bus=' + outbus + _termrep(terminaldic[wdg]) + ' '
+        #     for propname, propvalue in propdic.items():
+        #         wgstr += propname + '=' + _odssrep(propvalue) + ' '
+        #     s1 += wgstr
+        #
+        # return s2 + s1
+
+    def aka(self, name):
+        try:
+            assert self.name == ''
+        except AssertionError:
+            raise AssertionError(r'Cannot alias a component with name != ""')
+        cpy = self()
+        cpy.name = name
+        return cpy
 
 
 class Line(_CircuitElementNBus):
@@ -2889,180 +2955,6 @@ class StorageController(_CircuitElement):
         return s1 + s2
 
 
-# ENGINE CLASS
-# -------------------------------------------------------------
-Element_c = namedtuple('Element', ['Name', 'Voltages', 'Currents', 'NumConductors', 'NumTerminals', 'NodeOrder'
-                                   ])
-Bus_c = namedtuple('Bus', ['Name', 'Voltages', 'VoltagesPU', 'Distance', 'NumNodes', 'kVBase'])
-Monitor_c = namedtuple('Monitor', ['Name', 'Time', 'Header', 'NumChannels'])
-
-
-class Element_x(Element_c):
-    def __getattribute__(self, item):
-        try:
-            return getattr(super(), item)
-        except AttributeError:
-            try:
-                currentname = odr.CktElement.Name()
-                odr.Circuit.SetActiveElement(self.Name)
-                fck = getattr(odr.CktElement, item)
-                value = fck()
-                odr.Circuit.SetActiveElement(currentname)
-                return value
-            except AttributeError:
-                raise
-
-
-class Engine:
-    def __init__(self):
-        assert odr.Basic.Start()
-        self.dumps = {}
-
-    @staticmethod
-    def command(command_string):
-        engine_command(command_string)
-
-    @staticmethod
-    def solve():
-        engine_command('solve')
-        pass
-
-    def get_monitor(self, monitor_name):
-
-        self._set_active_monitor(monitor_name)
-
-        mn = Monitor_c(
-            Name=monitor_name,
-            Time=list(odr.Monitors.ByteStream()['t(sec)']/3600 + odr.Monitors.ByteStream()['hour']),
-            Header=list(odr.Monitors.ByteStream().keys())[2:],
-            NumChannels=len(list(odr.Monitors.ByteStream().keys())[2:])
-        )
-
-        return mn
-
-    @staticmethod
-    def _set_active_monitor(monitor_name):
-        name_0 = odr.Monitors.Name()
-        try:
-            odr.Monitors.Name(monitor_name)
-            assert odr.Monitors.Name().lower() == monitor_name.lower()
-        except AssertionError:
-            odr.Monitors.Name(name_0)
-            assert odr.Monitors.Name().lower() == name_0.lower()
-            raise KeyError('monitor name not found')
-
-    def get_bus(self):
-        pass
-
-    def reset_time(self):
-        pass
-
-    def get_element(self):
-        pass
-
-    def squelch(self):
-        pass
-
-    def unsquelch(self):
-        pass
-
-    def init_mon_dump(self, path, n_points=None):
-
-        if path in self.dumps.values():
-            existing_index = [i for i, v in self.dumps.items() if v == path]
-            assert len(existing_index) == 1
-            return existing_index[0]
-        else:
-            try:
-                index = max(self.dumps.keys()) + 1
-            except ValueError:
-                index = 0
-
-        self.dumps[index] = path
-        return index
-
-    def dump_monitors(self, dumpid):
-        for mn in odr.Monitors.AllNames():
-            self.dump_monitor(mn, self.dumps[dumpid] + '\\' + mn + '.mat')
-
-    def dump_monitor(self, monitor_name, path):
-
-        self._set_active_monitor(monitor_name)
-        bystr = odr.Monitors.ByteStream()
-        raw_keyz_pairs = list(utils.aux_fcn.pairs(list(bystr.keys())[2:]))
-        keyz = [re.sub(r'\W+', '', n1+n2) for n1, n2 in raw_keyz_pairs]
-        out = DataFrame(columns=keyz)
-        for k, (rk1, rk2) in zip(keyz, raw_keyz_pairs):
-            out[k] = bystr[rk1] + 1j*bystr[rk2]
-        # todo incremental dump
-        sio.savemat(path, {'struct': out.to_dict('list')})
-
-    @property
-    def Buses(self):
-        nm = odr.Circuit.AllBusNames()
-        for busname in nm:
-            odr.Circuit.SetActiveBus(busname)
-
-            raw_volts = odr.Bus.Voltages()
-            assert len(raw_volts) % 2 == 0
-            volts = []
-            for rp, ip in zip(raw_volts[0::2], raw_volts[1::2]):
-                volts.append(rp + 1j*ip)
-
-            raw_puvolts = odr.Bus.PuVoltage()
-            assert len(raw_puvolts) % 2 == 0
-            puvolts = []
-            for rp, ip in zip(raw_puvolts[0::2], raw_puvolts[1::2]):
-                puvolts.append(rp + 1j * ip)
-
-            b = Bus_c(
-                Name=odr.Bus.Name(),
-                Voltages=volts,
-                VoltagesPU=puvolts,
-                Distance=odr.Bus.Distance(),
-                NumNodes=odr.Bus.NumNodes(),
-                kVBase=odr.Bus.kVBase())
-
-            yield b
-
-    @property
-    def Lines(self):
-        for el in self.Elements:
-            if re.match('^Line\.', el.Name):
-                yield el
-            else:
-                continue
-
-    @property
-    def Elements(self):
-        nm = odr.Circuit.AllElementNames()
-        for elname in nm:
-            odr.Circuit.SetActiveElement(elname)
-
-            raw_volts = odr.CktElement.Voltages()
-            assert len(raw_volts) % 2 == 0
-            volts = []
-            for rp, ip in zip(raw_volts[0::2], raw_volts[1::2]):
-                volts.append(rp + 1j*ip)
-
-            raw_currs = odr.CktElement.Currents()
-            assert len(raw_currs) % 2 == 0
-            currs = []
-            for rp, ip in zip(raw_currs[0::2], raw_currs[1::2]):
-                currs.append(rp + 1j*ip)
-
-            nc = odr.CktElement.NumConductors()
-            nt = odr.CktElement.NumTerminals()
-
-            el = Element_x(
-                Name=elname,  # todo treat
-                Voltages=np.reshape(volts, (nt, nc)),
-                Currents=np.reshape(currs, (nt, nc)),
-                NumConductors=nc,
-                NumTerminals=nt,
-                NodeOrder=odr.CktElement.NodeOrder())
-
-            yield el
 
 # MAIN FUNCTION FOR DEMONSTRATION AND TESTING
 # -------------------------------------------------------------

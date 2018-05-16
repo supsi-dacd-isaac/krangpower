@@ -1,5 +1,6 @@
 import components as co
 import json
+import numpy as np
 
 
 def ebus(bus: str, nt: int):
@@ -38,6 +39,19 @@ def dejsonize(obj_repr: dict):
 
     classmap = co.get_classmap()
 
+    def propgetter(matchobj, indx=None):
+
+        if indx is None:
+            try:
+                return obj_repr['properties'][matchobj.group(2)]
+            except KeyError:
+                return co.default_comp['default_' + obj_repr['type']]['properties'][matchobj.group(2)]
+        else:
+            try:
+                return obj_repr['properties'][matchobj.group(2)][indx]
+            except KeyError:
+                return co.default_comp['default_' + obj_repr['type']]['properties'][matchobj.group(2)]['indx']
+
     # determines class
     elcls = classmap[obj_repr['type']]
 
@@ -51,11 +65,20 @@ def dejsonize(obj_repr: dict):
         if isinstance(value, list):
             obj_repr['properties'][prop] = co._matricize(value)
 
+    # add unit measure
+    for prop, value in obj_repr['units'].items():
+
+        if isinstance(obj_repr['properties'][prop], np.matrix):
+            unit_matrix = np.eye(len(obj_repr['properties'][prop])) * co.resolve_unit(value, propgetter)
+            obj_repr['properties'][prop] *= unit_matrix
+        else:
+            obj_repr['properties'][prop] *= co.resolve_unit(value, propgetter)
+
     # add in the adjointed parameters
     obj_repr['properties'].update(obj_repr['depends'])
 
     # returns object
     if elcls.isnamed():
-        return elcls(obj_repr['name'], xml_rep=obj_repr['properties'])
+        return elcls(obj_repr['name'], **obj_repr['properties'])
     else:
         return elcls(obj_repr['properties'])
