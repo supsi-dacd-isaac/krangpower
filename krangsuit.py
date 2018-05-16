@@ -1,10 +1,8 @@
 import copy
 import json
-import logging
-import os.path
 import re
 from functools import singledispatch as _singledispatch
-from logging.handlers import RotatingFileHandler as _RotatingFileHandler
+
 
 import networkx as nx
 import numpy as np
@@ -13,31 +11,33 @@ from tqdm import tqdm as _tqdm
 
 from . import busquery as bq
 from . import components as co
-from .utils import aux_fcn as au
 from .components import um, config, _pint_qty_type
 from .enhancer import OpendssdirectEnhancer
-
+from .enhancer import _clog
+from .utils import aux_fcn as au
 
 __all__ = ['Krang', 'from_json']
-
 _elk = 'el'
+_default_krang_name = 'Unnamed_Krang'
+_cmd_log_newline_len = 60
 
 
 class Krang:
 
     def __init__(self):
-        self.oe = OpendssdirectEnhancer()
+        self.id = _default_krang_name
         self.up_to_date = False
         self.last_gr = None
         self.named_entities = []
         self.ai_list = []
-        self.clog = None
         self.com = ''
+        self.brain = None
 
-    def initialize(self, name, vsource: co.Vsource):
-        self.clog = _create_command_logger(name)
-        self.clog.debug('\n' + '$%&' * 30)
+    def initialize(self, name=_default_krang_name, vsource=co.Vsource()):
+        self.brain = OpendssdirectEnhancer(id=name)
+        _clog.debug('\n' + '$%&' * _cmd_log_newline_len)
         self.command('clear')
+        self.id = name
         master_string = 'new object = circuit.' + name + ' '
         vsource.name = 'source'  # we force the name, so an already named vsource can be used as source.
         main_source_dec = vsource.fcs(buses=('sourcebus', 'sourcebus.0.0.0'))
@@ -56,13 +56,13 @@ class Krang:
         return _oe_getitem(item, self)
 
     def __getattr__(self, item):
-        """Krang.item, aside from retrieving the built.in attributes, wraps by default the calls to opendssdirect's
+        """Krang.item, aside from retrieving the builtin attributes, wraps by default the calls to opendssdirect's
         'class_to_dataframe' utility function. These are accessible via capital letter calls. Both singular and plural
-        are accepted (e.g., 'Line' or 'Lines', 'RegControl' , 'Regcontrol', 'RegControls', but not 'transformers')"""
+        are accepted. (e.g., 'Line' or 'Lines', 'RegControl' , 'Regcontrol', 'RegControls', but not 'transformers')"""
         try:
             assert item[0].isupper()
             dep_item = re.sub('s$', '', item).lower()
-            return self.oe.utils.class_to_dataframe(dep_item)
+            return self.brain.utils.class_to_dataframe(dep_item)
         except (AssertionError, NotImplementedError):
             raise AttributeError('{0} is neither a valid attribute nor a valid identifier for the class-views.'.format(
                 item
@@ -73,9 +73,16 @@ class Krang:
             assert other.isnamed()
             self.named_entities.append(other)
         except AssertionError:
-            assert other.isabove()
+            try:
+                assert other.isabove()
+            except AssertionError:
+                raise TypeError('The object could not be directly added to the Krang. Is it a bus object?')
 
-        assert other.name != ''
+        try:
+            assert other.name != ''
+        except AssertionError:
+            raise ValueError('Tried to add an object with a blank name')
+
         self.command(other.fcs())
         return self
 
@@ -83,12 +90,10 @@ class Krang:
         return self.up_to_date
 
     def command(self, cmd_str: str, echo=True):
-        rslt = self.oe.utils.run_command(cmd_str)
-        self.up_to_date = False
+
+        rslt = self.brain.txt_command(cmd_str, echo)
         if echo:
             self.com += cmd_str + '\n'
-            self.clog.debug('[' + cmd_str.replace('\n', '\n' + ' '*(30 + len(self.name)))
-                            + ']-->[' + rslt.replace('\n', '') + ']')
 
         return rslt
 
@@ -120,25 +125,25 @@ class Krang:
         self.command('set mode=snap\nsolve\nset mode=duty')
 
     def drag_solve(self):
-        nmbr = self.oe.Solution.Number()
-        self.oe.Solution.Number(1)
+        nmbr = self.brain.Solution.Number()
+        self.brain.Solution.Number(1)
         v = pandas.DataFrame(
-            columns=[x.lower() for x in self.oe.Circuit.YNodeOrder()])
+            columns=[x.lower() for x in self.brain.Circuit.YNodeOrder()])
         i = pandas.DataFrame(
-            columns=[x.lower() for x in self.oe.Circuit.YNodeOrder()])
+            columns=[x.lower() for x in self.brain.Circuit.YNodeOrder()])
 
-        self.clog.info('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
-                       ' Wait for end message...'.format(nmbr))
+        self.brain.log_line('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
+                            ' Wait for end message...'.format(nmbr))
         for _ in _tqdm(range(nmbr)):
             for ai_el in self.ai_list:
                 self.command(ai_el.element.fus(self, ai_el.name))
 
             self.command('solve', echo=False)
-            v = v.append(self.oe.Circuit.YNodeVArray(), ignore_index=True)
-            i = i.append(self.oe.Circuit.YCurrents(), ignore_index=True)
+            v = v.append(self.brain.Circuit.YNodeVArray(), ignore_index=True)
+            i = i.append(self.brain.Circuit.YCurrents(), ignore_index=True)
 
-        self.clog.info('Drag_solve ended')
-        self.oe.Solution.Number(nmbr)
+        self.brain.log_line('Drag_solve ended')
+        self.brain.Solution.Number(nmbr)
 
         return v, i
 
@@ -148,7 +153,7 @@ class Krang:
     def make_json_dict(self):
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
-        for Nm in self.oe.Circuit.AllElementNames():
+        for Nm in self.brain.Circuit.AllElementNames():
             nm = Nm.lower()
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
@@ -179,7 +184,7 @@ class Krang:
 
     @property
     def name(self):
-        return self.oe.Circuit.Name()
+        return self.brain.Circuit.Name()
 
     @property
     def graph(self):
@@ -188,28 +193,28 @@ class Krang:
             try:
                 exel = gr.nodes[bs][_elk]
             except KeyError:
-                gr.add_node(bs, **{_elk: [self.oe[name]]})
+                gr.add_node(bs, **{_elk: [self.brain[name]]})
                 return
-            exel.append(self.oe[name])
+            exel.append(self.brain[name])
             return
 
         def _update_edge(self, gr, ed, name):
             try:
                 exel = gr.edges[ed][_elk]
             except KeyError:
-                gr.add_edge(*ed, **{_elk: [self.oe[name]]})
+                gr.add_edge(*ed, **{_elk: [self.brain[name]]})
                 return
-            exel.append(self.oe[name])
+            exel.append(self.brain[name])
             return
 
         if False:
             return self.last_gr
         else:
             gr = nx.Graph()
-            ns = self.oe.Circuit.AllElementNames()
+            ns = self.brain.Circuit.AllElementNames()
             for name in ns:
                 try:
-                    buses = self.oe[name].BusNames()
+                    buses = self.brain[name].BusNames()
                 except TypeError:
                     continue
 
@@ -237,9 +242,9 @@ class Krang:
     @property
     def bus_coords(self):
         bp = {}
-        for bn in self.oe.Circuit.AllBusNames():
-            if self.oe['bus.' + bn].Coorddefined():
-                bp[bn] = (self.oe[bn].X(), self.oe[bn].Y())
+        for bn in self.brain.Circuit.AllBusNames():
+            if self.brain['bus.' + bn].Coorddefined():
+                bp[bn] = (self.brain[bn].X(), self.brain[bn].Y())
             else:
                 bp[bn] = None
         return bp
@@ -264,37 +269,15 @@ def _oe_getitem(item, oeshell):
 
 
 @_oe_getitem.register(str)
-def _(item, oeshell):
-    return oeshell.oe[item]
+def _(item, krg):
+    return krg.brain[item]
 
 
 @_oe_getitem.register(tuple)
-def _(item, oeshell):
+def _(item, krg):
     assert len(item) <= 2
-    bustermtuples = map(oeshell._bus_resolve, item)
-    return _BusView(oeshell, list(bustermtuples))
-
-
-def _create_command_logger(name):
-    logformat = '%(asctime)s - %(name)s - %(message)s'
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    logformatter = logging.Formatter(logformat)
-
-    # filehandler
-    try:
-        logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'commands_log_path'))
-        if not os.path.exists(os.path.dirname(logpath)):
-            os.makedirs(os.path.dirname(logpath))
-        fh = _RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
-        fh.setFormatter(logformatter)
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-    except PermissionError:
-        # this is handled to the console stream
-        logger.warning('Permission to write log file denied')
-
-    return logger
+    bustermtuples = map(krg._bus_resolve, item)
+    return _BusView(krg, list(bustermtuples))
 
 
 class _DepGraph(nx.DiGraph):
@@ -309,6 +292,20 @@ class _DepGraph(nx.DiGraph):
 
 
 class _BusView:
+    """_BusView is meant to be instantiated only by Krang and is returned by indicization like Krang['bus1', 'bus2'] or
+    Krang['bus1']. The main uses of a _BusView are:
+
+        -Adding elements to the corresponding bus/edge:
+            Krang['bus1'] << kp.Load()  # adds a Load to bus1
+            Krang['bus1', 'bus2'] << kp.Line()  # adds a Line between bus1 and bus2
+
+        -Evaluating a function from the submodule 'busquery' on the corresponding bus/edge through attribute resolution:
+            Krang['bus1'].voltage
+            Krang['bus1'].totload
+
+        -Getting a _PackedOpendssElement from the ones pertaining the corresponding bus/edge:
+            Krang['bus1']['myload']
+    """
 
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
@@ -372,6 +369,8 @@ class _BusView:
 
 
 def from_json(path):
+    """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
+    to dependency between object is automatically taken care of."""
 
     # load all entities
     with open(path, 'r') as ofile:

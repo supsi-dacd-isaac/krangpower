@@ -38,7 +38,6 @@ um.define('mt = meter')
 _pint_qty_type = type(1 * um.m)
 
 
-
 # -------------------------------------------------------------
 # CONFIG LOAD
 # -------------------------------------------------------------
@@ -77,7 +76,8 @@ try:
         raise OSError('Could not find a valid log path.')
     if not os.path.exists(os.path.dirname(logpath)):
         os.makedirs(os.path.dirname(logpath))
-    fh = RotatingFileHandler(logpath, maxBytes=2e6, backupCount=0)
+    maxsize = config.getfloat('log_settings', 'max_log_size_mb')
+    fh = RotatingFileHandler(logpath, maxBytes=maxsize*1e6, backupCount=0)
     fh.setFormatter(logformatter)
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
@@ -236,7 +236,7 @@ def _is_numeric_data(item):
     return re.fullmatch('([0-9]|\,|\.| )*', item) is not None
 
 
-def _matricize(value):
+def _matrix_from_json(value):
 
     def desym(lol):
         size = len(lol)
@@ -329,7 +329,7 @@ def load_dictionary_json(path):
     for entity in dik:
         for prop, value in dik[entity]['properties'].items():
             if isinstance(value, list):
-                dik[entity]['properties'][prop] = _matricize(value)
+                dik[entity]['properties'][prop] = _matrix_from_json(value)
 
             # todo give it a unit measure
 
@@ -358,7 +358,7 @@ def load_entities(path):
     for entity in dik:
         for property, value in dik[entity]['properties'].items():
             if isinstance(value, list):
-                dik[entity]['properties'][property] = _matricize(value)
+                dik[entity]['properties'][property] = _matrix_from_json(value)
 
     dicky = {}
 

@@ -1,0 +1,41 @@
+{"Settings":
+  {"VoltageBases": ["_asarray"]},
+
+"Bus":
+  {"CplxSeqVoltages": ["_couplearray"],
+   "SeqVoltages": ["_couplearray"],
+   "Voltages": ["_couplearray"],
+   "YscMatrix": ["_asarray", "_matricize"],
+   "Zsc0": ["_cpx"],
+   "Zsc1": ["_cpx"],
+   "ZscMatrix": ["_asarray", "_matricize"]
+   },
+
+"Circuit":
+  {"AllBusDistances": ["_dictionize_cktbus"],
+   "AllBusVMag": ["_dictionize_cktbus"],
+   "AllBusVolts": ["_couplearray", "_dictionize_cktbus"],
+   "AllElementLosses": ["_couplearray", "_dictionize_cktels"],
+   "LineLosses": ["_cpx"],
+   "Losses": ["_cpx"],
+   "TotalPower": ["_cpx"],
+   "YCurrents": ["_couplearray", "_dictionize_cktnodes"],
+   "YNodeVArray": ["_couplearray", "_dictionize_cktnodes"],
+   "SystemY": ["_matricize_ybus"]
+  },
+
+"CktElement":
+  {"CplxSeqCurrents": ["_couplearray"],
+   "CplxSeqVoltages": ["_couplearray"],
+   "Currents": ["_terminalize"],
+   "CurrentsMagAng": ["_terminalize"],
+   "Losses": ["_cpx"],
+   "PhaseLosses": ["_couplearray"],
+   "Powers": ["_terminalize"],
+   "SeqCurrents": ["_couplearray"],
+   "SeqVoltages": ["_couplearray"],
+   "Voltages": ["_terminalize"],
+   "VoltagesMagAng": ["_terminalize"],
+   "Yprim": ["_matricize"]
+   }
+}

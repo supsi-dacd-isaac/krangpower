@@ -1,20 +1,25 @@
 # OpendssdirectEnhancer by Federico Rosato
 # a wrapper for opendssdirect.py by Dheepak Krishnamurthy and Maximilian J. Zangs
 
-from functools import reduce
 import copy
+import json
+import logging
+import os
+import platform
+import re
+from functools import reduce
+from logging.handlers import RotatingFileHandler as _RotatingFileHandler
 from math import sqrt
-from operator import getitem
+from operator import getitem, attrgetter
 from typing import Callable
 
 import numpy as np
-import re
 import opendssdirect as odr
 from pandas import DataFrame
-from . import components as co
-from .components import um, logger
-from .components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
 
+from . import components as co
+from .components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
+from .components import um, logger, config, thisdir
 from .utils.aux_fcn import lower as _lower
 from .utils.aux_fcn import pairwise as _pairwise
 
@@ -24,8 +29,52 @@ __all__ = ['OpendssdirectEnhancer']
 # when calling _Packed's __getitem__ method
 _default_entities = co.default_comp
 
+# information about the opendssdirect interface is loaded in order to feed the _PackedOpendssObject metaclass
+_interface_methods_path = os.path.join(thisdir, config.get('data_files', 'interfaces'))
+with open(_interface_methods_path, 'r') as ifile:
+    itf = json.load(ifile)
+_interface_methods = {(k,): v for k, v in itf.items()}
+_unit_measurement_path = os.path.join(thisdir, config.get('data_files', 'measurement_units'))
+_treatments_path = os.path.join(thisdir, config.get('data_files', 'treatments'))
+_interf_selectors_path = os.path.join(thisdir, config.get('data_files', 'interface_selectors'))
+with open(_interf_selectors_path, 'r') as ifile:
+    itf_sel_names = json.load(ifile)
+
+
+# instantiating the module command logger
+def _create_command_logger(name):
+    logformat = '%(asctime)s - %(message)s'
+    cmd_logger = logging.getLogger(name)
+    cmd_logger.setLevel(logging.DEBUG)
+    logformatter = logging.Formatter(logformat)
+
+    # filehandler
+    try:
+        if platform.system() == 'Windows':
+            logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'commands_log_path'))
+        elif platform.system() == 'Linux':
+            logpath = os.path.join('/var/log', config.get('log_file', 'commands_log_path'))
+        else:
+            raise OSError('Could not find a valid log path.')
+        if not os.path.exists(os.path.dirname(logpath)):
+            os.makedirs(os.path.dirname(logpath))
+        maxsize = config.getfloat('log_settings', 'max_log_size_mb')
+        fh = _RotatingFileHandler(logpath, maxBytes=maxsize*1e6, backupCount=0)
+        fh.setFormatter(logformatter)
+        fh.setLevel(logging.DEBUG)
+        cmd_logger.addHandler(fh)
+    except PermissionError:
+        # this is handled to the console stream
+        cmd_logger.warning('Permission to write log file denied')
+
+    return cmd_logger
+
+
+_default_name = 'OpenDSSEnhancer'
+_clog = _create_command_logger(_default_name)
 
 # <editor-fold desc="Auxiliary functions">
+
 
 def _assign_unit(item, unit: type(um.m) or None):
     if unit is None:
@@ -142,6 +191,10 @@ def _cast_dumbstring(string: str, type):
 
 # there's no XYCurves.AllNames() or similar, so we have to mock up one ourselves
 def _xycurve_names():
+
+    if odr.XYCurves.Count() == 0:
+        return []
+
     xynames = []
     i = 1
     odr.XYCurves.First()
@@ -192,165 +245,33 @@ class OpendssdirectEnhancer:
         7: um.cm
     }
 
-    trt = {'Settings':
-                {'VoltageBases': (_asarray,)},
-           'Bus':
-                {'CplxSeqVoltages': (_couplearray,),
-                 'SeqVoltages': (_couplearray,),
-                 'Voltages': (_couplearray,),
-                 'YscMatrix': (_asarray, _matricize,),
-                 'Zsc0': (_cpx,),
-                 'Zsc1': (_cpx,),
-                 'ZscMatrix': (_asarray, _matricize,),
-                 # puvmagangle
-                 },
+    # loads chains of functions through which to pass the rough outputs of opendss.
+    with open(_treatments_path, 'r') as tfile:
+        rtrt = json.load(tfile)
+    trt = dict()
+    for subdic_name, subdic in rtrt.items():
+        nsd = {k: tuple([globals()[t] for t in v]) for k, v in subdic.items()}
+        trt[subdic_name] = nsd
 
-           'Circuit':
-                {'AllBusDistances': (_dictionize_cktbus,),
-                 'AllBusVMag': (_dictionize_cktbus,),
-                 'AllBusVolts': (_couplearray, _dictionize_cktbus),
-                 'AllElementLosses': (_couplearray, _dictionize_cktels),
-                 'LineLosses': (_cpx,),
-                 'Losses': (_cpx,),
-                 'TotalPower': (_cpx,),
-                 'YCurrents': (_couplearray, _dictionize_cktnodes),
-                 'YNodeVArray': (_couplearray, _dictionize_cktnodes),
-                 'SystemY': (_matricize_ybus,)},
+    # loads measurement units for the interface of components without self-referencing.
+    # the components with self referencing, like lines and loadshapes, are taken care of at runtime.
+    with open(_unit_measurement_path, 'r') as ufile:
+        rumr = json.load(ufile)
+    umr = dict()
+    for subdic_name, subdic in rumr.items():
+        nsd = {k: um.parse_units(v) for k, v in subdic.items()}
+        umr[subdic_name] = nsd
 
-           'CktElement':
-                {'CplxSeqCurrents': (_couplearray,),
-                 'CplxSeqVoltages': (_couplearray,),
-                 'Currents': (_terminalize,),
-                 'CurrentsMagAng': (_terminalize,),
-                 'Losses': (_cpx,),
-                 'PhaseLosses': (_couplearray,),
-                 'Powers': (_terminalize,),
-                 'SeqCurrents': (_couplearray,),
-                 'SeqVoltages': (_couplearray,),
-                 'Voltages': (_terminalize,),
-                 'VoltagesMagAng': (_terminalize,),
-                 'Yprim': (_matricize,)
-                 }
-        # todo complete with the other items
-    }
-
-    umr = {'Settings':
-                {'VoltageBases': um.kV},
-           'Bus':
-                {'CplxSeqVoltages': um.V,
-                 'Cust_Duration': um.hr,
-                 'Distance': um.km,
-                 'Int_Duration': um.hr,
-                 'Isc': um.A,
-                 'SeqVoltages': um.V,
-                 'TotalMiles': um.mile,
-                 'VLL': um.V,
-                 'VMagAngle': um.deg,
-                 'Voc': um.V,
-                 'Voltages': um.V,
-                 'YscMatrix': um.siemens,
-                 'Zsc0': um.ohm,
-                 'Zsc1': um.ohm,
-                 'ZscMatrix': um.ohm,
-                 'kVBase': um.kV
-                 #puvmagangle
-                 },
-           'CapControls':
-                {'Vmin': um.V,
-                 'Vmax': um.V},
-           'Capacitors':
-                {'kv': um.kV,
-                 'kvar': um.kVA},
-           'Circuit':
-                {'AllBusDistances': um.km,
-                 'AllBusVMag': um.V,
-                 'AllBusVolts': um.V,
-                 'AllElementLosses': um.kW,
-                 'LineLosses': um.W,
-                 'Losses': um.W,
-                 'TotalPower': um.kVA,
-                 'YCurrents': um.A,
-                 'YNodeVArray': um.V,
-                 'SystemY': um.siemens},
-           'Fuses':
-                {'RatedCurrent': um.A},
-           'Generators':
-                {'kV': um.kV,
-                 'kVARated': um.kVA,
-                 'kW': um.kW,
-                 'kvar': um.kVA},
-           'Isource':
-                {'Amps': um.A,
-                 'AngleDeg': um.deg,
-                 'Frequency': um.Hz},
-           'Loads':
-                {'PctMean': um.pct,
-                 'PctStdDev': um.pct,
-                 'Rneut': um.ohm,
-                 'XfkVA': um.kVA,
-                 'Xneut': um.ohm,
-                 'kV': um.kVA,
-                 'kVABase': um.kVA,
-                 'kW': um.kW,
-                 'kWh': um.kWh,
-                 'kWhDays': um.day,
-                 'kvar': um.kVA,
-                 'puSeriesRL': um.pct},
-           'Meters':
-                {
-                 'AvgRepairTime': um.hr,
-                 'CalcCurrent': um.A,
-                 'PeakCurrent': um.A},
-           # todo monitor bytestream...
-           'PDElements':
-                {'PctPermanent': um.pct,
-                 'RepairTime': um.hr,
-                 'TotalMiles': um.mile},
-           'PVSystems':
-                {'Irradiance': um.W / (um.m ** 2),
-                 'kVARated': um.kVA,
-                 'kW': um.kW,
-                 'kvar': um.kVA},
-           'Solution':
-                {'Capkvar': um.kVA,
-                 'DblHour': um.hr,
-                 'Frequency': um.Hz,
-                 'GenkW': um.kW,
-                 'Hour': um.hr,
-                 'Seconds': um.s,
-                 'StepSize': um.s,
-                 'StepSizeHr': um.hr,
-                 'StepSizeMin': um.min,
-                 'TimeTimeStep': um.microsecond,
-                 'TotalTime': um.microsecond},
-           'CktElement':
-                {'CplxSeqCurrents': um.A,
-                 'CplxSeqVoltages': um.V,
-                 'Currents': um.A,
-                 'CurrentsMagAng': um.deg,
-                 'Emergamps': um.A,
-                 'Losses': um.W,
-                 'NormalAmps': um.A,
-                 'PhaseLosses': um.kW,
-                 'Powers': um.kW,
-                 'SeqCurrents': um.A,
-                 'SeqVoltages': um.V,
-                 'Voltages': um.V,
-                 'VoltagesMagAng': um.deg,
-                 'Yprim': um.siemens
-                 }
-        # todo finish the other items
-    }
-
-    def __init__(self, stack=None):
+    def __init__(self, stack=None, id=_default_name):
         if stack is None:
             self.stack = []
         else:
             self.stack = stack
+        self.id = id
 
     def __getattr__(self, item):
         if self._chain_hasattr(self.stack + [item]):
-            return OpendssdirectEnhancer(self.stack + [item])
+            return OpendssdirectEnhancer(self.stack + [item], self.id)
             # return getattr(odr, item)
         else:
             raise AttributeError('Could not find the attribute {0} in the available interfaces.'.format(item))
@@ -359,10 +280,21 @@ class OpendssdirectEnhancer:
         """bracket indicization looks for an object with the name desired and returns a nice packedelement that you
         can call with all the usual attributes, but without ever worrying again about SetActiveElement() and the likes.
         """
-        if item.lower() not in map(lambda name: name.lower(), self.get_all_names()):
-            raise KeyError('Element {0} was not found in the circuit'.format(item))
 
-        return _PackedOpendssElement(*item.lower().split('.', 1), self)
+        try:
+            assert item.lower() in map(lambda name: name.lower(), self.get_all_names())
+        except AssertionError:
+            bare_names_dict = {name.lower().split('.', 1)[1]: name.lower() for name in self.get_all_names()}
+            try:
+                assert item.lower() in bare_names_dict.keys()
+            except AssertionError:
+                raise KeyError('Element {0} was not found in the circuit'.format(item))
+            else:
+                fullitem = bare_names_dict[item.lower()]
+        else:
+            fullitem = item.lower()
+
+        return _PackedOpendssElement(*fullitem.split('.', 1), self)
 
     def __str__(self):
         return '<OpendssdirectEnhancer -> {0}>'.format('.'.join(['opendssdirect'] + self.stack))
@@ -391,13 +323,16 @@ class OpendssdirectEnhancer:
 
         odrobj = self._chain_getattr()
         e_ordobj = odrobj(*args)
+
+        # explicit control over what's returned when we are calling the text interface.
+        # this is because many errors from the text interface are returned silently as regular strings.
+        if self.stack[-1] == 'run_command':
+            _validate_text_interface_result(e_ordobj)
+
         for t in trt:
             e_ordobj = t(e_ordobj)
 
         return _assign_unit(e_ordobj, ums)
-
-    def _jsonize(self):
-        pass
 
     @staticmethod
     def get_all_names():
@@ -459,15 +394,23 @@ class OpendssdirectEnhancer:
 
         return line_qties
 
-    def _chain_getattr(self, stack=None, start_obj=odr):
+    def txt_command(self, cmd_str: str, echo=True):
 
+        rslt = self.utils.run_command(cmd_str)  # error check is implemented at call
+        if echo:
+            self.log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_default_name)))
+                          + ']-->[' + rslt.replace('\n', '') + ']')
+
+        return rslt
+
+    def log_line(self, line: str, lvl=logging.DEBUG):
+            _clog.log(lvl, '(id:{0})-'.format(self.id) + line)
+
+    def _chain_getattr(self, stack=None, start_obj=odr):
         if stack is None:
             stack = self.stack
 
-        if len(stack) == 1:
-            return getattr(start_obj, stack[0])
-        else:
-            return self._chain_getattr(stack[1:], getattr(start_obj, stack[0]))
+        return attrgetter('.'.join(stack))(start_obj)
 
     def _chain_hasattr(self, stack=None, start_obj=odr):
 
@@ -477,88 +420,38 @@ class OpendssdirectEnhancer:
         if len(stack) == 1:
             return hasattr(start_obj, stack[0])
         else:
-            return self._chain_getattr(stack[1:], getattr(start_obj, stack[0]))
+            return self._chain_hasattr(stack[1:], getattr(start_obj, stack[0]))
 
 
-_interface_methods = {('ActiveClass',): ['ActiveClassName', 'AllNames', 'Count', 'First', 'Name', 'Next', 'NumElements'],
-                             ('Basic',): ['AllowForms', 'Classes', 'ClearAll', 'DataPath', 'DefaultEditor', 'NewCircuit', 'NumCircuits', 'NumClasses', 'NumUserClasses', 'Reset', 'ShowPanel', 'Start', 'UserClasses', 'Version'],
-                             ('Bus',): ['Coorddefined', 'CplxSeqVoltages', 'Distance', 'GetUniqueNodeNumber', 'Isc', 'Lambda', 'Name', 'Nodes', 'NumNodes', 'PuVoltage', 'SectionID', 'SeqVoltages', 'TotalMiles', 'VLL', 'VMagAngle', 'Voc', 'Voltages', 'X', 'Y', 'YscMatrix', 'Zsc0', 'Zsc1', 'ZscMatrix', 'ZscRefresh', 'kVBase', 'puVLL', 'puVmagAngle'],
-                             ('Capacitors',): ['AddStep', 'AllNames', 'AvailableSteps', 'Close', 'Count', 'First', 'IsDelta', 'Name', 'Next', 'NumSteps', 'Open', 'States', 'SubtractStep', 'kV', 'kvar'],
-                             ('CapControls',): ['AllNames', 'CTRatio', 'Capacitor', 'Count', 'Delay', 'DelayOff', 'First', 'Mode', 'MonitoredObj', 'MonitoredTerm', 'Name', 'Next', 'OFFSetting', 'ONSetting', 'PTRatio', 'UseVoltOverride', 'Vmax', 'Vmin'],
-                             ('Circuit',): ['AllBusDistances', 'AllBusMagPu', 'AllBusNames', 'AllBusVMag', 'AllBusVolts', 'AllElementLosses', 'AllElementNames', 'AllNodeDistances', 'AllNodeNames', 'Capacity', 'Disable', 'Enable', 'EndOfTimeStepUpdate', 'FirstElement', 'FirstPCElement', 'FirstPDElement', 'LineLosses', 'Losses', 'Name', 'NextElement', 'NextPCElement', 'NextPDElement', 'NumBuses', 'NumCktElements', 'NumNodes', 'ParentPDElement', 'Sample', 'SaveSample', 'SetActiveBus', 'SetActiveBusi', 'SetActiveClass', 'SetActiveElement', 'SubstationLosses', 'TotalPower', 'UpdateStorage', 'YCurrents', 'YNodeOrder', 'YNodeVArray'],
-                             ('CktElement',): ['AllPropertyNames', 'AllVariableNames', 'AllVariableValues', 'BusNames', 'Close', 'CplxSeqCurrents', 'CplxSeqVoltages', 'Currents', 'CurrentsMagAng', 'DisplayName', 'EmergAmps', 'Enabled', 'EnergyMeter', 'GUID', 'HasSwitchControl', 'HasVoltControl', 'IsOpen', 'Losses', 'Name', 'NodeOrder', 'NormalAmps', 'NumConductors', 'NumControls', 'NumPhases', 'NumProperties', 'NumTerminals', 'OCPDevIndex', 'OCPDevType', 'Open', 'PhaseLosses', 'Powers', 'Residuals', 'SeqCurrents', 'SeqPowers', 'SeqVoltages', 'Variablei', 'Voltages', 'VoltagesMagAng', 'YPrim'],
-                             ('dss',): ['ActiveClass', 'Basic', 'Bus', 'CapControls', 'Capacitors', 'Circuit', 'CktElement', 'Element', 'Executive', 'Fuses', 'Generators', 'Isource', 'Lines', 'LoadShape', 'Loads', 'Meters', 'Monitors', 'PDElements', 'PVsystems', 'Parser', 'Properties', 'Reclosers', 'RegControls', 'Relays', 'Sensors', 'Settings', 'Solution', 'SwtControls', 'Topology', 'Transformers', 'Vsources', 'XYCurves', 'dss'],
-                             ('Element',): ['AllPropertyNames', 'Name', 'NumProperties'],
-                             ('Executive',): ['Command', 'CommandHelp', 'NumCommands', 'NumOptions', 'Option', 'OptionHelp', 'OptionValue'],
-                             ('Fuses',): ['AllNames', 'Close', 'Count', 'First', 'Idx', 'IsBlown', 'MonitoredObj', 'MonitoredTerm', 'Name', 'Next', 'NumPhases', 'Open', 'RatedCurrent', 'SwitchedObj', 'TCCCurve'],
-                             ('Generators',): ['AllNames', 'Count', 'First', 'ForcedON', 'Idx', 'Model', 'Name', 'Next', 'PF', 'Phases', 'RegisterNames', 'RegisterValues', 'Vmaxpu', 'Vminpu', 'kV', 'kVARated', 'kW', 'kvar'],
-                             ('Isource',): ['AllNames', 'Amps', 'AngleDeg', 'Count', 'First', 'Frequency', 'Name', 'Next'],
-                             ('Lines',): ['AllNames', 'Bus1', 'Bus2', 'C0', 'C1', 'CMatrix', 'Count', 'EmergAmps', 'First', 'Geometry', 'Length', 'LineCode', 'Name', 'Next', 'NormAmps', 'NumCust', 'Parent', 'Phases', 'R0', 'R1', 'RMatrix', 'Rg', 'Rho', 'Spacing', 'Units', 'X0', 'X1', 'XMatrix', 'Xg', 'Yprim'],
-                             ('Loads',): ['AllNames', 'AllocationFactor', 'CFactor', 'CVRCurve', 'CVRvars', 'CVRwatts', 'Class', 'Count', 'Daily', 'Duty', 'First', 'Growth', 'Idx', 'IsDelta', 'Model', 'Name', 'Next', 'NumCust', 'PF', 'PctMean', 'PctStdDev', 'RelWeighting', 'Rneut', 'Spectrum', 'Status', 'Vmaxpu', 'VminEmerg', 'VminNorm', 'Vminpu', 'XfkVA', 'Xneut', 'Yearly', 'ZipV', 'kV', 'kVABase', 'kW', 'kWh', 'kWhDays', 'kvar', 'puSeriesRL'],
-                             ('LoadShape',): ['AllNames', 'Count', 'First', 'HrInterval', 'MinInterval', 'Name', 'Next', 'Normalize', 'Npts', 'PBase', 'PMult', 'QBase', 'QMult', 'SInterval', 'TimeArray', 'UseActual'],
-                             ('Meters',): ['AllBranchesInZone', 'AllEndElements', 'AllNames', 'AllocFactors', 'AvgRepairTime', 'CalcCurrent', 'CloseAllDIFiles', 'Count', 'CountBranches', 'CountEndElements', 'CustInterrupts', 'DIFilesAreOpen', 'DoReliabilityCalc', 'FaultRateXRepairHrs', 'First', 'MeteredElement', 'MeteredTerminal', 'Name', 'Next', 'NumSectionBranches', 'NumSectionCustomers', 'NumSections', 'OCPDeviceType', 'OpenAllDIFiles', 'PeakCurrent', 'RegisterNames', 'RegisterValues', 'Reset', 'ResetAll', 'SAIDI', 'SAIFI', 'SAIFIkW', 'Sample', 'SampleAll', 'Save', 'SaveAll', 'SectSeqidx', 'SectTotalCust', 'SeqListSize', 'SequenceList', 'SetActiveSection', 'SumBranchFltRates', 'TotalCustomers', 'Totals'],
-                             ('Monitors',): ['AllNames', 'ByteStream', 'Count', 'Element', 'FileName', 'FileVersion', 'First', 'Mode', 'Name', 'Next', 'Process', 'ProcessAll', 'Reset', 'ResetAll', 'Sample', 'SampleAll', 'Save', 'SaveAll', 'Show', 'Terminal'],
-                             ('PDElements',): ['AccumulatedL', 'Count', 'FaultRate', 'First', 'FromTerminal', 'IsShunt', 'Lambda', 'Name', 'Next', 'NumCustomers', 'ParentPDElement', 'PctPermanent', 'RepairTime', 'SectionID', 'TotalCustomers', 'TotalMiles'],
-                             ('Properties',): ['Description', 'Name', 'Value'],
-                             ('PVsystems',): ['AllNames', 'Count', 'First', 'Idx', 'Irradiance', 'Name', 'Next', 'kVARated', 'kW', 'kvar', 'pf'],
-                             ('Reclosers',): ['AllNames', 'Close', 'Count', 'First', 'GroundInst', 'GroundTrip', 'Idx', 'MonitoredObj', 'MonitoredTerm', 'Name', 'Next', 'NumFast', 'Open', 'PhaseInst', 'PhaseTrip', 'RecloseIntervals', 'Shots', 'SwitchedObj', 'SwitchedTerm'],
-                             ('RegControls',): ['AllNames', 'CTPrimary', 'Count', 'Delay', 'First', 'ForwardBand', 'ForwardR', 'ForwardVreg', 'ForwardX', 'IsInverseTime', 'IsReversible', 'MaxTapChange', 'MonitoredBus', 'Name', 'Next', 'PTRatio', 'ReverseBand', 'ReverseR', 'ReverseVreg', 'ReverseX', 'TapDelay', 'TapNumber', 'TapWinding', 'Transformer', 'VoltageLimit', 'Winding'],
-                             ('Relays',): ['AllNames', 'Count', 'First', 'Idx', 'MonitoredObj', 'MonitoredTerm', 'Name', 'Next', 'SwitchedObj', 'SwitchedTerm'],
-                             ('Sensors',): ['AllNames', 'Count', 'Currents', 'First', 'IsDelta', 'MeteredElement', 'MeteredTerminal', 'Name', 'Next', 'PctError', 'Reset', 'ResetAll', 'ReverseDelta', 'Weight', 'kVBase', 'kW', 'kvar'],
-                             ('Settings',): ['AllocationFactors', 'AllowDuplicates', 'AutoBusList', 'CktModel', 'EmergVmaxpu', 'EmergVminpu', 'LossRegs', 'LossWeight', 'NormVmaxpu', 'NormVminpu', 'PriceCurve', 'PriceSignal', 'Trapezoidal', 'UERegs', 'UEWeight', 'VoltageBases', 'ZoneLock'],
-                             ('Solution',): ['AddType', 'Algorithm', 'BuildYMatrix', 'Capkvar', 'CheckControls', 'CheckFaultStatus', 'Cleanup', 'ControlActionsDone', 'ControlIterations', 'ControlMode', 'Converged', 'Convergence', 'DblHour', 'DefaultDaily', 'DefaultYearly', 'DoControlActions', 'EventLog', 'FinishTimeStep', 'Frequency', 'GenMult', 'GenPF', 'GenkW', 'Hour', 'InitSnap', 'Iterations', 'LDCurve', 'LoadModel', 'LoadMult', 'MaxControlIterations', 'MaxIterations', 'Mode', 'ModeID', 'MostIterationsDone', 'Number', 'PctGrowth', 'ProcessTime', 'Random', 'SampleControlDevices', 'SampleDoControlActions', 'Seconds', 'Solve', 'SolveDirect', 'SolveNoControl', 'SolvePFlow', 'SolvePlusControl', 'StepSize', 'StepSizeHr', 'StepSizeMin', 'SystemYChanged', 'TimeTimeStep', 'TotalIterations', 'TotalTime', 'Year'],
-                             ('SwtControls',): ['Action', 'AllNames', 'Count', 'Delay', 'First', 'IsLocked', 'Name', 'Next', 'SwitchedObj', 'SwitchedTerm'],
-                             ('Topology',): ['ActiveBranch', 'ActiveLevel', 'AllIsolatedBranches', 'AllIsolatedLoads', 'AllLoopedPairs', 'BranchName', 'BusName', 'First', 'FirstLoad', 'ForwardBranch', 'LoopedBranch', 'Next', 'NextLoad', 'NumIsolatedBranches', 'NumIsolatedLoads', 'NumLoops', 'ParallelBranch'],
-                             ('Transformers',): ['AllNames', 'Count', 'First', 'IsDelta', 'MaxTap', 'MinTap', 'Name', 'Next', 'NumTaps', 'NumWindings', 'R', 'Rneut', 'Tap', 'Wdg', 'XfmrCode', 'Xhl', 'Xht', 'Xlt', 'Xneut', 'kV', 'kVA'],
-                             ('utils',): ['Iterator'],
-                             ('Vsources',): ['AllNames', 'AngleDeg', 'BasekV', 'Count', 'First', 'Frequency', 'Name', 'Next', 'PU', 'Phases'],
-                             ('XYCurves',): ['Count', 'First', 'Name', 'Next', 'Npts', 'X', 'XArray', 'XScale', 'XShift', 'Y', 'YArray', 'YScale', 'YShift']}
+class OpenDSSTextError(Exception):
+    pass
+
+
+def _validate_text_interface_result(result_string: str):
+    if result_string.lower().startswith(('warning', 'error')):
+        raise OpenDSSTextError(result_string)
 
 
 class _PackedOpendssElement:
     def __init__(self, eltype, name, p_odr):
 
-        # todo complete and verify these dicts
-        interfaces = {'bus': (p_odr.Bus,),
-                      'load': (p_odr.Loads, p_odr.CktElement),
-                      'monitor': (p_odr.Monitors, p_odr.CktElement),
-                      'line': (p_odr.Lines, p_odr.CktElement, p_odr.PDElements),
-                      'capcontrol': (p_odr.CapControls,),
-                      'capacitor': (p_odr.Capacitors, p_odr.CktElement, p_odr.PDElements),
-                      'isource': (p_odr.Isource, p_odr.CktElement),
-                      'meter': (p_odr.Meters, p_odr.CktElement),
-                      'vsource': (p_odr.Vsources, p_odr.CktElement),
-                      'pvsystem': (p_odr.PVsystems, p_odr.CktElement),
-                      'regcontrol': (p_odr.RegControls,),
-                      'xycurve': (p_odr.XYCurves,),
-                      'transformer': (p_odr.Transformers, p_odr.CktElement, p_odr.PDElements),
-                      'storage': (p_odr.CktElement,),
-                      'loadshape': (p_odr.LoadShape,),
-                      'reactor': (p_odr.PDElements,)
-                      }
+        # reconstructs what are the available interfaces from file
+        self._available_interfaces = tuple(getattr(p_odr, itf_name) for itf_name in itf_sel_names['interfaces'][eltype])
 
-        selectors = {'load': (p_odr.Loads.Name, p_odr.Circuit.SetActiveElement),
-                     'bus': (p_odr.Circuit.SetActiveBus,),
-                     'monitor': (p_odr.Monitors.Name, p_odr.Circuit.SetActiveElement),
-                     'line': (p_odr.Lines.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
-                     'capcontrol': (p_odr.CapControls,),
-                     'capacitor': (p_odr.Capacitors.Name, p_odr.Circuit.SetActiveElement, p_odr.PDElements.Name),
-                     'isource': (p_odr.Isource.Name, p_odr.Circuit.SetActiveElement),
-                     'meter': (p_odr.Meters.Name,),
-                     'vsource': (p_odr.Vsources.Name, p_odr.Circuit.SetActiveElement),
-                     'pvsystem': (p_odr.PVsystems.Name, p_odr.Circuit.SetActiveElement),
-                     'regcontrol': (p_odr.RegControls.Name,),
-                     'xycurve': (p_odr.XYCurves.Name,),
-                     'transformer': (p_odr.Transformers.Name, p_odr.Circuit.SetActiveElement),
-                     'storage': (p_odr.Circuit.SetActiveElement,),
-                     'loadshape': (p_odr.LoadShape.Name,),
-                     'reactor': (p_odr.PDElements.Name,)}
+        # reconstructs from file what are the interfaces in which I have to select the element in order to get the
+        # results that pertain it from self._available_interfaces
+        self._selectors = []
+        sel_attrs_chain = tuple(itf_sel_names['selectors'][eltype])
+        for ac in sel_attrs_chain:
+            for i, a in enumerate(ac.split('.')):
+                if i == 0:
+                    obi = getattr(p_odr, a)
+                else:
+                    obi = getattr(obi, a)
+            self._selectors.append(obi)
 
-        self._available_interfaces = interfaces[eltype]
         self._name = name
-        # full qualified name
         # todo perform sanity checks on name
-        self._selectors = selectors[eltype]
         # todo distinct linecode_a, etc and make sure that _eltype is coherent with components
         self._eltype = eltype
         self._p_odr = p_odr
@@ -677,6 +570,12 @@ class _PackedOpendssElement:
         else:
             return rslt * unt
 
+    def __pos__(self):
+        self._p_odr.txt_command('enable {0}'.format(self.fullname))
+
+    def __neg__(self):
+        self._p_odr.txt_command('disable {0}'.format(self.fullname))
+
     def _get_datatype(self, item):
         try:
             return type(_default_entities['default_' + self._eltype]['properties'][item.lower()])
@@ -722,7 +621,7 @@ class _PackedOpendssElement:
 
 
 class _CallFinalizer(Callable):
-    def __init__(self, interface, selector_fns: tuple, name: str, s_interface_name: str):
+    def __init__(self, interface, selector_fns: list, name: str, s_interface_name: str):
         self._super_interface_name = s_interface_name
         self._interface = interface
         self._selectors = selector_fns
@@ -737,11 +636,7 @@ class _CallFinalizer(Callable):
         # this is the key bit: the PackedOpendssElement that instances this class is capable of retaining its name and
         # auto select itself before calling the underlying odr.
         for sel in self._selectors:
-            try:
-                sel(self._name_to_select)
-            except TypeError:
-                pass
-
+            sel(self._name_to_select)
 
         logger.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)

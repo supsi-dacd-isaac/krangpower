@@ -1,0 +1,116 @@
+{
+  "Settings": {
+    "VoltageBases": "kV"
+  },
+  "Bus": {
+    "CplxSeqVoltages": "V",
+    "Cust_Duration": "hr",
+    "Distance": "km",
+    "Int_Duration": "hr",
+    "Isc": "A",
+    "SeqVoltages": "V",
+    "TotalMiles": "mile",
+    "VLL": "V",
+    "VMagAngle": "deg",
+    "Voc": "V",
+    "Voltages": "V",
+    "YscMatrix": "siemens",
+    "Zsc0": "ohm",
+    "Zsc1": "ohm",
+    "ZscMatrix": "ohm",
+    "kVBase": "kV"
+  },
+  "CapControls": {
+    "Vmin": "V",
+    "Vmax": "V"
+  },
+  "Capacitors": {
+    "kv": "kV",
+    "kvar": "kVA"
+  },
+  "Circuit": {
+    "AllBusDistances": "km",
+    "AllBusVMag": "V",
+    "AllBusVolts": "V",
+    "AllElementLosses": "kW",
+    "LineLosses": "W",
+    "Losses": "W",
+    "TotalPower": "kVA",
+    "YCurrents": "A",
+    "YNodeVArray": "V",
+    "SystemY": "siemens"
+  },
+  "Fuses": {
+    "RatedCurrent": "A"
+  },
+  "Generators": {
+    "kV": "kV",
+    "kVARated": "kVA",
+    "kW": "kW",
+    "kvar": "kVA"
+  },
+  "Isource": {
+    "Amps": "A",
+    "AngleDeg": "deg",
+    "Frequency": "Hz"
+  },
+  "Loads": {
+    "PctMean": "pct",
+    "PctStdDev": "pct",
+    "Rneut": "ohm",
+    "XfkVA": "kVA",
+    "Xneut": "ohm",
+    "kV": "kVA",
+    "kVABase": "kVA",
+    "kW": "kW",
+    "kWh": "kWh",
+    "kWhDays": "day",
+    "kvar": "kVA",
+    "puSeriesRL": "pct"
+  },
+  "Meters": {
+    "AvgRepairTime": "hr",
+    "CalcCurrent": "A",
+    "PeakCurrent": "A"
+  },
+  "PDElements": {
+    "PctPermanent": "pct",
+    "RepairTime": "hr",
+    "TotalMiles": "mile"
+  },
+  "PVSystems": {
+    "Irradiance": "W/(m**2)",
+    "kVARated": "kVA",
+    "kW": "kW",
+    "kvar": "kVA"
+  },
+  "Solution": {
+    "Capkvar": "kVA",
+    "DblHour": "hr",
+    "Frequency": "Hz",
+    "GenkW": "kW",
+    "Hour": "hr",
+    "Seconds": "s",
+    "StepSize": "s",
+    "StepSizeHr": "hr",
+    "StepSizeMin": "min",
+    "TimeTimeStep": "microsecond",
+    "TotalTime": "microsecond"
+  },
+  "CktElement": {
+    "CplxSeqCurrents": "A",
+    "CplxSeqVoltages": "V",
+    "Currents": "A",
+    "CurrentsMagAng": "deg",
+    "Emergamps": "A",
+    "Losses": "W",
+    "NormalAmps": "A",
+    "PhaseLosses": "kW",
+    "Powers": "kW",
+    "SeqCurrents": "A",
+    "SeqVoltages": "V",
+    "Voltages": "V",
+    "VoltagesMagAng": "deg",
+    "Yprim": "siemens"
+  }
+}

@@ -63,7 +63,7 @@ def dejsonize(obj_repr: dict):
     # restore matrices
     for prop, value in obj_repr['properties'].items():
         if isinstance(value, list):
-            obj_repr['properties'][prop] = co._matricize(value)
+            obj_repr['properties'][prop] = co._matrix_from_json(value)
 
     # add unit measure
     for prop, value in obj_repr['units'].items():
