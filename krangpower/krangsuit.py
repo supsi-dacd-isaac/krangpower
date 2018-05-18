@@ -11,10 +11,10 @@ from tqdm import tqdm as _tqdm
 
 from . import busquery as bq
 from . import components as co
-from .components import um, config, _pint_qty_type
+from .components import um, _pint_qty_type
 from .enhancer import OpendssdirectEnhancer
 from .enhancer import _clog
-from .utils import aux_fcn as au
+from . import aux_fcn as au
 
 __all__ = ['Krang', 'from_json']
 _elk = 'el'

@@ -1,5 +1,5 @@
 import numpy as np
-from .components import um
+from krangpower.components import um
 
 
 def get_fun(fun_name):
