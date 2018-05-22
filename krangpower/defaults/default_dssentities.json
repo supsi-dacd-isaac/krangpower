@@ -417,7 +417,7 @@
             "normamps": 400.0,
             "emergamps": 600.0,
 
-            "nphases": 3,
+            "phases": 3,
             "r1": 0.058,
             "x1": 0.1206,
             "r0": 0.1784,
@@ -500,6 +500,9 @@
         "associated": {
             "linecode": "",
             "geometry": ""},
+        "associated_format":{
+            "linecode": "name",
+            "geometry": "name"},
         "topological": {
             "bus1": "",
             "bus2": ""}

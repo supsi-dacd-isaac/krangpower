@@ -10,11 +10,13 @@ linegeometry_c,CNData,cncable
 linegeometry_c,list,cncable
 linegeometry_t,TSData,tscable
 linegeometry_t,list,tscable
+line,linegeometry,geometry
 line,LineGeometry_C,geometry
 line,LineGeometry_O,geometry
 line,LineGeometry_T,geometry
-line,LineCode_S,geometry
-line,LineCode_A,geometry
+line,linecode,linecode
+line,LineCode_A,linecode
+line,LineCode_A,linecode
 pvsystem,CsvLoadsape,duty
 pvsystem,PtCurve,p-tcurve
 pvsystem,EffCurve,effcurve

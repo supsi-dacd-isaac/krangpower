@@ -14,14 +14,14 @@ class NxTable:
 
     def __getitem__(self, item):
         self._check_key(item)
-        return self._data[item[0]][item[1]]['data']
+        return self._data[item[0].lower()][item[1].lower()]['data']
 
     def from_csv(self, path):
         with open(path, 'r') as f:
             cntnt = csv.reader(f)
 
             for row in cntnt:
-                self[row[0], row[1]] = row[2]
+                self[row[0].lower(), row[1].lower()] = row[2].lower()
 
     @staticmethod
     def _check_key(key):

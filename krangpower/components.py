@@ -26,9 +26,9 @@ from .nxtable import NxTable
 
 __all__ = ['load_entities', 'load_dictionary_json', 'CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve', 'Vsource',
-           'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol','Reactor',
+           'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
            'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'default_comp', 'logpath',
-           'um', 'resolve_unit', 'default_settings']
+           'um', 'resolve_unit', 'default_settings', 'tmp_path']
 
 um = pint.UnitRegistry()
 um.define('percent = 0.01 * dimensionless = pct')
@@ -44,11 +44,27 @@ _pint_qty_type = type(1 * um.m)
 thisdir = os.path.dirname(os.path.realpath(__file__))
 
 config = cfp.ConfigParser()
-config.read(os.path.join(thisdir, 'config\krang_config.cfg'))
+config.read(os.path.join(thisdir, 'config/krang_config.cfg'))
 
 default_settings_path_config = os.path.join(thisdir,  config.get('data_files', 'default_settings'))
 default_entities_path = os.path.join(thisdir, config.get('data_files', 'default_entities'))
 association_types_path = os.path.join(thisdir, config.get('data_files', 'association_types'))
+
+# temporary files path
+if platform.system() == 'Windows':
+    tmp_path = os.path.join(os.getenv('TEMP'), config.get('temp_folder', 'temp_folder'))
+elif platform.system() == 'Linux':
+    tmp_path = os.path.join('/var/tmp', config.get('temp_folder', 'temp_folder'))
+else:
+    raise OSError('Could not find a valid temp path.')
+
+# log path
+if platform.system() == 'Windows':
+    logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'log_folder'), config.get('log_file', 'general_log_path'))
+elif platform.system() == 'Linux':
+    logpath = os.path.join('/var/log', config.get('log_file', 'log_folder'), config.get('log_file', 'general_log_path'))
+else:
+    raise OSError('Could not find a valid log path.')
 
 
 # -------------------------------------------------------------
@@ -68,12 +84,6 @@ logger.addHandler(_ch)
 
 # filehandler
 try:
-    if platform.system() == 'Windows':
-        logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'general_log_path'))
-    elif platform.system() == 'Linux':
-        logpath = os.path.join('/var/log', config.get('log_file', 'general_log_path'))
-    else:
-        raise OSError('Could not find a valid log path.')
     if not os.path.exists(os.path.dirname(logpath)):
         os.makedirs(os.path.dirname(logpath))
     maxsize = config.getfloat('log_settings', 'max_log_size_mb')
@@ -84,7 +94,6 @@ try:
 except (PermissionError, OSError):
     # this is handled to the console stream
     logger.warning('Permission to write log file denied')
-
 
 
 # <editor-fold desc="AUX FUNCTIONS">
@@ -198,7 +207,10 @@ def _termrep(terminals):
     """
     This function takes a terminal collection (represented by a tuple of ints) and returns a representation that can be
     cat to a bus name in order to form a full bus-terminal qualification according to the odsswr syntax.
-    Example: (1, 3, 2) ----> ".1.3.2"
+
+    >>> _termrep(1,3,2)
+    '.1.3.2'
+
     :param terminals: tuple of ints
     :type terminals: tuple
     :rtype: string
@@ -213,15 +225,6 @@ def _termrep(terminals):
             return s[0:-1]  # shaves final dot
         except TypeError:  # todo clean
             return '.' + str(terminals)
-
-
-def _prcx(complex_number, prec=4, color=False):
-    if color:
-        return '\033[94m' + str(round(np.abs(complex_number), prec)) + '\033[91m' + '∠' + str(
-            round(np.rad2deg(np.angle(complex_number)), prec)) + '°' + '\033[0m'
-    else:
-        return str(round(np.abs(complex_number), prec)) + '∠' + \
-               str(round(np.rad2deg(np.angle(complex_number)), prec)) + '°'
 
 
 def _is_timestamp(item):
@@ -261,26 +264,6 @@ def _matrix_from_json(value):
 
 
 # <editor-fold desc="AUX CLASSES">
-class _StringArray(list):
-    """List intended to be initialized by a single string containing comma-separated values and to be able to __repr__
-    that same string, albeit implementing list manipulation and indicization. Useful for manipulating and printing
-    odsswr comma-separated values"""
-
-    def __init__(self, datastring):
-        super().__init__()
-        for s in datastring.split(','):
-            self.append(s)
-
-    def __repr__(self):
-        fstr = ''
-        for s in self:
-            fstr += s + ','
-        return fstr[:-1]
-
-    def __str__(self):
-        return self.__repr__()
-
-
 class _SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
     """_SnpMatrix extends numpy.matrix. numpy.matrix can be initialized by a 'v11,v12;v21,v22'- like string; _SnpMatrix,
     in addition to this, can be initialized by a 'v11;v21,v22'-like string, representing the tril of a symmetrical
@@ -312,9 +295,7 @@ class _SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a sym
 # </editor-fold>
 
 
-ai_record = namedtuple('ai_record', ['element', 'bus', 'name'])
-
-
+@lru_cache(8)
 def load_dictionary_json(path):
     this_module = modules[__name__]
     classmap = {}
@@ -409,7 +390,7 @@ def _type_recovery(value, target_type):
             assert target_type == float
             recovered_value = float(value)
 
-        elif isinstance(value, list):
+        elif isinstance(value, (list, np.ndarray)):
             assert target_type == np.matrix
             recovered_value = np.matrix(value)
         else:
@@ -439,6 +420,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     muldict = NxTable()
     muldict.from_csv(association_types_path)
 
+    @property
+    def _eltype(self):
+        return self.toe.split('_')[0]
+
     @classmethod
     def isnamed(cls):
         return False
@@ -453,22 +438,24 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
     @property
     def fullname(self):
-        return (self.toe + '.' + self.name).lower()
+        return (self._eltype + '.' + self.name).lower()
 
     def __mul__(self, other):
 
         i1 = self.toe
-        i2 = other.__class__.__name__
+        i2 = other._eltype
 
         prop_to_set = self.muldict[i1, i2]
         # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
         # does not depend on input
         assert prop_to_set in self._associated.keys()
 
+        prop_fmt = self._associated_fmt.get(prop_to_set, 'fullname')
+
         if isinstance(other, list):
-            self[prop_to_set] = [o.fullname for o in other]
+            self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
         else:
-            self[prop_to_set] = other.fullname
+            self[prop_to_set] = getattr(other, prop_fmt)
 
         return self
 
@@ -545,7 +532,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # pint quantity check and conversion
             if isinstance(value_raw, _pint_qty_type):
-                unt = resolve_unit(self.default_units[parameter], self._get_prop_from_matchobj)
+                unt = resolve_unit(self.default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == um.none:
                     pass
                     # assert parameter_raw == 'length'
@@ -573,9 +560,9 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             if isinstance(value, np.matrix):
                 test = np.array_equal(value, default_comp['default_' + self.toe][default_dict][parameter])
             elif isinstance(value, list):
-                test = value == default_comp['default_' + self.toe][default_dict][parameter]
+                test = value == default_comp['default_' + self.toe][default_dict][parameter.lower()]
             else:
-                test = value == default_comp['default_' + self.toe][default_dict][parameter]
+                test = value == default_comp['default_' + self.toe][default_dict][parameter.lower()]
 
             if test:
                 logger.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
@@ -627,6 +614,12 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                     self._associated = copy.deepcopy(el['associated'])
                 except KeyError:
                     self._associated = {}
+
+                try:
+                    self._associated_fmt = copy.deepcopy(el['associated_format'])
+                except KeyError:
+                    self._associated_fmt = {}
+
                 break
         else:
             raise TypeError('Could not  find a suitable reference object for {0} in the default file ("{1}")'
@@ -1531,7 +1524,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
                     idx = 0, ind  # matricial indicization necessary
                 else:
                     idx = ind
-                s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
+                s2 += str(parameter).strip('s') + '=' + str(true_param[idx]) + ' '
 
         return s1 + s2
 
@@ -2558,25 +2551,25 @@ class Monitor(_AboveCircuitElement):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def fcs(self, **hookup):
-
-        # eltype = hookup.get('eltype')
-        # elname = hookup.get('elname')
-        # terminal = hookup.get('terminal')
-        # alias = hookup.get('alias')
-        #
-        # if alias is not None:
-        #     name = alias
-        # else:
-        #     name = 'mntr_' + eltype + '_' + elname
-
-        name = self.name
-
-        return 'New monitor.' + name + ' element=' + self['element'] + \
-               ' mode=' + str(self['mode']) + \
-               ' vipolar=no ppolar=no'
-
-             # ' terminal=' + str(terminal) +\
+    # def fcs(self, **hookup):
+    #
+    #     # eltype = hookup.get('eltype')
+    #     # elname = hookup.get('elname')
+    #     # terminal = hookup.get('terminal')
+    #     # alias = hookup.get('alias')
+    #     #
+    #     # if alias is not None:
+    #     #     name = alias
+    #     # else:
+    #     #     name = 'mntr_' + eltype + '_' + elname
+    #
+    #     name = self.name
+    #
+    #     return 'New monitor.' + name + ' element=' + self['element'] + \
+    #            ' mode=' + str(self['mode']) + \
+    #            ' vipolar=no ppolar=no'
+    #
+    #          # ' terminal=' + str(terminal) +\
 
 
 class BusVoltageMonitor(_AboveCircuitElement):
