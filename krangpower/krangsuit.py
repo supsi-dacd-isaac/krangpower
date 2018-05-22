@@ -50,10 +50,8 @@ class Krang:
         >>> myKrang.command('makebuslist')
         ''
         >>> i, v = myKrang.drag_solve()
-        >>> print(i['a.1'][0])
-        (8672.156356680181-30.93327809884986j) volt
-        >>> print(myKrang[('b',)].voltage)
-        [-4381.96742580-7487.03544174j -4292.97917782+7538.41283065j  8674.94660448  -51.37738747j] volt
+        >>> np.isclose(i['a.1'][0].to('V').magnitude, 8672.156356-30.933278j)
+        True
         >>> myKrang.save_json(r'.\krang.json')
         >>> myKrang.save_dss(r'.\krang.dss')
         >>> cs = from_json(r'.\krang.json')
@@ -139,6 +137,7 @@ class Krang:
             raise ValueError('Tried to add an object with a blank name')
 
         self.command(other.fcs())
+        self.brain._names_up2date = False
         return self
 
     def __bool__(self):
@@ -506,9 +505,6 @@ def from_json(path):
         l_ckt.set(**{on: d_ov})
 
     # reconstruction of dependency graph and declarations
-
-
-
     dep_graph = _DepGraph()
     for jobj in master_dict['elements'].values():
         vname = jobj['type'].split('_')[0] + '.' + jobj['name']

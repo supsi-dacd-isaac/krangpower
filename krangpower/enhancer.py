@@ -365,11 +365,12 @@ class OpendssdirectEnhancer:
         """Gets the fully qualified names of the elements, plus buses, loadshapes and xycurves.
         It's worth noting that object such as LineCodes, WireCodes, etc are not as of today retrievable, because their
         names are not accessible in a direct way."""
-
+        odr.utils.run_command('makebuslist')
         if cls._names_up2date:
             return cls._cached_allnames
         else:
             anl = []
+            odr.utils.run_command('makebuslist')
             anl.extend(map(lambda bn: 'bus.' + bn, odr.Circuit.AllBusNames()))
             anl.extend(odr.Circuit.AllElementNames())
             anl.extend(map(lambda ln: 'loadshape.' + ln, odr.LoadShape.AllNames()))

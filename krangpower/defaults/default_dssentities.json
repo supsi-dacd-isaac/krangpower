@@ -408,16 +408,11 @@
     "default_line": {
         "type": "line",
         "properties": {"length": 1.0,
-            "switch": "false",
+            "switch": "False",
             "rg": 0.01805,
             "xg": 0.155081,
             "rho": 100.0,
-            "units": "none",
-            "earthmodel": "deri",
-            "normamps": 400.0,
-            "emergamps": 600.0,
 
-            "phases": 3,
             "r1": 0.058,
             "x1": 0.1206,
             "r0": 0.1784,
@@ -469,6 +464,13 @@
                     2.8
                 ]
             ],
+
+
+            "units": "none",
+            "earthmodel": "Deri",
+            "normamps": 400.0,
+            "emergamps": 600.0,
+            "phases": 3,
             "basefreq": 50.0,
             "faultrate": 0.1,
             "%perm": 20.0,
@@ -481,9 +483,7 @@
             "rg": "ohm / this.units",
             "xg": "ohm / this.units",
             "rho": "ohm",
-            "normamps": "A",
-            "emergamps": "A",
-
+            
             "r1": "ohm / this.units",
             "x1": "ohm / this.units",
             "r0": "ohm / this.units",
@@ -493,6 +493,9 @@
             "rmatrix": "ohm / this.units",
             "xmatrix": "ohm / this.units",
             "cmatrix": "nF / this.units",
+
+            "normamps": "A",
+            "emergamps": "A",
             "basefreq": "Hz",
             "faultrate": "h",
             "repair": "h"
@@ -500,6 +503,17 @@
         "associated": {
             "linecode": "",
             "geometry": ""},
+        "ignored":[
+            "r1",
+            "x1",
+            "r0",
+            "x0",
+            "c1",
+            "c0",
+            "rmatrix",
+            "xmatrix",
+            "cmatrix"
+        ],
         "associated_format":{
             "linecode": "name",
             "geometry": "name"},

@@ -570,7 +570,8 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # finally setting the parameter
             target_list[parameter.lower()] = value
-            self.editedParams.append(parameter.lower())
+            if parameter_raw.lower() not in self._ignored_params:
+                self.editedParams.append(parameter.lower())
 
     def _getparameter(self, param):
 
@@ -619,6 +620,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                     self._associated_fmt = copy.deepcopy(el['associated_format'])
                 except KeyError:
                     self._associated_fmt = {}
+
+                try:
+                    self._ignored_params = copy.deepcopy(el['ignored'])
+                except KeyError:
+                    self._ignored_params = []
 
                 break
         else:
