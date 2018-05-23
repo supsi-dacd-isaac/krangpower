@@ -11,14 +11,19 @@ from tqdm import tqdm as _tqdm
 from krangpower import aux_fcn as au
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.components import um, _pint_qty_type, tmp_path
+from krangpower.components import um, _pint_qty_type, _mlog
 from krangpower.enhancer import OpendssdirectEnhancer, OpenDSSTextError
 from krangpower.enhancer import _clog  # used only to write a newline
 
-__all__ = ['Krang', 'from_json']
+__all__ = ['Krang', 'from_json', 'set_log_level']
 _elk = 'el'
 _default_krang_name = 'Unnamed_Krang'
 _cmd_log_newline_len = 60
+
+
+def set_log_level(lvl):
+    _clog.setLevel(lvl)
+    _mlog.setLevel(lvl)
 
 
 class Krang:
@@ -359,8 +364,8 @@ def _(item, krg):
 
 
 class _DepGraph(nx.DiGraph):
-    """Simple extension of nx.Digraph created to reverse-walk a dependency tree in order to declare the entities in the
-    right order."""
+    """Simple extension of nx.Digraph created to reverse-walk a dependency branching in order to declare the entities
+    in the right order."""
 
     @property
     def leaves(self):
@@ -370,6 +375,11 @@ class _DepGraph(nx.DiGraph):
         self.remove_nodes_from(self.leaves)
 
     def recursive_prune(self):
+        try:
+            assert nx.is_branching(self)
+        except AssertionError:
+            raise ValueError('Cannot recursively prune cyclic graph')
+
         while self.leaves:
             yield self.leaves
             self.trim()

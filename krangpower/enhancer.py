@@ -21,8 +21,8 @@ from pandas import DataFrame
 from krangpower import components as co
 from krangpower.aux_fcn import lower as _lower
 from krangpower.aux_fcn import pairwise as _pairwise
-from krangpower.components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery
-from krangpower.components import um, logger, config, thisdir
+from krangpower.components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery, _global_log_level
+from krangpower.components import um, _mlog, config, thisdir
 
 __all__ = ['OpendssdirectEnhancer']
 
@@ -48,7 +48,7 @@ with open(_interf_selectors_path, 'r') as ifile:
 def _create_command_logger(name):
     logformat = '%(asctime)s - %(message)s'
     cmd_logger = logging.getLogger(name)
-    cmd_logger.setLevel(logging.DEBUG)
+    cmd_logger.setLevel(_global_log_level)
     logformatter = logging.Formatter(logformat)
 
     # filehandler
@@ -731,7 +731,7 @@ class _CallFinalizer(Callable):
         for sel in self._selectors:
             sel(self._name_to_select)
 
-        logger.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
+        _mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
 
     @property

@@ -71,16 +71,18 @@ else:
 # MAIN LOGGER
 # -------------------------------------------------------------
 
+_global_log_level = logging.WARNING
+
 logformat = '%(asctime)s - %(levelname)s (%(funcName)s) -------------> %(message)s'
-logger = logging.getLogger('krangpower')
-logger.setLevel(logging.DEBUG)
+_mlog = logging.getLogger('krangpower')
+_mlog.setLevel(_global_log_level)
 logformatter = logging.Formatter(logformat)
 
 # streamhandler
 _ch = logging.StreamHandler()
 _ch.setLevel(logging.WARN)
 _ch.setFormatter(logformatter)
-logger.addHandler(_ch)
+_mlog.addHandler(_ch)
 
 # filehandler
 try:
@@ -90,10 +92,10 @@ try:
     fh = RotatingFileHandler(logpath, maxBytes=maxsize*1e6, backupCount=0)
     fh.setFormatter(logformatter)
     fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
+    _mlog.addHandler(fh)
 except (PermissionError, OSError):
     # this is handled to the console stream
-    logger.warning('Permission to write log file denied')
+    _mlog.warning('Permission to write log file denied')
 
 
 # <editor-fold desc="AUX FUNCTIONS">
@@ -230,9 +232,9 @@ def _termrep(terminals):
 def _is_timestamp(item):
     try:
         dateparse(item)
-        return True
     except ValueError:
         return False
+    return True
 
 
 def _is_numeric_data(item):
@@ -511,6 +513,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         for parameter_raw, value_raw in unitsfirst(kwargs):
 
+            # check against direct setting of secured parameters
+            if parameter_raw.lower() in self._ignored_params:
+                raise ValueError('You cannot directly set property {0} for an object of type {1}. This property has'
+                                 'to be set by associating an entity of the correct type.'.format(parameter_raw, self.toe))
+
             # patch for the 'pct in keyword' problem
             if re.match('pct', parameter_raw.lower()):
                 parameter = parameter_raw.lower().replace('pct', '%')
@@ -565,13 +572,12 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                 test = value == default_comp['default_' + self.toe][default_dict][parameter.lower()]
 
             if test:
-                logger.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
+                _mlog.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
                 continue
 
             # finally setting the parameter
             target_list[parameter.lower()] = value
-            if parameter_raw.lower() not in self._ignored_params:
-                self.editedParams.append(parameter.lower())
+            self.editedParams.append(parameter.lower())
 
     def _getparameter(self, param):
 
@@ -1396,7 +1402,7 @@ class _CircuitElementNBus(_CircuitElement):
 
         for parameter in params_selected:
             if not (parameter in self._params):
-                logger.warning('Unknown parameter %s requested in edit string. Blatantly ignored.', parameter)
+                _mlog.warning('Unknown parameter %s requested in edit string. Blatantly ignored.', parameter)
             else:
                 s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s2
