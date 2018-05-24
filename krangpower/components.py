@@ -1,101 +1,32 @@
-import configparser as cfp
 import copy
 import csv
 import json
-import logging
 import os.path
-import platform
 import re
+import textwrap
 from abc import abstractmethod
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from functools import lru_cache
-from logging.handlers import RotatingFileHandler
-from sys import modules
 
 import numpy as np
-import pint
 import scipy.io as sio
 from dateutil.parser import parse as dateparse
 from pandas import read_csv
 
+from krangpower.aux_fcn import load_dictionary_json, _matrix_from_json, get_classmap
+from krangpower.config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
+    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP
+from krangpower.logging_init import _mlog
 from .nxtable import NxTable
 
 # COMPONENTS FOR KRANGSUIT - WRITTEN BY FEDERICO ROSATO
 # -------------------------------------------------------------
 
-
-__all__ = ['load_entities', 'load_dictionary_json', 'CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
-           'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve', 'Vsource',
+__all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
+           'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
+           'Vsource',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'default_comp', 'logpath',
-           'um', 'resolve_unit', 'default_settings', 'tmp_path']
-
-um = pint.UnitRegistry()
-um.define('percent = 0.01 * dimensionless = pct')
-um.define('none = [generic_length] = unitlength')  # when lengths are set as none, this creates a common basis
-um.define('mt = meter')
-
-_pint_qty_type = type(1 * um.m)
-
-
-# -------------------------------------------------------------
-# CONFIG LOAD
-# -------------------------------------------------------------
-thisdir = os.path.dirname(os.path.realpath(__file__))
-
-config = cfp.ConfigParser()
-config.read(os.path.join(thisdir, 'config/krang_config.cfg'))
-
-default_settings_path_config = os.path.join(thisdir,  config.get('data_files', 'default_settings'))
-default_entities_path = os.path.join(thisdir, config.get('data_files', 'default_entities'))
-association_types_path = os.path.join(thisdir, config.get('data_files', 'association_types'))
-
-# temporary files path
-if platform.system() == 'Windows':
-    tmp_path = os.path.join(os.getenv('TEMP'), config.get('temp_folder', 'temp_folder'))
-elif platform.system() == 'Linux':
-    tmp_path = os.path.join('/var/tmp', config.get('temp_folder', 'temp_folder'))
-else:
-    raise OSError('Could not find a valid temp path.')
-
-# log path
-if platform.system() == 'Windows':
-    logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'log_folder'), config.get('log_file', 'general_log_path'))
-elif platform.system() == 'Linux':
-    logpath = os.path.join('/var/log', config.get('log_file', 'log_folder'), config.get('log_file', 'general_log_path'))
-else:
-    raise OSError('Could not find a valid log path.')
-
-
-# -------------------------------------------------------------
-# MAIN LOGGER
-# -------------------------------------------------------------
-
-_global_log_level = logging.WARNING
-
-logformat = '%(asctime)s - %(levelname)s (%(funcName)s) -------------> %(message)s'
-_mlog = logging.getLogger('krangpower')
-_mlog.setLevel(_global_log_level)
-logformatter = logging.Formatter(logformat)
-
-# streamhandler
-_ch = logging.StreamHandler()
-_ch.setLevel(logging.WARN)
-_ch.setFormatter(logformatter)
-_mlog.addHandler(_ch)
-
-# filehandler
-try:
-    if not os.path.exists(os.path.dirname(logpath)):
-        os.makedirs(os.path.dirname(logpath))
-    maxsize = config.getfloat('log_settings', 'max_log_size_mb')
-    fh = RotatingFileHandler(logpath, maxBytes=maxsize*1e6, backupCount=0)
-    fh.setFormatter(logformatter)
-    fh.setLevel(logging.DEBUG)
-    _mlog.addHandler(fh)
-except (PermissionError, OSError):
-    # this is handled to the console stream
-    _mlog.warning('Permission to write log file denied')
+           'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
 
 
 # <editor-fold desc="AUX FUNCTIONS">
@@ -104,7 +35,8 @@ def _cpx(odss_tuple, nterm, ncond):
     """
     This function transforms the raw data for electric parameters (voltage, current...) in a suitable complex array
 
-    :param odss_tuple: tuple of nphases*2 floats (returned by odsswr as couples of real, imag components, for each phase of each terminal)
+    :param odss_tuple: tuple of nphases*2 floats (returned by odsswr as couples of real, imag components, for each phase
+        of each terminal)
     :type odss_tuple: tuple or list
     :param nterm: number of terminals of the underlying electric object
     :type nterm: int
@@ -139,7 +71,7 @@ def _odssrep(data_raw):
     :rtype: str
     """
 
-    if isinstance(data_raw, _pint_qty_type):
+    if isinstance(data_raw, _PINT_QTY_TYPE):
         data = data_raw.magnitude
     else:
         data = data_raw
@@ -241,27 +173,6 @@ def _is_numeric_data(item):
     return re.fullmatch('([0-9]|\,|\.| )*', item) is not None
 
 
-def _matrix_from_json(value):
-
-    def desym(lol):
-        size = len(lol)
-        dsm = np.matrix(np.zeros([size, size]))
-        for r in range(size):
-            for c in range(r+1):
-                dsm[r, c] = lol[r][c]
-                dsm[c, r] = lol[r][c]
-
-        return dsm
-
-    if isinstance(value[0], str):
-        return value
-    else:
-        try_mtx = np.matrix(value)
-        if try_mtx.dtype == 'object':
-            return desym(value)
-        else:
-            return try_mtx
-
 # </editor-fold>
 
 
@@ -297,65 +208,75 @@ class _SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a sym
 # </editor-fold>
 
 
-@lru_cache(8)
-def load_dictionary_json(path):
-    this_module = modules[__name__]
-    classmap = {}
-    for item in dir(this_module):
-        classmap[item.lower()] = getattr(this_module, item)
-
-    with open(path, 'r') as file:
-        dik = json.load(file)
-
-    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
-    # and we have to convert them back.
-    for entity in dik:
-        for prop, value in dik[entity]['properties'].items():
-            if isinstance(value, list):
-                dik[entity]['properties'][prop] = _matrix_from_json(value)
-
-            # todo give it a unit measure
-
-    return dik
-
-
-def get_classmap():
-
-    this_module = modules[__name__]
-    classmap = {}
-    for item in dir(this_module):
-        classmap[item.lower()] = getattr(this_module, item)
-
-    return classmap
-
-
-def load_entities(path):
+def dejsonize(obj_repr: dict):
 
     classmap = get_classmap()
 
-    with open(path, 'r') as file:
-        dik = json.load(file)
+    def propgetter(matchobj, indx=None):
 
-    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
-    # and we have to convert them back.
-    for entity in dik:
-        for property, value in dik[entity]['properties'].items():
-            if isinstance(value, list):
-                dik[entity]['properties'][property] = _matrix_from_json(value)
-
-    dicky = {}
-
-    for entity_name in dik:
-        elcls = classmap[dik[entity_name]['type']]
-        if elcls.isnamed():
-            dicky[entity_name] = elcls(entity_name, xml_rep=dik[entity_name]['properties'])
+        if indx is None:
+            try:
+                return obj_repr['properties'][matchobj.group(2)]
+            except KeyError:
+                return co.DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]
         else:
-            dicky[entity_name] = elcls(dik[entity_name]['properties'])
+            try:
+                return obj_repr['properties'][matchobj.group(2)][indx]
+            except KeyError:
+                return co.DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]['indx']
 
-    return dicky
+    # determines class
+    elcls = classmap[obj_repr['type']]
+
+    if 'path' in obj_repr.keys():
+        with open(obj_repr['path'], 'r') as file:
+            dik = json.load(file)
+            obj_repr['properties'] = dik[obj_repr['name']]['properties']
+
+    # restore matrices
+    for prop, value in obj_repr['properties'].items():
+        if isinstance(value, list):
+            obj_repr['properties'][prop] = _matrix_from_json(value)
+
+    # add unit measure
+    for prop, value in obj_repr['units'].items():
+
+        if isinstance(obj_repr['properties'][prop], np.matrix):
+            unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
+            obj_repr['properties'][prop] *= unit_matrix
+        else:
+            obj_repr['properties'][prop] *= _resolve_unit(value, propgetter)
+
+    # add in the adjointed parameters
+    obj_repr['properties'].update(obj_repr['depends'])
+
+    # returns object
+    if elcls.isnamed():
+        return elcls(obj_repr['name'], **obj_repr['properties'])
+    else:
+        return elcls(**obj_repr['properties'])
 
 
-def resolve_unit(ustring: str, match_unit_getter):
+def _type_recovery(value, target_type):
+    try:
+        if isinstance(value, int):
+            assert target_type == float
+            recovered_value = float(value)
+
+        elif isinstance(value, (list, np.ndarray)):
+            assert target_type == np.matrix
+            recovered_value = np.matrix(value)
+        else:
+            raise AssertionError
+    except AssertionError:
+        raise TypeError('Unrecoverable type {0}-->{1}'
+                        .format(
+                                type(value),
+                                target_type))
+    return recovered_value
+
+
+def _resolve_unit(ustring: str, match_unit_getter):
 
     # resolution of self-referencing units, of the type "ohm / this.units" where "units" is a string parameter
     # of the _DSSObj
@@ -381,37 +302,25 @@ def resolve_unit(ustring: str, match_unit_getter):
         units.append(string)
 
     if len(units) == 1:
-        return [um.parse_units(s) for s in units][0]
+        return [UM.parse_units(s) for s in units][0]
     else:
-        return [um.parse_units(s) for s in units]
+        return [UM.parse_units(s) for s in units]
 
 
-def _type_recovery(value, target_type):
-    try:
-        if isinstance(value, int):
-            assert target_type == float
-            recovered_value = float(value)
-
-        elif isinstance(value, (list, np.ndarray)):
-            assert target_type == np.matrix
-            recovered_value = np.matrix(value)
+def _get_help(config, section):
+    helpitems = config.items(section.upper().split('_')[0])
+    help_str = ''
+    basev = 90
+    for item in helpitems:
+        dname = item[0].split(') ')
+        pname = dname[-1].lower()
+        if pname in DEFAULT_COMP['default_' + section]['properties'].keys():
+            mod = ''
         else:
-            raise AssertionError
-    except AssertionError:
-        raise TypeError('Unrecoverable type {0}-->{1}'
-                        .format(
-                                type(value),
-                                target_type))
-    return recovered_value
-
-
-# -------------------------------------------------------------
-# GLOBAL DEFAULT ENTITIES DICT
-# -------------------------------------------------------------
-default_comp = load_dictionary_json(default_entities_path)
-
-with open(default_settings_path_config, 'r') as f:
-    default_settings = json.load(f)
+            mod = '\u0336'
+        hstr = mod.join(item[0].upper() + ':  ' + item[1])
+        help_str += '\n'+'\n\t '.join(textwrap.wrap(hstr, basev*(len(mod)+1)))
+    return help_str
 
 
 # -------------------------------------------------------------
@@ -420,7 +329,7 @@ with open(default_settings_path_config, 'r') as f:
 class _DSSentity:  # implements the dictionary param, the xmlc drive for load and the on-the-fly overwrite
 
     muldict = NxTable()
-    muldict.from_csv(association_types_path)
+    muldict.from_csv(_ASSOCIATION_TYPES_PATH)
 
     @property
     def _eltype(self):
@@ -441,6 +350,12 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     @property
     def fullname(self):
         return (self._eltype + '.' + self.name).lower()
+
+    @property
+    def help(self):
+        print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self._eltype))
+        print(_get_help(DSSHELP, self._eltype))
+        return None
 
     def __mul__(self, other):
 
@@ -538,9 +453,9 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                 # should this raise an exception instead?
 
             # pint quantity check and conversion
-            if isinstance(value_raw, _pint_qty_type):
-                unt = resolve_unit(self.default_units[parameter.lower()], self._get_prop_from_matchobj)
-                if unt == um.none:
+            if isinstance(value_raw, _PINT_QTY_TYPE):
+                unt = _resolve_unit(self.default_units[parameter.lower()], self._get_prop_from_matchobj)
+                if unt == UM.none:
                     pass
                     # assert parameter_raw == 'length'
                     # unt = value_raw.units
@@ -565,11 +480,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                                             target_type))
 
             if isinstance(value, np.matrix):
-                test = np.array_equal(value, default_comp['default_' + self.toe][default_dict][parameter])
+                test = np.array_equal(value, DEFAULT_COMP['default_' + self.toe][default_dict][parameter])
             elif isinstance(value, list):
-                test = value == default_comp['default_' + self.toe][default_dict][parameter.lower()]
+                test = value == DEFAULT_COMP['default_' + self.toe][default_dict][parameter.lower()]
             else:
-                test = value == default_comp['default_' + self.toe][default_dict][parameter.lower()]
+                test = value == DEFAULT_COMP['default_' + self.toe][default_dict][parameter.lower()]
 
             if test:
                 _mlog.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
@@ -593,10 +508,10 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         unt = self.default_units.get(param, None)
         if unt is not None:
             if isinstance(target_list[param], np.matrix):
-                unit_matrix = np.eye(len(target_list[param])) * resolve_unit(unt, self._get_prop_from_matchobj)
+                unit_matrix = np.eye(len(target_list[param])) * _resolve_unit(unt, self._get_prop_from_matchobj)
                 return target_list[param] * unit_matrix
             else:
-                return target_list[param] * resolve_unit(unt, self._get_prop_from_matchobj)
+                return target_list[param] * _resolve_unit(unt, self._get_prop_from_matchobj)
         else:
             return target_list[param]
 
@@ -613,7 +528,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         """
         self.editedParams = []  # reset
 
-        for elname, el in default_comp.items():
+        for elname, el in DEFAULT_COMP.items():
             if el['type'] == self.toe:
                 self._params = copy.deepcopy(el['properties'])
                 self.default_units = copy.deepcopy(el['units'])
@@ -635,11 +550,11 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
                 break
         else:
             raise TypeError('Could not  find a suitable reference object for {0} in the default file ("{1}")'
-                            .format(self.toe, default_entities_path))
+                            .format(self.toe, _DEFAULT_ENTITIES_PATH))
 
         self.params_types_raw = {k: type(v) for k, v in list(self._params.items()) + list(self._associated.items())}
 
-    def jsonize(self, all_params=False, flatten_mtx=True, using=default_entities_path):
+    def jsonize(self, all_params=False, flatten_mtx=True, using=_DEFAULT_ENTITIES_PATH):
         super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
         if not self.isnamed():
             super_dikt['term_perm'] = self.term_perm
@@ -658,7 +573,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             pls_mtx[parameter] = value
 
         # all units in _params are in standard units. Therefore, we pass standard units.
-        super_dikt['units'] = {k: v for k, v in default_comp['default_' + self.toe]['units'].items()
+        super_dikt['units'] = {k: v for k, v in DEFAULT_COMP['default_' + self.toe]['units'].items()
                                if k in self.editedParams}
 
         if using is not None:
@@ -743,7 +658,7 @@ class CsvLoadshape:
 
     """
 
-    def __init__(self, name, csv_path: str, column_scheme: dict, interval=_pint_qty_type, use_actual=True, npts=None):
+    def __init__(self, name, csv_path: str, column_scheme: dict, interval=_PINT_QTY_TYPE, use_actual=True, npts=None):
 
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
@@ -760,24 +675,24 @@ class CsvLoadshape:
         else:
             self.name = name
         self.use_actual = use_actual
-        if isinstance(interval, _pint_qty_type):
+        if isinstance(interval, _PINT_QTY_TYPE):
             self.true_interval = interval
         else:
-            self.true_interval = interval * um.min
+            self.true_interval = interval * UM.min
 
         if interval is None:
             self.intkey = 'interval'
             self.interval = 0.0
         else:  # using different properties just for cosmetic purposes
-            if self.true_interval < (300 * um.s):
+            if self.true_interval < (300 * UM.s):
                 self.intkey = 'sinterval'
-                self.interval = self.true_interval.to(um.s).magnitude
-            elif self.true_interval < (180 * um.min):
+                self.interval = self.true_interval.to(UM.s).magnitude
+            elif self.true_interval < (180 * UM.min):
                 self.intkey = 'minterval'
-                self.interval = self.true_interval.to(um.min).magnitude
+                self.interval = self.true_interval.to(UM.min).magnitude
             else:
                 self.intkey = 'interval'
-                self.interval = self.true_interval.to(um.h).magnitude
+                self.interval = self.true_interval.to(UM.h).magnitude
 
         # auto-header recognition
         head = next(csv.reader(open(csv_path)))
@@ -1109,7 +1024,7 @@ class _LineGeometry(_NamedDSSentity):
         for ind in range(0, self['nconds']):
             s2 += '\n~ cond={0} '.format(ind + 1)
             for parameter in self.specialparams:
-                if isinstance(self[parameter], _pint_qty_type):
+                if isinstance(self[parameter], _PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
                 else:
                     true_param = self[parameter]
@@ -1527,7 +1442,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
         for ind in range(0, self['windings']):
             s2 += '\n~ wdg={0} bus={1}'.format(ind + 1, buses[ind]) + ' '
             for parameter in self.specialparams:
-                if isinstance(self[parameter], _pint_qty_type):
+                if isinstance(self[parameter], _PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
                 else:
                     true_param = self[parameter]
@@ -2705,12 +2620,11 @@ class StorageController(_AboveCircuitElement):
         return s1 + s2
 
 
-
 # MAIN FUNCTION FOR DEMONSTRATION AND TESTING
 # -------------------------------------------------------------
-
 def main():
     pass
+
 
 if __name__ == "__main__":
     main()

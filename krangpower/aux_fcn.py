@@ -1,6 +1,29 @@
-from krangpower import components as co
 import json
+import textwrap
+from functools import lru_cache
+from sys import modules
+
 import numpy as np
+
+
+def get_help_out(config, section):
+    helpitems = config.items(section.upper().split('_')[0])
+    help_str = ''
+    basev = 90
+    for item in helpitems:
+        hstr = item[0].upper() + ':  ' + item[1]
+        help_str += '\n'+'\n\t '.join(textwrap.wrap(hstr, basev))
+    return help_str
+
+
+def get_classmap():
+
+    comp_module = modules['krangpower.components']
+    classmap = {}
+    for item in dir(comp_module):
+        classmap[item.lower()] = getattr(comp_module, item)
+
+    return classmap
 
 
 def ebus(bus: str, nt: int):
@@ -35,50 +58,73 @@ def pairwise(iterable):
     return zip(a, a)
 
 
-def dejsonize(obj_repr: dict):
+@lru_cache(8)
+def load_dictionary_json(path):
+    this_module = modules[__name__]
+    classmap = {}
+    for item in dir(this_module):
+        classmap[item.lower()] = getattr(this_module, item)
 
-    classmap = co.get_classmap()
+    with open(path, 'r') as file:
+        dik = json.load(file)
 
-    def propgetter(matchobj, indx=None):
+    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
+    # and we have to convert them back.
+    for entity in dik:
+        for prop, value in dik[entity]['properties'].items():
+            if isinstance(value, list):
+                dik[entity]['properties'][prop] = _matrix_from_json(value)
 
-        if indx is None:
-            try:
-                return obj_repr['properties'][matchobj.group(2)]
-            except KeyError:
-                return co.default_comp['default_' + obj_repr['type']]['properties'][matchobj.group(2)]
-        else:
-            try:
-                return obj_repr['properties'][matchobj.group(2)][indx]
-            except KeyError:
-                return co.default_comp['default_' + obj_repr['type']]['properties'][matchobj.group(2)]['indx']
+            # todo give it a unit measure
 
-    # determines class
-    elcls = classmap[obj_repr['type']]
+    return dik
 
-    if 'path' in obj_repr.keys():
-        with open(obj_repr['path'], 'r') as file:
-            dik = json.load(file)
-            obj_repr['properties'] = dik[obj_repr['name']]['properties']
 
-    # restore matrices
-    for prop, value in obj_repr['properties'].items():
-        if isinstance(value, list):
-            obj_repr['properties'][prop] = co._matrix_from_json(value)
+def _matrix_from_json(value):
 
-    # add unit measure
-    for prop, value in obj_repr['units'].items():
+    def desym(lol):
+        size = len(lol)
+        dsm = np.matrix(np.zeros([size, size]))
+        for r in range(size):
+            for c in range(r+1):
+                dsm[r, c] = lol[r][c]
+                dsm[c, r] = lol[r][c]
 
-        if isinstance(obj_repr['properties'][prop], np.matrix):
-            unit_matrix = np.eye(len(obj_repr['properties'][prop])) * co.resolve_unit(value, propgetter)
-            obj_repr['properties'][prop] *= unit_matrix
-        else:
-            obj_repr['properties'][prop] *= co.resolve_unit(value, propgetter)
+        return dsm
 
-    # add in the adjointed parameters
-    obj_repr['properties'].update(obj_repr['depends'])
-
-    # returns object
-    if elcls.isnamed():
-        return elcls(obj_repr['name'], **obj_repr['properties'])
+    if isinstance(value[0], str):
+        return value
     else:
-        return elcls(**obj_repr['properties'])
+        try_mtx = np.matrix(value)
+        if try_mtx.dtype == 'object':
+            return desym(value)
+        else:
+            return try_mtx
+
+
+def load_entities(path):
+
+    classmap = get_classmap()
+
+    with open(path, 'r') as file:
+        dik = json.load(file)
+
+    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
+    # and we have to convert them back.
+    for entity in dik:
+        for property, value in dik[entity]['properties'].items():
+            if isinstance(value, list):
+                dik[entity]['properties'][property] = _matrix_from_json(value)
+
+    dicky = {}
+
+    for entity_name in dik:
+        elcls = classmap[dik[entity_name]['type']]
+        if elcls.isnamed():
+            dicky[entity_name] = elcls(entity_name, xml_rep=dik[entity_name]['properties'])
+        else:
+            dicky[entity_name] = elcls(dik[entity_name]['properties'])
+
+    return dicky
+
+

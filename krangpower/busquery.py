@@ -1,5 +1,5 @@
 import numpy as np
-from krangpower.components import um
+from krangpower.config_loader import UM
 
 
 def get_fun(fun_name):
@@ -25,8 +25,8 @@ def absvoltage(oek, busview, busname):
 
 def totload(oek, busview, busname):
     els = [element for element in busview.content if element.type == 'load']
-    tkw = 0.0 * um.kW
-    tkvar = 0.0 * um.kVA
+    tkw = 0.0 * UM.kW
+    tkvar = 0.0 * UM.kVA
     for e in els:
         tkw += e['kw']
         tkvar += e['kvar']

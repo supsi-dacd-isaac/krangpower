@@ -4,26 +4,37 @@ import re
 from functools import singledispatch as _singledispatch
 
 import networkx as nx
+import xml.etree.ElementTree as ET
 import numpy as np
 import pandas
 from tqdm import tqdm as _tqdm
 
-from krangpower import aux_fcn as au
+import krangpower.components
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.components import um, _pint_qty_type, _mlog
-from krangpower.enhancer import OpendssdirectEnhancer, OpenDSSTextError
-from krangpower.enhancer import _clog  # used only to write a newline
+from krangpower.aux_fcn import get_help_out
+from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, _TMP_PATH
+from krangpower.enhancer import OpendssdirectEnhancer
+from krangpower.logging_init import _clog
 
-__all__ = ['Krang', 'from_json', 'set_log_level']
-_elk = 'el'
-_default_krang_name = 'Unnamed_Krang'
-_cmd_log_newline_len = 60
+__all__ = ['Krang', 'from_json']
 
 
-def set_log_level(lvl):
-    _clog.setLevel(lvl)
-    _mlog.setLevel(lvl)
+def _helpfun(config, section):
+    """This decorator adds a 'help' submethod to a function or method, and is meant to read a series of help (
+    property, desc) pairs from a config file. The help method is invoked by function.help(), just prints stuff to the
+    console and returns nothing. """
+
+    def _real_helpfun(f):
+
+        def ghelp():
+            print('\nPARAMETERS HELP FOR FUNCTION {0} ({1})\n'.format(f.__name__, section))
+            print(get_help_out(config, section))
+
+        f.help = ghelp
+        return f
+
+    return _real_helpfun
 
 
 class Krang:
@@ -31,22 +42,22 @@ class Krang:
     elements and options, saving and loading circuit data as json, representing the circuit as graph, perform repeated
     solutions and reporting the results as DataFrames.
 
-        >>> myKrang = Krang('myckt', co.Vsource(basekv=15.0 * um.kV).aka('source'))
-        >>> um = myKrang.get_unit_register()
-        >>> myKrang.set(number=20, stepsize=15 * um.min)
-        >>> myKrang['sourcebus', 'a'] << co.Line(length=120 * um.unitlength).aka('line_1')
+        >>> myKrang = Krang('myckt', co.Vsource(basekv=15.0 * UM.kV).aka('source'))
+        >>> UM = myKrang.get_unit_register()
+        >>> myKrang.set(number=20, stepsize=15 * UM.min)
+        >>> myKrang['sourcebus', 'a'] << co.Line(length=120 * UM.unitlength).aka('line_1')
         <BusView('sourcebus', 'a')>
-        >>> l2 = co.Line(units='m', length=0.72 * um.m).aka('line_2')
+        >>> l2 = co.Line(units='m', length=0.72 * UM.m).aka('line_2')
         >>> myKrang[('a.1.3.2', 'b.3.2.1')] << l2
         <BusView('a', 'b')>
-        >>> myKrang['line.line_2']['length'] = 200 * um.yard
-        >>> vls = np.matrix([15.0, 7.0]) * um.kV
+        >>> myKrang['line.line_2']['length'] = 200 * UM.yard
+        >>> vls = np.matrix([15.0, 7.0]) * UM.kV
         >>> trf = co.Transformer(windings=2, kvs=vls).aka('trans')
         >>> myKrang[('b', 'c')] << trf
         <BusView('b', 'c')>
         >>> print(myKrang['line.line_2']['rmatrix'])
         [[ 0.09813333  0.04013333  0.04013333] [ 0.04013333  0.09813333  0.04013333] [ 0.04013333  0.04013333  0.09813333]] ohm / meter
-        >>> bp_load = co.Load(kw=18.2345 * um.kW, kv=15 * um.kV)  # * lish
+        >>> bp_load = co.Load(kw=18.2345 * UM.kW, kv=15 * UM.kV)  # * lish
         >>> myKrang[('a',)] << bp_load.aka('load_a')
         <BusView('a',)>
         >>> myKrang[('b',)] << bp_load.aka('load_b')
@@ -67,7 +78,7 @@ class Krang:
     """
 
     def __init__(self, *args):
-        self.id = _default_krang_name
+        self.id = _DEFAULT_KRANG_NAME
         self._up_to_date = False
         self._last_gr = None
         self._named_entities = []
@@ -75,21 +86,21 @@ class Krang:
         self.com = ''
         self.brain = None
         self._initialize(*args)
-        self._tmp_count = 0
 
-    def _initialize(self, name=_default_krang_name, vsource=co.Vsource()):
+    def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource()):
         self.brain = OpendssdirectEnhancer(oe_id=name)
-        _clog.debug('\n' + '$%&' * _cmd_log_newline_len)
+        _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
         self.id = name
         self.command('clear')
         master_string = self._form_newcircuit_string(name, vsource)
         self.command(master_string)
         self.set(mode='duty')
         self.command('makebuslist')  # in order to make sourcebus recognizable
+        self.brain.Basic.DataPath(_TMP_PATH)  # redirects all file output to the temp folder
 
     @staticmethod
-    def get_unit_register():
-        return um
+    def get_unit_registry():
+        return UM
 
     @staticmethod
     def _form_newcircuit_string(name, vsource):
@@ -148,6 +159,7 @@ class Krang:
     def __bool__(self):
         return self._up_to_date
 
+    @_helpfun(DSSHELP, 'EXECUTIVE')
     def command(self, cmd_str: str, echo=True):
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
 
@@ -157,41 +169,62 @@ class Krang:
             self.com += cmd_str + '\n'
         return rslt
 
+    @_helpfun(DSSHELP, 'OPTIONS')
     def set(self, **opts_vals):
         """Sets circuit options according to a dict. Option that have a physical dimensionality (such as stepsize) can
         be specified as pint quantities; otherwise, the default opendss units will be used."""
         for option, value in opts_vals.items():
-            if isinstance(value, _pint_qty_type):
-                vl = value.to(um.parse_units(co.default_settings['units'][option])).magnitude
+            if isinstance(value, _PINT_QTY_TYPE):
+                vl = value.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][option])).magnitude
             else:
                 vl = value
             self.command('set {0}={1}'.format(option, vl))
         self._up_to_date = False
 
+    @_helpfun(DSSHELP, 'OPTIONS')
     def get(self, *opts):
         """Takes a list of circuit options and returns them as dict of name, value."""
-        assert all([x in list(co.default_settings['values'].keys()) for x in opts])
+        assert all([x in list(co.DEFAULT_SETTINGS['values'].keys()) for x in opts])
         r_opts = {opt: self.command('get {0}'.format(opt), echo=False).split('!')[0] for opt in opts}
 
         for op in r_opts.keys():
-            tt = type(co.default_settings['values'][op])
+            tt = type(co.DEFAULT_SETTINGS['values'][op])
             if tt is list:
                 r_opts[op] = eval(r_opts[op])  # lists are literals like [13]
             else:
                 r_opts[op] = tt(r_opts[op])
-            if op in co.default_settings['units'].keys():
-                r_opts[op] *= um.parse_units(co.default_settings['units'][op])
+            if op in co.DEFAULT_SETTINGS['units'].keys():
+                r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
 
         return r_opts
 
     def snap(self):
         """Solves a circuit snapshot."""
-        self.command('set mode=snap\nsolve\nset mode=duty')
+        self.set(mode='snap')
+        self.solve()
+        self.set(mode='duty')
 
+    @_helpfun(DSSHELP, 'EXPORT')
     def export(self, object_descriptor):
         tmp_filename = self.command('export ' + object_descriptor)
-        self._tmp_count += 1
-        return pandas.read_csv(tmp_filename)
+        if tmp_filename.lower().endswith('csv'):
+            return pandas.read_csv(tmp_filename)
+        elif tmp_filename.lower().endswith('xml'):
+            return ET.parse(tmp_filename)
+        else:
+            raise ValueError('Unknown export file {0}, contact the developer'.format(tmp_filename))
+
+    @_helpfun(DSSHELP, 'SHOW')
+    def show(self, object_descriptor):
+        self.command('show ' + object_descriptor)
+        # tmp_filename = self.command('show ' + object_descriptor)
+        # with open(tmp_filename) as show_file:
+        #     content = show_file.read()
+        #
+        # if rtrn:
+        #     return content
+        # else:
+        #     print(content)
 
     def drag_solve(self):
         nmbr = self.brain.Solution.Number()
@@ -235,15 +268,15 @@ class Krang:
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # options
-        opts = self.get(*list(co.default_settings['values'].keys()))
+        opts = self.get(*list(co.DEFAULT_SETTINGS['values'].keys()))
         for on, ov in _tqdm(opts.items()):
-            if isinstance(ov, _pint_qty_type):
-                opts[on] = ov.to(um.parse_units(co.default_settings['units'][on])).magnitude
+            if isinstance(ov, _PINT_QTY_TYPE):
+                opts[on] = ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
                     opts[on] = opts[on].tolist()
 
         master_dict['settings']['values'] = opts
-        master_dict['settings']['units'] = co.default_settings['units']
+        master_dict['settings']['units'] = co.DEFAULT_SETTINGS['units']
 
         return master_dict
 
@@ -265,22 +298,22 @@ class Krang:
     @property
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
-        _PackedOpendssElement's in the edge/node property '{0}'""".format(_elk)
+        _PackedOpendssElement's in the edge/node property '{0}'""".format(_ELK)
 
         def _update_node(self, gr, bs, name):
             try:
-                exel = gr.nodes[bs][_elk]
+                exel = gr.nodes[bs][_ELK]
             except KeyError:
-                gr.add_node(bs, **{_elk: [self.brain[name]]})
+                gr.add_node(bs, **{_ELK: [self.brain[name]]})
                 return
             exel.append(self.brain[name])
             return
 
         def _update_edge(self, gr, ed, name):
             try:
-                exel = gr.edges[ed][_elk]
+                exel = gr.edges[ed][_ELK]
             except KeyError:
-                gr.add_edge(*ed, **{_elk: [self.brain[name]]})
+                gr.add_edge(*ed, **{_ELK: [self.brain[name]]})
                 return
             exel.append(self.brain[name])
             return
@@ -434,17 +467,15 @@ class _BusView:
     @property
     def content(self):
         if self._content is None:
-        # content is lazily evaluated in order to avoid recalculating oek.graph a million times when just making
-        # a million assignments
         # CONTENT IS NOT UPDATED AFTER FIRST EVAL
             if len(self.buses) == 1:
                 try:
-                    self._content = self.oek.graph.nodes[self.buses[0]][_elk]
+                    self._content = self.oek.graph.nodes[self.buses[0]][_ELK]
                     # it's ok that a KeyError by both indexes is caught in the same way
                 except KeyError:
                     self._content = []
             elif len(self.buses) == 2:
-                self._content = list(nx.get_edge_attributes(self.oek.graph.subgraph(self.buses), _elk).values())
+                self._content = list(nx.get_edge_attributes(self.oek.graph.subgraph(self.buses), _ELK).values())
             else:
                 raise ValueError
         return self._content
@@ -479,7 +510,7 @@ def from_json(path):
         master_dict = json.load(ofile)
 
     # init the krang with the source, then remove it
-    l_ckt = Krang(master_dict['cktname'], au.dejsonize(master_dict['elements']['vsource.source']))
+    l_ckt = Krang(master_dict['cktname'], krangpower.components.dejsonize(master_dict['elements']['vsource.source']))
     del master_dict['elements']['vsource.source']
 
     # load and declare options
@@ -487,14 +518,14 @@ def from_json(path):
     for on, ov in opt_dict['values'].items():
         # we try in any way to see if the value is the same as the default and, if so, we continue
         # todo there is an edge case where the value of a measured quantity is the same, but the unit is different
-        if ov == co.default_settings['values'][on]:
+        if ov == co.DEFAULT_SETTINGS['values'][on]:
             continue
         try:
-            if np.isclose(ov, co.default_settings['values'][on]):
+            if np.isclose(ov, co.DEFAULT_SETTINGS['values'][on]):
                 continue
         except ValueError:
             try:
-                if np.isclose(ov, co.default_settings['values'][on]).all():
+                if np.isclose(ov, co.DEFAULT_SETTINGS['values'][on]).all():
                     continue
             except ValueError:
                 pass
@@ -502,13 +533,13 @@ def from_json(path):
             pass
 
         try:
-            if ov.lower() == co.default_settings['values'][on].lower():
+            if ov.lower() == co.DEFAULT_SETTINGS['values'][on].lower():
                 continue
         except AttributeError:
             pass
 
         if on in opt_dict['units'].keys():
-            d_ov = ov * um.parse_units(opt_dict['units'][on])
+            d_ov = ov * UM.parse_units(opt_dict['units'][on])
         else:
             d_ov = ov
 
@@ -543,7 +574,7 @@ def from_json(path):
             except KeyError:
                 mdmod = {k.split('.')[1]: v for k, v in master_dict['elements'].items()}
                 jobj = copy.deepcopy(mdmod[nm.lower()])
-            dssobj = au.dejsonize(jobj)
+            dssobj = krangpower.components.dejsonize(jobj)
             if dssobj.isnamed():
                 l_ckt << dssobj
             elif dssobj.isabove():

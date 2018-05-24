@@ -4,11 +4,8 @@
 import copy
 import json
 import logging
-import os
-import platform
 import re
 from functools import reduce
-from logging.handlers import RotatingFileHandler as _RotatingFileHandler
 from math import sqrt
 from operator import getitem, attrgetter
 from typing import Callable
@@ -16,74 +13,36 @@ from typing import Callable
 import numpy as np
 import opendssdirect as odr
 from pandas import DataFrame
-# from profilehooks import profile
 
-from krangpower import components as co
 from krangpower.aux_fcn import lower as _lower
 from krangpower.aux_fcn import pairwise as _pairwise
-from krangpower.components import resolve_unit, _SnpMatrix, _pint_qty_type, _odssrep, _type_recovery, _global_log_level
-from krangpower.components import um, _mlog, config, thisdir
+from krangpower.components import _SnpMatrix, _odssrep, _type_recovery, get_classmap, _resolve_unit, _get_help
+from krangpower.config_loader import _DEFAULT_NAME, _INTERFACE_METHODS_PATH, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
+    _INTERF_SELECTORS_PATH, _PINT_QTY_TYPE, UM, DEFAULT_COMP
+from krangpower.logging_init import _mlog, _clog
+
+# from profilehooks import profile
 
 __all__ = ['OpendssdirectEnhancer']
 
-# the default entity parameter values are loaded in order to allow correct type casting and comparison with the default
-# when calling _Packed's __getitem__ method
-_default_entities = co.default_comp
-
-_classmap = co.get_classmap()
-
 # information about the opendssdirect interface is loaded in order to feed the _PackedOpendssObject metaclass
-_interface_methods_path = os.path.join(thisdir, config.get('data_files', 'interfaces'))
-with open(_interface_methods_path, 'r') as ifile:
+with open(_INTERFACE_METHODS_PATH, 'r') as ifile:
     itf = json.load(ifile)
 _interface_methods = {(k,): v for k, v in itf.items()}
-_unit_measurement_path = os.path.join(thisdir,  config.get('data_files', 'measurement_units'))
-_treatments_path = os.path.join(thisdir, config.get('data_files', 'treatments'))
-_interf_selectors_path = os.path.join(thisdir, config.get('data_files', 'interface_selectors'))
-with open(_interf_selectors_path, 'r') as ifile:
+with open(_INTERF_SELECTORS_PATH, 'r') as ifile:
     itf_sel_names = json.load(ifile)
 
-
-# instantiating the module command logger
-def _create_command_logger(name):
-    logformat = '%(asctime)s - %(message)s'
-    cmd_logger = logging.getLogger(name)
-    cmd_logger.setLevel(_global_log_level)
-    logformatter = logging.Formatter(logformat)
-
-    # filehandler
-    try:
-        if platform.system() == 'Windows':
-            logpath = os.path.join(os.getenv('APPDATA'), config.get('log_file', 'log_folder'), config.get('log_file', 'commands_log_path'))
-        elif platform.system() == 'Linux':
-            logpath = os.path.join('/var/log', config.get('log_file', 'log_folder'), config.get('log_file', 'commands_log_path'))
-        else:
-            raise OSError('Could not find a valid log path.')
-        if not os.path.exists(os.path.dirname(logpath)):
-            os.makedirs(os.path.dirname(logpath))
-        maxsize = config.getfloat('log_settings', 'max_log_size_mb')
-        fh = _RotatingFileHandler(logpath, maxBytes=maxsize*1e6, backupCount=0)
-        fh.setFormatter(logformatter)
-        fh.setLevel(logging.DEBUG)
-        cmd_logger.addHandler(fh)
-    except PermissionError:
-        # this is handled to the console stream
-        cmd_logger.warning('Permission to write log file denied')
-
-    return cmd_logger
-
+_classmap = get_classmap()
 
 # The choice of a module-wide command logger is due to the fact that opendssdirect remains unique even when several
 # Enhancers are instantiated. So they better refer to a unique command logger. The distinction between instances is
 # possible through Enhancer.id, settable as kwarg oe_id when instantiating it.
-_default_name = 'OpenDSSEnhancer'
-_clog = _create_command_logger(_default_name)
 
 
 # <editor-fold desc="Auxiliary functions">
 
 
-def _assign_unit(item, unit: type(um.m) or None):
+def _assign_unit(item, unit: type(UM.m) or None):
     if unit is None:
         return item
     elif isinstance(item, dict):
@@ -251,18 +210,18 @@ class OpendssdirectEnhancer:
     """
 
     line_um = {
-        0: um.unitlength,
-        1: um.mile,
-        2: um.kft,
-        3: um.km,
-        4: um.m,
-        5: um.ft,
-        6: um.inch,
-        7: um.cm
+        0: UM.unitlength,
+        1: UM.mile,
+        2: UM.kft,
+        3: UM.km,
+        4: UM.m,
+        5: UM.ft,
+        6: UM.inch,
+        7: UM.cm
     }
 
     # loads chains of functions through which to pass the rough outputs of opendss.
-    with open(_treatments_path, 'r') as tfile:
+    with open(_TREATMENTS_PATH, 'r') as tfile:
         rtrt = json.load(tfile)
     trt = dict()
     for subdic_name, subdic in rtrt.items():
@@ -271,17 +230,17 @@ class OpendssdirectEnhancer:
 
     # loads measurement units for the interface of components without self-referencing.
     # the components with self referencing, like lines and loadshapes, are taken care of at runtime.
-    with open(_unit_measurement_path, 'r') as ufile:
+    with open(_UNIT_MEASUREMENT_PATH, 'r') as ufile:
         rumr = json.load(ufile)
     umr = dict()
     for subdic_name, subdic in rumr.items():
-        nsd = {k: um.parse_units(v) for k, v in subdic.items()}
+        nsd = {k: UM.parse_units(v) for k, v in subdic.items()}
         umr[subdic_name] = nsd
 
     _names_up2date = False
     _cached_allnames = []
 
-    def __init__(self, stack=None, oe_id=_default_name):
+    def __init__(self, stack=None, oe_id=_DEFAULT_NAME):
         if stack is None:
             self.stack = []
         else:
@@ -387,47 +346,47 @@ class OpendssdirectEnhancer:
 
         if use_actual:
             return {'Loadshapes':
-                        {'HrInterval': um.hr,
-                         'MinInterval': um.min,
-                         'PBase': um.kW,
-                         'PMult': um.kW,
-                         'QBase': um.kVA,
-                         'QMult': um.kVA,
-                         'SInterval': um.s,
-                         'TimeArray': um.hr}}
+                        {'HrInterval': UM.hr,
+                         'MinInterval': UM.min,
+                         'PBase': UM.kW,
+                         'PMult': UM.kW,
+                         'QBase': UM.kVA,
+                         'QMult': UM.kVA,
+                         'SInterval': UM.s,
+                         'TimeArray': UM.hr}}
 
         else:
             return {'Loadshapes':
-                        {'HrInterval': um.hr,
-                         'MinInterval': um.min,
-                         'PBase': um.kW,
-                         'PMult': um.dimensionless,
-                         'QBase': um.kW,
-                         'QMult': um.dimensionless,
-                         'SInterval': um.s,
-                         'TimeArray': um.hr}}
+                        {'HrInterval': UM.hr,
+                         'MinInterval': UM.min,
+                         'PBase': UM.kW,
+                         'PMult': UM.dimensionless,
+                         'QBase': UM.kW,
+                         'QMult': UM.dimensionless,
+                         'SInterval': UM.s,
+                         'TimeArray': UM.hr}}
 
     @staticmethod
     def line_umd(unit_length):
         """Special case of call if the object is a line; needed because it's a type of object for which a "units"
         properties exists that influences the other quantities dimensions."""
 
-        line_qties = {'Lines': {'C0': um.nF/unit_length,
-                                'C1': um.nF/unit_length,
-                                'CMatrix': um.nF/unit_length,
-                                'EmergAmps': um.A,
+        line_qties = {'Lines': {'C0': UM.nF / unit_length,
+                                'C1': UM.nF / unit_length,
+                                'CMatrix': UM.nF / unit_length,
+                                'EmergAmps': UM.A,
                                 'Length': unit_length,
-                                'NormAmps': um.A,
-                                'R0': um.ohm/unit_length,
-                                'R1': um.ohm/unit_length,
-                                'RMatrix': um.ohm/unit_length,
-                                'Rg': um.ohm/unit_length,
-                                'Rho': um.ohm/unit_length,
-                                'X0': um.ohm/unit_length,
-                                'X1': um.ohm/unit_length,
-                                'XMatrix': um.ohm/unit_length,
-                                'Xg': um.ohm/unit_length,
-                                'Yprim': um.siemens/unit_length}}
+                                'NormAmps': UM.A,
+                                'R0': UM.ohm / unit_length,
+                                'R1': UM.ohm / unit_length,
+                                'RMatrix': UM.ohm / unit_length,
+                                'Rg': UM.ohm / unit_length,
+                                'Rho': UM.ohm / unit_length,
+                                'X0': UM.ohm / unit_length,
+                                'X1': UM.ohm / unit_length,
+                                'XMatrix': UM.ohm / unit_length,
+                                'Xg': UM.ohm / unit_length,
+                                'Yprim': UM.siemens / unit_length}}
 
         return line_qties
 
@@ -436,7 +395,7 @@ class OpendssdirectEnhancer:
         suppressed by setting the keyword argument echo=False."""
         rslt = self.utils.run_command(cmd_str)  # rslt could be an error string too
         if echo:
-            self.log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_default_name)))
+            self.log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_DEFAULT_NAME)))
                           + ']-->[' + rslt.replace('\n', '') + ']')
 
         if self._influences_names(cmd_str):
@@ -528,7 +487,7 @@ class _PackedOpendssElement:
     def topological(self):
         """Returns those properties that are marked as 'topological' in the configuration files and identify the wiring
         location of the element. (Typically, bus1 and, if it exists, bus2.)"""
-        top_par_names = _default_entities['default_' + self._eltype]['topological']
+        top_par_names = DEFAULT_COMP['default_' + self._eltype]['topological']
 
         rt = [self[t] for t in top_par_names.keys()]
         if len(rt) == 1 and isinstance(rt[0], list):
@@ -547,6 +506,10 @@ class _PackedOpendssElement:
     @property
     def name(self):
         return self._name
+
+    @property
+    def help(self):
+        return self.unpack().help
 
     def _craft_member(self, item: str):
         """This second order function returns a function that invokes self._side_getattr on item. Such returned
@@ -597,8 +560,8 @@ class _PackedOpendssElement:
 
         # the names of those properties that are ok to pass to the _DssEntity are taken from the components'
         # configuration file
-        valid_props = copy.deepcopy(_default_entities['default_' + self._eltype]['properties'])
-        valid_props.update(_default_entities['default_' + self._eltype].get('associated', {}))
+        valid_props = copy.deepcopy(DEFAULT_COMP['default_' + self._eltype]['properties'])
+        valid_props.update(DEFAULT_COMP['default_' + self._eltype].get('associated', {}))
 
         # either those properties dumped that are valid, or those that are valid AND different from the default values,
         # are stored in dep_prop
@@ -663,18 +626,18 @@ class _PackedOpendssElement:
         """Gets what type of data corresponds to the property name passed as argument. The information is retrieved from
         the configuration files."""
         try:
-            return type(_default_entities['default_' + self._eltype]['properties'][item.lower()])
+            return type(DEFAULT_COMP['default_' + self._eltype]['properties'][item.lower()])
         except KeyError:
-            return type(_default_entities['default_' + self._eltype]['topological'][item.lower()])
+            return type(DEFAULT_COMP['default_' + self._eltype]['topological'][item.lower()])
 
     def _get_builtin_units(self, item):
         """Gets what measurement unit corresponds to the property name passed as argument. The information is retrieved
         from the configuration files."""
-        raw_unit = _default_entities['default_' + self._eltype]['units'].get(item.lower(), None)
+        raw_unit = DEFAULT_COMP['default_' + self._eltype]['units'].get(item.lower(), None)
         if raw_unit is None:
             return None
         else:
-            return resolve_unit(raw_unit, self._get_matching_unit)
+            return _resolve_unit(raw_unit, self._get_matching_unit)
 
     def _get_matching_unit(self, matchobj):
         """Gets the property stored in the argument, a matchobj, group(2). It is a supporting function to
@@ -690,7 +653,7 @@ class _PackedOpendssElement:
         # it is checked whether you passed a _pint_qty_type as value or not. Throughout the function, errors will be
         # trhown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
         # the content of the _pint_qty_type is not the right data type (such as a matrix instead of an int).
-        if isinstance(value, _pint_qty_type):
+        if isinstance(value, _PINT_QTY_TYPE):
             unt = self._get_builtin_units(key)
             ref_value = value.to(unt).magnitude
         else:

@@ -1,7 +1,8 @@
 import csv
 import os
 import krangpower as kp
-um = kp.um
+
+um = kp.UM
 
 test_dir = os.path.join(os.getenv("AppData"), 'krangpower\\test')
 
@@ -138,9 +139,6 @@ with open(os.path.join(eulv_root, 'Loads.csv'), 'r') as ldf:
 
 # the data is contained in:
 # skw, loads_dict, lines_dict, lc_dict, lp_dict, transformer
-
-import krangpower as kp
-
 print('Creating circuit...')
 SRC = kp.Vsource(**skw)
 eulv = kp.Krang('eu_lv_test', SRC)

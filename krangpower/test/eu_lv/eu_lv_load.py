@@ -1,5 +1,7 @@
 import krangpower as kp
-um = kp.um
+import krangpower.config_loader
+
+um = krangpower.config_loader.UM
 
 eulv = kp.from_json('./eu_lv.json')
 
