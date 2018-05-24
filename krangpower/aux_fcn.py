@@ -4,6 +4,21 @@ from functools import lru_cache
 from sys import modules
 
 import numpy as np
+from pykml import parser as kmlparser
+
+
+def kml2buscoords(kml_path):
+    with open(kml_path) as f:
+        pkm = kmlparser.parse(f).getroot()
+
+        rows = []
+        for pck in pkm.findall('.//{http://www.opengis.net/kml/2.2}Placemark'):
+            name = str(pck.name).split()[-1].lower()
+            lg = float(pck.LookAt.longitude)
+            lt = float(pck.LookAt.latitude)
+            rows.append('{0},{1},{2}'.format(name, lg, lt))
+
+    return rows
 
 
 def get_help_out(config, section):

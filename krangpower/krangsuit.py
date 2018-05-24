@@ -1,19 +1,24 @@
+import code
 import copy
 import json
 import re
+import xml.etree.ElementTree as ET
+from csv import writer as csvwriter
+from csv import reader as csvreader
 from functools import singledispatch as _singledispatch
 
 import networkx as nx
-import xml.etree.ElementTree as ET
 import numpy as np
 import pandas
 from tqdm import tqdm as _tqdm
 
 import krangpower.components
+from krangpower.components import _is_numeric_data
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.aux_fcn import get_help_out
-from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, _TMP_PATH
+from krangpower.aux_fcn import get_help_out, kml2buscoords
+from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
+    _TMP_PATH, _COORDS_FILE_PATH
 from krangpower.enhancer import OpendssdirectEnhancer
 from krangpower.logging_init import _clog
 
@@ -85,6 +90,7 @@ class Krang:
         self._ai_list = []
         self.com = ''
         self.brain = None
+        self._coords_linked = dict()
         self._initialize(*args)
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource()):
@@ -159,6 +165,69 @@ class Krang:
     def __bool__(self):
         return self._up_to_date
 
+    # def start_console(self):
+    #
+    #     import sys
+    #     sys.ps1 = '<<>'
+    #     name = self.name
+    #
+    #     class KrangSole(code.InteractiveConsole):
+    #
+    #         def __init__(self, locals=None, filename="<console>"):
+    #             super().__init__(locals, filename)
+    #
+    #         def interact(self, banner=None, exitmsg=None):
+    #             """Closely emulate the interactive Python console.
+    #
+    #             The optional banner argument specifies the banner to print
+    #             before the first interaction; by default it prints a banner
+    #             similar to the one printed by the real Python interpreter,
+    #             followed by the current class name in parentheses (so as not
+    #             to confuse this with the real interpreter -- since it's so
+    #             close!).
+    #
+    #             The optional exitmsg argument specifies the exit message
+    #             printed when exiting. Pass the empty string to suppress
+    #             printing an exit message. If exitmsg is not given or None,
+    #             a default message is printed.
+    #
+    #             """
+    #             banner = 'aye aye!'
+    #             prompt1 = '[krang]>'
+    #             prompt2 = '[krang]...'
+    #             self.write("%s\n" % str(banner))
+    #             more = 0
+    #             while 1:
+    #                 try:
+    #                     if more:
+    #                         prompt = prompt1
+    #                     else:
+    #                         prompt = prompt2
+    #                     try:
+    #                         line = self.raw_input(prompt)
+    #                     except EOFError:
+    #                         self.write("\n")
+    #                         break
+    #                 except KeyboardInterrupt:
+    #                     self.write("\nKeyboardInterrupt\n")
+    #                     self.resetbuffer()
+    #                     more = 0
+    #                 else:
+    #                     more = self.push(line)
+    #             if exitmsg is None:
+    #                 self.write('now exiting %s...\n' % self.__class__.__name__)
+    #             elif exitmsg != '':
+    #                 self.write('%s\n' % exitmsg)
+    #
+    #         def push(self, line):
+    #             if line.startswith('['):
+    #                 super().push(name + line)
+    #             else:
+    #                 super().push(name + '.' + line)
+    #
+    #     conzol = KrangSole(locals={self.name: self, 'load': co.Load})
+    #     conzol.interact()
+
     @_helpfun(DSSHELP, 'EXECUTIVE')
     def command(self, cmd_str: str, echo=True):
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
@@ -214,6 +283,10 @@ class Krang:
         else:
             raise ValueError('Unknown export file {0}, contact the developer'.format(tmp_filename))
 
+    @_helpfun(DSSHELP, 'PLOT')
+    def plot(self, object_descriptor):
+        self.command('plot ' + object_descriptor)
+
     @_helpfun(DSSHELP, 'SHOW')
     def show(self, object_descriptor):
         self.command('show ' + object_descriptor)
@@ -240,7 +313,7 @@ class Krang:
             for ai_el in self._ai_list:
                 self.command(ai_el.element.fus(self, ai_el.name))
 
-            self.command('solve', echo=False)
+            self.solve(echo=False)
             v = v.append(self.brain.Circuit.YNodeVArray(), ignore_index=True)
             i = i.append(self.brain.Circuit.YCurrents(), ignore_index=True)
 
@@ -250,15 +323,60 @@ class Krang:
 
         return v, i
 
-    def solve(self):
+    def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
-        self.command('solve')
+        self._declare_buscoords()
+        self.command('solve', echo)
         self._up_to_date = True
+
+    def _declare_buscoords(self):
+        """Meant to be called just before solve, so that all buses are already mentioned"""
+        self.command('makebuslist')
+        for busname, coords in self._coords_linked.items():
+            if coords is not None:
+                try:
+                    self[busname].X(coords[0])
+                    self[busname].Y(coords[1])
+                except KeyError:
+                    continue  # we ignore buses present in coords linked, but not generated
+            else:
+                continue
+
+    def _preload_buscoords(self, path):
+        with open(path, 'r') as bc_file:
+            bcr = csvreader(bc_file)
+            try:
+                while True:
+                    try:
+                        row = next(bcr)
+                        float(row[1])
+                        break
+                    except ValueError:
+                        continue
+            except StopIteration:
+                return
+            while row:
+                self._coords_linked[str(row[0])] = [float(row[1]), float(row[2])]
+                try:
+                    row = next(bcr)
+                except StopIteration:
+                    return
+
+    def link_kml(self, file_path):
+        rows = kml2buscoords(file_path)
+        bcw = csvwriter(_COORDS_FILE_PATH)
+        bcw.writerows(rows)
+        self._preload_buscoords(_COORDS_FILE_PATH)
+
+    def link_coords(self, csv_path):
+        # todo sanity check
+        self._preload_buscoords(csv_path)
 
     def make_json_dict(self):
         """Returns a complete description of the circuit and its objects as a json.dumpable-dict."""
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
+        # elements
         for Nm in _tqdm(self.brain.Circuit.AllElementNames()):
             nm = Nm.lower()
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
@@ -277,6 +395,9 @@ class Krang:
 
         master_dict['settings']['values'] = opts
         master_dict['settings']['units'] = co.DEFAULT_SETTINGS['units']
+
+        # coordinates
+        master_dict['buscoords'] = self.bus_coords
 
         return master_dict
 
@@ -411,7 +532,8 @@ class _DepGraph(nx.DiGraph):
         try:
             assert nx.is_branching(self)
         except AssertionError:
-            raise ValueError('Cannot recursively prune cyclic graph')
+            pass
+            # raise ValueError('Cannot recursively prune cyclic graph')
 
         while self.leaves:
             yield self.leaves
@@ -467,7 +589,7 @@ class _BusView:
     @property
     def content(self):
         if self._content is None:
-        # CONTENT IS NOT UPDATED AFTER FIRST EVAL
+            # CONTENT IS NOT UPDATED AFTER FIRST EVAL
             if len(self.buses) == 1:
                 try:
                     self._content = self.oek.graph.nodes[self.buses[0]][_ELK]
@@ -582,6 +704,8 @@ def from_json(path):
             else:
                 l_ckt[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
                 # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
+
+    l_ckt._coords_linked = master_dict['buscoords']
 
     return l_ckt
 

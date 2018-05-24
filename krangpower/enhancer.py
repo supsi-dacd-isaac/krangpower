@@ -563,6 +563,12 @@ class _PackedOpendssElement:
         valid_props = copy.deepcopy(DEFAULT_COMP['default_' + self._eltype]['properties'])
         valid_props.update(DEFAULT_COMP['default_' + self._eltype].get('associated', {}))
 
+        ignored_props = DEFAULT_COMP['default_' + self._eltype].get('ignored', [])
+
+        valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props}
+
+        # todo ignored
+
         # either those properties dumped that are valid, or those that are valid AND different from the default values,
         # are stored in dep_prop
         if verbose:

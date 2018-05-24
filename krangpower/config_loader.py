@@ -41,7 +41,6 @@ _DEFAULT_KRANG_NAME = CONFIG.get('misc_settings', 'default_krang_name')
 _CMD_LOG_NEWLINE_LEN = CONFIG.getint('misc_settings', 'newline_cmdlog_length')
 _DEFAULT_NAME = CONFIG.get('misc_settings', 'default_enhancer_name')
 
-
 # -------------------------------------------------------------
 #  LOG PATH
 # -------------------------------------------------------------
@@ -76,6 +75,7 @@ elif platform.system() == 'Linux':
 else:
     raise OSError('Could not find a valid temp path.')
 
+_COORDS_FILE_PATH = os.path.join(_TMP_PATH, 'bus_coords_fromkml.csv')
 
 # -------------------------------------------------------------
 #  UNIT MEASURE REGISTRY

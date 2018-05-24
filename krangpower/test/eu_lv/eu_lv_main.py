@@ -167,6 +167,8 @@ print('Adding loads...')
 for ldname, lddata in loads_dict.items():
     eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs']).aka(ldname) * lp_dict[int(lddata['duty_name'])]
 
+eulv.link_coords(os.path.join(eulv_root, 'Buscoords.csv'))
+
 eulv.set(basefrequency=50.0 * um.Hz)
 
 eulv.set(time=[0, 0], number=1, stepsize=1.0 * um.min)
@@ -202,4 +204,4 @@ print(m53_out)
 print(mtr_out)
 
 
-# eulv.save_json('./eu_lv.json')
+eulv.save_json(r'.\eu.json')
