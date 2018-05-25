@@ -8,7 +8,6 @@ import re
 from functools import reduce
 from math import sqrt
 from operator import getitem, attrgetter
-from typing import Callable
 
 import numpy as np
 import opendssdirect as odr
@@ -682,7 +681,7 @@ class _PackedOpendssElement:
         return self.__str__()
 
 
-class _CallFinalizer(Callable):
+class _CallFinalizer:
     def __init__(self, interface, selector_fns: list, name: str, s_interface_name: str):
         self._super_interface_name = s_interface_name
         self._interface = interface
