@@ -368,13 +368,6 @@ class Krang:
                 except StopIteration:
                     return
 
-    def link_kml(self, file_path):
-        """Notifies Krang of a kml file with bus coordinates to use."""
-        rows = kml2buscoords(file_path)
-        bcw = csvwriter(_COORDS_FILE_PATH)
-        bcw.writerows(rows)
-        self._preload_buscoords(_COORDS_FILE_PATH)
-
     def link_coords(self, csv_path):
         """Notifies Krang of a csv file with bus coordinates to use."""
         # todo sanity check
