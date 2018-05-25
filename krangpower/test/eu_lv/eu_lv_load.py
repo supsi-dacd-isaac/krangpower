@@ -1,4 +1,6 @@
-from krangpower import UM, from_json
+from krangpower import Krang, from_json
+
+UM = Krang.get_unit_registry()
 
 eulv = from_json("./eu_lv.json")
 

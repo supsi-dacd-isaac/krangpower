@@ -1,0 +1,1537 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Electrical elements (bus-based) &#8212; krangpower 0.1.5.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Above-graph components (element-based)" href="above.html" />
+    <link rel="prev" title="Reference for Components" href="reference_components.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="electrical-elements-bus-based">
+<h1>Electrical elements (bus-based)<a class="headerlink" href="#electrical-elements-bus-based" title="Permalink to this headline">¶</a></h1>
+<p>These are electrical components that can be added to compose the grid topology.</p>
+<div class="section" id="transformer">
+<h2>Transformer<a class="headerlink" href="#transformer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Transformer">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Transformer</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transformer object</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>windings</td>
+<td>int</td>
+<td>2</td>
+</tr>
+<tr class="row-odd"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-even"><td>conns</td>
+<td>stringarray</td>
+<td>wye,wye</td>
+</tr>
+<tr class="row-odd"><td>kvs</td>
+<td>floatarray</td>
+<td>12.47,12.47</td>
+</tr>
+<tr class="row-even"><td>kvas</td>
+<td>floatarray</td>
+<td>1000.0,1000.0</td>
+</tr>
+<tr class="row-odd"><td>taps</td>
+<td>floatarray</td>
+<td>1.000,1.000</td>
+</tr>
+<tr class="row-even"><td>%rs</td>
+<td>floatarray</td>
+<td>0.20,0.20</td>
+</tr>
+<tr class="row-odd"><td>xhl</td>
+<td>float</td>
+<td>7.000</td>
+</tr>
+<tr class="row-even"><td>xht</td>
+<td>float</td>
+<td>35.000</td>
+</tr>
+<tr class="row-odd"><td>xlt</td>
+<td>float</td>
+<td>30.000</td>
+</tr>
+<tr class="row-even"><td>x12</td>
+<td>float</td>
+<td>7.000</td>
+</tr>
+<tr class="row-odd"><td>x13</td>
+<td>float</td>
+<td>35.000</td>
+</tr>
+<tr class="row-even"><td>x23</td>
+<td>float</td>
+<td>30.000</td>
+</tr>
+<tr class="row-odd"><td>xscmatrix</td>
+<td>floatmatrix</td>
+<td>7.00</td>
+</tr>
+<tr class="row-even"><td>normmaxhkva</td>
+<td>float</td>
+<td>1100.0</td>
+</tr>
+<tr class="row-odd"><td>emergmaxhkva</td>
+<td>float</td>
+<td>1500.0</td>
+</tr>
+<tr class="row-even"><td>thermal</td>
+<td>float</td>
+<td>2.0</td>
+</tr>
+<tr class="row-odd"><td>n</td>
+<td>float</td>
+<td>0.8</td>
+</tr>
+<tr class="row-even"><td>m</td>
+<td>float</td>
+<td>0.8</td>
+</tr>
+<tr class="row-odd"><td>flrise</td>
+<td>float</td>
+<td>65.0</td>
+</tr>
+<tr class="row-even"><td>hsrise</td>
+<td>float</td>
+<td>15.0</td>
+</tr>
+<tr class="row-odd"><td>%loadloss</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>%noloadloss</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>normhkva</td>
+<td>float</td>
+<td>1100.0</td>
+</tr>
+<tr class="row-even"><td>emerghkva</td>
+<td>float</td>
+<td>1500.0</td>
+</tr>
+<tr class="row-odd"><td>sub</td>
+<td>string</td>
+<td>n</td>
+</tr>
+<tr class="row-even"><td>maxtap</td>
+<td>float</td>
+<td>1.1</td>
+</tr>
+<tr class="row-odd"><td>mintap</td>
+<td>float</td>
+<td>0.9</td>
+</tr>
+<tr class="row-even"><td>numtaps</td>
+<td>int</td>
+<td>32</td>
+</tr>
+<tr class="row-odd"><td>subname</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>%imag</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>ppm_antifloat</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>bank</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>xfmrcode</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>xrconst</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>x12</td>
+<td>float</td>
+<td>7.0</td>
+</tr>
+<tr class="row-even"><td>x13</td>
+<td>float</td>
+<td>35.0</td>
+</tr>
+<tr class="row-odd"><td>x23</td>
+<td>float</td>
+<td>30.0</td>
+</tr>
+<tr class="row-even"><td>leadlag</td>
+<td>string</td>
+<td>lag</td>
+</tr>
+<tr class="row-odd"><td>normamps</td>
+<td>float</td>
+<td>50.929</td>
+</tr>
+<tr class="row-even"><td>emergamps</td>
+<td>float</td>
+<td>69.449</td>
+</tr>
+<tr class="row-odd"><td>faultrate</td>
+<td>float</td>
+<td>0.007</td>
+</tr>
+<tr class="row-even"><td>%perm</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>repair</td>
+<td>float</td>
+<td>36.0</td>
+</tr>
+<tr class="row-even"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Transformer.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a parameter for the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.aka" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Transformer.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Transformer.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Transformer.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Transformer.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Transformer.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="line">
+<h2>Line<a class="headerlink" href="#line" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Line">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Line</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Line object. Data for the conductors must specified by a LineCode or a LineGeometry.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>length</td>
+<td>float</td>
+<td>1.000</td>
+</tr>
+<tr class="row-odd"><td>switch</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr class="row-even"><td>rg</td>
+<td>float</td>
+<td>0.01805</td>
+</tr>
+<tr class="row-odd"><td>xg</td>
+<td>float</td>
+<td>0.155081</td>
+</tr>
+<tr class="row-even"><td>rho</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>units</td>
+<td>string</td>
+<td>none</td>
+</tr>
+<tr class="row-even"><td>earthmodel</td>
+<td>string</td>
+<td>deri</td>
+</tr>
+<tr class="row-odd"><td>normamps</td>
+<td>float</td>
+<td>400.0</td>
+</tr>
+<tr class="row-even"><td>emergamps</td>
+<td>float</td>
+<td>600.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Line.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Line.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Line.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Line.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Line.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Line.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Line.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Line.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Line.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Line.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="vsource">
+<h2>Vsource<a class="headerlink" href="#vsource" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Vsource">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Vsource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Voltage source</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>basekv</td>
+<td>float</td>
+<td>115.0</td>
+</tr>
+<tr class="row-odd"><td>pu</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>angle</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>frequency</td>
+<td>float</td>
+<td>60.0</td>
+</tr>
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>mvasc3</td>
+<td>float</td>
+<td>2000.0</td>
+</tr>
+<tr class="row-even"><td>mvasc1</td>
+<td>float</td>
+<td>2100.0</td>
+</tr>
+<tr class="row-odd"><td>x1r1</td>
+<td>float</td>
+<td>4.0</td>
+</tr>
+<tr class="row-even"><td>x0r0</td>
+<td>float</td>
+<td>3.0</td>
+</tr>
+<tr class="row-odd"><td>isc3</td>
+<td>float</td>
+<td>10000.0</td>
+</tr>
+<tr class="row-even"><td>isc1</td>
+<td>float</td>
+<td>10500.0</td>
+</tr>
+<tr class="row-odd"><td>r1</td>
+<td>float</td>
+<td>1.6038</td>
+</tr>
+<tr class="row-even"><td>x1</td>
+<td>float</td>
+<td>6.4151</td>
+</tr>
+<tr class="row-odd"><td>r0</td>
+<td>float</td>
+<td>1.796</td>
+</tr>
+<tr class="row-even"><td>x0</td>
+<td>float</td>
+<td>5.3881</td>
+</tr>
+<tr class="row-odd"><td>scantype</td>
+<td>string</td>
+<td>pos</td>
+</tr>
+<tr class="row-even"><td>sequence</td>
+<td>string</td>
+<td>pos</td>
+</tr>
+<tr class="row-odd"><td>z1</td>
+<td>floatarray</td>
+<td>1.6037668,6.4150673</td>
+</tr>
+<tr class="row-even"><td>z0</td>
+<td>floatarray</td>
+<td>1.7960358,5.3881075</td>
+</tr>
+<tr class="row-odd"><td>z2</td>
+<td>floatarray</td>
+<td>1.6037668,6.4150673</td>
+</tr>
+<tr class="row-even"><td>puz1</td>
+<td>floatarray</td>
+<td>0.012126781,0.048507125</td>
+</tr>
+<tr class="row-odd"><td>puz0</td>
+<td>floatarray</td>
+<td>0.013580611,0.040741834</td>
+</tr>
+<tr class="row-even"><td>puz2</td>
+<td>floatarray</td>
+<td>0.012126781,0.048507125</td>
+</tr>
+<tr class="row-odd"><td>basemva</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-even"><td>yearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>daily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>duty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>spectrum</td>
+<td>string</td>
+<td>defaultvsource</td>
+</tr>
+<tr class="row-even"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Vsource.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Vsource.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Vsource.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Vsource.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Vsource.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Vsource.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Vsource.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Vsource.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Vsource.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Vsource.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="isource">
+<h2>Isource<a class="headerlink" href="#isource" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Isource">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Isource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current source</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>amps</td>
+<td>floatarray</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>angle</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>frequency</td>
+<td>float</td>
+<td>60.0</td>
+</tr>
+<tr class="row-odd"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-even"><td>scantype</td>
+<td>string</td>
+<td>pos</td>
+</tr>
+<tr class="row-odd"><td>sequence</td>
+<td>string</td>
+<td>pos</td>
+</tr>
+<tr class="row-even"><td>yearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>daily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>duty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>spectrum</td>
+<td>string</td>
+<td>default</td>
+</tr>
+<tr class="row-even"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+<tr class="row-odd"><td>enabled</td>
+<td>string</td>
+<td>true</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Isource.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Isource.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Isource.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Isource.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Isource.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Isource.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Isource.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Isource.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Isource.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Isource.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="capacitor">
+<h2>Capacitor<a class="headerlink" href="#capacitor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Capacitor">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Capacitor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capacitance</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>kvar</td>
+<td>float</td>
+<td>1200.0</td>
+</tr>
+<tr class="row-even"><td>kv</td>
+<td>float</td>
+<td>12.470</td>
+</tr>
+<tr class="row-odd"><td>conn</td>
+<td>string</td>
+<td>wye</td>
+</tr>
+<tr class="row-even"><td>cuf</td>
+<td>float</td>
+<td>20.47</td>
+</tr>
+<tr class="row-odd"><td>r</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>xl</td>
+<td>floatarray</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>harm</td>
+<td>intarray</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>numsteps</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>states</td>
+<td>intarray</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>normamps</td>
+<td>float</td>
+<td>75.0046059412345</td>
+</tr>
+<tr class="row-odd"><td>emergamps</td>
+<td>float</td>
+<td>100.006141254979</td>
+</tr>
+<tr class="row-even"><td>faultrate</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>%perm</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-even"><td>repair</td>
+<td>float</td>
+<td>3.0</td>
+</tr>
+<tr class="row-odd"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Capacitor.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Capacitor.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Capacitor.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Capacitor.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Capacitor.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Capacitor.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Capacitor.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Capacitor.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Capacitor.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Capacitor.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="reactor">
+<h2>Reactor<a class="headerlink" href="#reactor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Reactor">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Reactor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reactor object</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>kvar</td>
+<td>float</td>
+<td>1200.0</td>
+</tr>
+<tr class="row-even"><td>kv</td>
+<td>float</td>
+<td>12.47</td>
+</tr>
+<tr class="row-odd"><td>conn</td>
+<td>string</td>
+<td>wye</td>
+</tr>
+<tr class="row-even"><td>parallel</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>r</td>
+<td>float</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>x</td>
+<td>float</td>
+<td>1555.009</td>
+</tr>
+<tr class="row-odd"><td>rp</td>
+<td>float</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>z1</td>
+<td>floatarray</td>
+<td>0,0</td>
+</tr>
+<tr class="row-odd"><td>z2</td>
+<td>floatarray</td>
+<td>0,0</td>
+</tr>
+<tr class="row-even"><td>z0</td>
+<td>floatarray</td>
+<td>0,0</td>
+</tr>
+<tr class="row-odd"><td>z</td>
+<td>floatarray</td>
+<td>0.0,1555.009</td>
+</tr>
+<tr class="row-even"><td>rcurve</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>lcurve</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>lmh</td>
+<td>float</td>
+<td>4124.7895</td>
+</tr>
+<tr class="row-odd"><td>normamps</td>
+<td>float</td>
+<td>5.0</td>
+</tr>
+<tr class="row-even"><td>emergamps</td>
+<td>float</td>
+<td>6.0</td>
+</tr>
+<tr class="row-odd"><td>faultrate</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>%perm</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>repair</td>
+<td>float</td>
+<td>3.0</td>
+</tr>
+<tr class="row-even"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Reactor.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Reactor.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Reactor.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Reactor.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Reactor.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Reactor.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Reactor.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Reactor.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Reactor.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Reactor.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="generator">
+<h2>Generator<a class="headerlink" href="#generator" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="storage">
+<h2>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.Storage">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Storage</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Storage object</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>kv</td>
+<td>float</td>
+<td>12.47</td>
+</tr>
+<tr class="row-even"><td>kw</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>pf</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>conn</td>
+<td>string</td>
+<td>wye</td>
+</tr>
+<tr class="row-odd"><td>kvar</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>kva</td>
+<td>float</td>
+<td>25.0</td>
+</tr>
+<tr class="row-odd"><td>kwrated</td>
+<td>float</td>
+<td>25.0</td>
+</tr>
+<tr class="row-even"><td>kwhrated</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+<tr class="row-odd"><td>kwhstored</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+<tr class="row-even"><td>%stored</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>%reserve</td>
+<td>float</td>
+<td>20.0</td>
+</tr>
+<tr class="row-even"><td>state</td>
+<td>string</td>
+<td>idling</td>
+</tr>
+<tr class="row-odd"><td>%discharge</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-even"><td>%charge</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>%effcharge</td>
+<td>float</td>
+<td>90.0</td>
+</tr>
+<tr class="row-even"><td>%effdischarge</td>
+<td>float</td>
+<td>90.0</td>
+</tr>
+<tr class="row-odd"><td>%idlingkw</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>%idlingkvar</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>%r</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>%x</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+<tr class="row-odd"><td>model</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>vminpu</td>
+<td>float</td>
+<td>0.9</td>
+</tr>
+<tr class="row-odd"><td>vmaxpu</td>
+<td>float</td>
+<td>1.1</td>
+</tr>
+<tr class="row-even"><td>balanced</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>limitcurrent</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>yearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>daily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>duty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>dispmode</td>
+<td>string</td>
+<td>default</td>
+</tr>
+<tr class="row-even"><td>dischargetrigger</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>chargetrigger</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>timechargetrig</td>
+<td>float</td>
+<td>2.0</td>
+</tr>
+<tr class="row-odd"><td>class</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>dynadll</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>dynadata</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>usermodel</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>userdata</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>debugtrace</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>spectrum</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.Storage.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Storage.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Storage.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Storage.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Storage.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Storage.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Storage.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Storage.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.Storage.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Storage.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pvsystem">
+<h2>PvSystem<a class="headerlink" href="#pvsystem" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.PvSystem">
+<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">PvSystem</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>PvSystem object.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>kv</td>
+<td>float</td>
+<td>12.47</td>
+</tr>
+<tr class="row-even"><td>irradiance</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-odd"><td>Pmpp</td>
+<td>float</td>
+<td>500.0</td>
+</tr>
+<tr class="row-even"><td>pctPmpp</td>
+<td>float</td>
+<td>100.0</td>
+</tr>
+<tr class="row-odd"><td>Temperature</td>
+<td>float</td>
+<td>25.0</td>
+</tr>
+<tr class="row-even"><td>pf</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-odd"><td>conn</td>
+<td>string</td>
+<td>wye</td>
+</tr>
+<tr class="row-even"><td>kvar</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>kVA</td>
+<td>float</td>
+<td>500.0</td>
+</tr>
+<tr class="row-even"><td>%Cutin</td>
+<td>float</td>
+<td>20.0</td>
+</tr>
+<tr class="row-odd"><td>%Cutout</td>
+<td>float</td>
+<td>20.0</td>
+</tr>
+<tr class="row-even"><td>EffCurve</td>
+<td>float</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>P-TCurve</td>
+<td>float</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>%R</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+<tr class="row-odd"><td>%X</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>model</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>Vminpu</td>
+<td>float</td>
+<td>0.9</td>
+</tr>
+<tr class="row-even"><td>Vmaxpu</td>
+<td>float</td>
+<td>1.1</td>
+</tr>
+<tr class="row-odd"><td>Balanced</td>
+<td>string</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td>LimitCurrent</td>
+<td>string</td>
+<td>No</td>
+</tr>
+<tr class="row-odd"><td>yearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>daily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>duty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Tyearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Tdaily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>Tduty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>class</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>UserModel</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>UserData</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>debugtrace</td>
+<td>string</td>
+<td>NO</td>
+</tr>
+<tr class="row-odd"><td>VarFollowInverter</td>
+<td>string</td>
+<td>No</td>
+</tr>
+<tr class="row-even"><td>kvarLimit</td>
+<td>float</td>
+<td>500.0</td>
+</tr>
+<tr class="row-odd"><td>DutyStart</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>spectrum</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.PvSystem.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.PvSystem.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.PvSystem.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.PvSystem.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.PvSystem.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.PvSystem.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.PvSystem.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.PvSystem.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.PvSystem.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.PvSystem.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><hr />
+<p>
+<h2 class='logo'>
+<a href="krangpower_docs.html">Home</a>
+</h2>
+</p><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="reference_components.html">Reference for Components</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Electrical elements (bus-based)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#transformer">Transformer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#line">Line</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vsource">Vsource</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#isource">Isource</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#capacitor">Capacitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reactor">Reactor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generator">Generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#storage">Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pvsystem">PvSystem</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="above.html">Above-graph components (element-based)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linedef.html">Transmission line definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="condef.html">Conductor definition (for LineGeometry)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="curves.html">Curves and dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_components.html#paramhelp">paramhelp</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="krangpower_docs.html">Documentation overview</a><ul>
+  <li><a href="reference_components.html">Reference for Components</a><ul>
+      <li>Previous: <a href="reference_components.html" title="previous chapter">Reference for Components</a></li>
+      <li>Next: <a href="above.html" title="next chapter">Above-graph components (element-based)</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Federico Rosato.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/electrical.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,211 @@
+
+Electrical elements (bus-based)
+---------------------------------
+These are electrical components that can be added to compose the grid topology
+
+
+Transformer
+'''''''''''
+.. autoclass:: krangpower.Transformer
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Line
+''''
+.. autoclass:: krangpower.Line
+   :members:
+   :undoc-members:
+   :inherited-members:   
+   
+Vsource
+'''''''   
+.. autoclass:: krangpower.Vsource
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Isource
+'''''''
+.. autoclass:: krangpower.Isource
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Fault
+'''''
+.. autoclass:: krangpower.Fault
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Capacitor
+'''''''''
+.. autoclass:: krangpower.Capacitor
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Reactor
+'''''''
+.. autoclass:: krangpower.Reactor
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Generator
+'''''''''
+.. autoclass:: krangpower.Generator
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+Storage
+'''''''
+.. autoclass:: krangpower.Storage
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+PvSystem
+''''''''
+.. autoclass:: krangpower.PvSystem
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Dload
+'''''
+.. autoclass:: krangpower.Dload
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Switch
+''''''
+.. autoclass:: krangpower.Switch
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+   
+Auxiliary components (element-based)
+------------------------------------
+These components provide control and monitoring function. They are not directly part of the grid topology. Their collocation in the system is determined by element, transformer winding, etc.
+Regcontrol
+''''''''''
+.. autoclass:: krangpower.Regcontrol
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Monitor
+'''''''
+.. autoclass:: krangpower.Monitor
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+BusVoltageMonitor
+'''''''''''''''''
+.. autoclass:: krangpower.BusVoltageMonitor
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+StorageController
+'''''''''''''''''
+.. autoclass:: krangpower.StorageController
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+
+Transmission line definition
+----------------------------
+These entities define transmission line parameters, directly via impedance matrix specification (LineCode) or via an arrangement of conductors defined in the Circuit (see section "Conductor definition")
+
+LineCode_S
+''''''''''''   
+.. autoclass:: krangpower.LineCode_S
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+LineCode_A
+''''''''''''   
+.. autoclass:: krangpower.LineCode_A
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+LineGeometry_O
+''''''''''''''
+.. autoclass:: krangpower.LineGeometry_O
+   :members:
+   :undoc-members:
+   :inherited-members:   
+
+LineGeometry_T
+''''''''''''''
+.. autoclass:: krangpower.LineGeometry_T
+   :members:
+   :undoc-members:
+   :inherited-members:   
+
+LineGeometry_C
+''''''''''''''
+.. autoclass:: krangpower.LineGeometry_C
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Conductor definition (for LineGeometry)
+---------------------------------------
+These entities are capable of memorizing the physical and geometrical data of conductors intended to be arranged in a LineGeometry. The backend then derives the impedance matrix of the line for the simulation.
+
+WireData
+''''''''''''   
+.. autoclass:: krangpower.WireData
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+TSData
+''''''''''''   
+.. autoclass:: krangpower.TSData
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+CNData
+''''''''''''   
+.. autoclass:: krangpower.CNData
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Curves and dependencies
+-----------------------
+These are auxiliary object that are used to manage data-points, mainly electrical characteristics and time-dependent quantities, for sequential simulations (duty-cycle, etc.) of a Circuit. Typical examples are inverter efficiencies, memorized in Curve (with 'xycurve' parameter), temperature profiles (Curve with 'thsape' parameter) and Load histories, memorized in loadshapes.
+
+Loadshape
+'''''''''
+.. autoclass:: krangpower.Loadshape
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+CsvLoadshape
+''''''''''''
+.. autoclass:: krangpower.CsvLoadshape
+   :members:
+   :undoc-members:
+   :inherited-members:
+   
+Curve
+''''''''''''
+.. autoclass:: krangpower.CsvLoadshape
+   :members:
+   :undoc-members:
+   :inherited-members:  

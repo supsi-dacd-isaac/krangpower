@@ -1,10 +1,9 @@
-import code
 import copy
 import json
 import re
 import xml.etree.ElementTree as ET
-from csv import writer as csvwriter
 from csv import reader as csvreader
+from csv import writer as csvwriter
 from functools import singledispatch as _singledispatch
 
 import networkx as nx
@@ -13,7 +12,6 @@ import pandas
 from tqdm import tqdm as _tqdm
 
 import krangpower.components
-from krangpower.components import _is_numeric_data
 from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out, kml2buscoords
@@ -93,12 +91,12 @@ class Krang:
         self._coords_linked = dict()
         self._initialize(*args)
 
-    def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource()):
+    def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = OpendssdirectEnhancer(oe_id=name)
         _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
         self.id = name
         self.command('clear')
-        master_string = self._form_newcircuit_string(name, vsource)
+        master_string = self._form_newcircuit_string(name, vsource, source_bus_name)
         self.command(master_string)
         self.set(mode='duty')
         self.command('makebuslist')  # in order to make sourcebus recognizable
@@ -106,13 +104,14 @@ class Krang:
 
     @staticmethod
     def get_unit_registry():
+        """Retrieves krangpower's UnitRegistry."""
         return UM
 
     @staticmethod
-    def _form_newcircuit_string(name, vsource):
+    def _form_newcircuit_string(name, vsource, source_bus_name):
         master_string = 'new object = circuit.' + name + ' '
         vsource.name = 'source'  # we force the name, so an already named vsource can be used as source.
-        main_source_dec = vsource.fcs(buses=('sourcebus', 'sourcebus.0.0.0'))
+        main_source_dec = vsource.fcs(buses=(source_bus_name, source_bus_name + '.0.0.0'))
         main_dec = re.sub('New vsource\.source ', '', main_source_dec)
         main_dec = re.sub('bus2=[^ ]+ ', '', main_dec)
         master_string += ' ' + main_dec + '\n'
@@ -275,20 +274,24 @@ class Krang:
 
     @_helpfun(DSSHELP, 'EXPORT')
     def export(self, object_descriptor):
+        """Wraps the OpenDSS export command. Returns a DataFrame for csv exports, an ElementTree for xml exports.
+        Has a help attribute."""
         tmp_filename = self.command('export ' + object_descriptor)
         if tmp_filename.lower().endswith('csv'):
             return pandas.read_csv(tmp_filename)
         elif tmp_filename.lower().endswith('xml'):
             return ET.parse(tmp_filename)
         else:
-            raise ValueError('Unknown export file {0}, contact the developer'.format(tmp_filename))
+            raise ValueError('Unknown format for export file {0}, contact the developer'.format(tmp_filename))
 
     @_helpfun(DSSHELP, 'PLOT')
     def plot(self, object_descriptor):
+        """Wraps the OpenDSS export command. Has a help attribute."""
         self.command('plot ' + object_descriptor)
 
     @_helpfun(DSSHELP, 'SHOW')
     def show(self, object_descriptor):
+        """Wraps the OpenDSS show command. Has a help attribute."""
         self.command('show ' + object_descriptor)
         # tmp_filename = self.command('show ' + object_descriptor)
         # with open(tmp_filename) as show_file:
@@ -300,6 +303,8 @@ class Krang:
         #     print(content)
 
     def drag_solve(self):
+        """Instead of launching a monolithic duty solve, This command solves one step at a time and saves node currents
+        and voltages in the two DataFrames returned."""
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(1)
         v = pandas.DataFrame(
@@ -343,6 +348,7 @@ class Krang:
                 continue
 
     def _preload_buscoords(self, path):
+        """Loads in a local dict the buscoords from path."""
         with open(path, 'r') as bc_file:
             bcr = csvreader(bc_file)
             try:
@@ -363,12 +369,14 @@ class Krang:
                     return
 
     def link_kml(self, file_path):
+        """Notifies Krang of a kml file with bus coordinates to use."""
         rows = kml2buscoords(file_path)
         bcw = csvwriter(_COORDS_FILE_PATH)
         bcw.writerows(rows)
         self._preload_buscoords(_COORDS_FILE_PATH)
 
     def link_coords(self, csv_path):
+        """Notifies Krang of a csv file with bus coordinates to use."""
         # todo sanity check
         self._preload_buscoords(csv_path)
 
@@ -414,6 +422,7 @@ class Krang:
 
     @property
     def name(self):
+        """The name of the circuit.."""
         return self.brain.Circuit.Name()
 
     @property
@@ -472,6 +481,9 @@ class Krang:
 
     @property
     def bus_coords(self):
+        """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
+        a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
+        launched. """
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
             if self.brain['bus.' + bn].Coorddefined():
@@ -529,12 +541,18 @@ class _DepGraph(nx.DiGraph):
         self.remove_nodes_from(self.leaves)
 
     def recursive_prune(self):
-        try:
-            assert nx.is_branching(self)
-        except AssertionError:
-            pass
-            # raise ValueError('Cannot recursively prune cyclic graph')
 
+        # dependency non-circularity check
+        cy = list(nx.simple_cycles(self))
+        try:
+            assert len(cy) == 0
+        except AssertionError:
+            print('Found circular dependency(s) in the graph!')
+            for cycle in cy:
+                print(cycle)
+            raise ValueError('Cannot recursively prune a directed graph with cycles')
+
+        # actual prune generator
         while self.leaves:
             yield self.leaves
             self.trim()
@@ -544,15 +562,15 @@ class _BusView:
     """_BusView is meant to be instantiated only by Krang and is returned by indicization like Krang['bus1', 'bus2'] or
     Krang['bus1']. The main uses of a _BusView are:
 
-        -Adding elements to the corresponding bus/edge:
+        - Adding elements to the corresponding bus/edge:
             Krang['bus1'] << kp.Load()  # adds a Load to bus1
             Krang['bus1', 'bus2'] << kp.Line()  # adds a Line between bus1 and bus2
 
-        -Evaluating a function from the submodule 'busquery' on the corresponding bus/edge through attribute resolution:
+        - Evaluating a function from the submodule 'busquery' on the corresponding bus/edge through attribute resolution:
             Krang['bus1'].voltage
             Krang['bus1'].totload
 
-        -Getting a _PackedOpendssElement from the ones pertaining the corresponding bus/edge:
+        - Getting a _PackedOpendssElement from the ones pertaining the corresponding bus/edge:
             Krang['bus1']['myload']
     """
 
@@ -570,6 +588,7 @@ class _BusView:
         self.fcs_kwargs = {buskey: self.buses, tkey: self.tp}
 
     def __lshift__(self, other):
+        """Adds a component to the BusView, binding the component added to the buses referenced by the BusView."""
         assert not other.isnamed()
         try:
             assert other.name != ''
@@ -583,11 +602,9 @@ class _BusView:
 
         return self
 
-    def __getitem__(self, item):
-        return self.content[item]
-
     @property
     def content(self):
+        """A list containing the PackedOpendssElements bound to the BusView's buses."""
         if self._content is None:
             # CONTENT IS NOT UPDATED AFTER FIRST EVAL
             if len(self.buses) == 1:
@@ -603,6 +620,7 @@ class _BusView:
         return self._content
 
     def __getattr__(self, item):
+        """Calculates a quantity from the submodule busquery on the BusView."""
         try:
             # attributes requested via getattr are searched in busquery
             f = bq.get_fun(item)

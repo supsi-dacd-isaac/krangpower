@@ -1,0 +1,183 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Usage &#8212; krangpower 0.1.5.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Krang reference" href="krang_ref.html" />
+    <link rel="prev" title="Krangpower" href="krangpower_docs.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>The central class of the krangpower package is the eponymous <code class="code docutils literal"><span class="pre">Krang</span></code>. It is designed to provide easy and intuitive interaction. Let’s see the basics of <code class="code docutils literal"><span class="pre">Krang</span></code> usage with a small walkthrough:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">krangpower</span> <span class="kn">as</span> <span class="nn">kp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">um</span> <span class="o">=</span> <span class="n">kp</span><span class="o">.</span><span class="n">UM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">kp</span><span class="o">.</span><span class="n">Vsource</span><span class="p">(</span><span class="n">basekv</span><span class="o">=</span><span class="mi">15000</span><span class="o">*</span><span class="n">um</span><span class="o">.</span><span class="n">V</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span> <span class="o">=</span> <span class="n">kp</span><span class="o">.</span><span class="n">Krang</span><span class="p">(</span><span class="s1">&#39;mighty_krang&#39;</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<ul class="simple">
+<li>&#64;2 Krangpower uses unit management package <a class="reference external" href="https://pint.readthedocs.io/">pint</a>, so The first thing we did here is to bring in the local namespace krangpower’s <code class="code docutils literal"><span class="pre">UnitRegistry</span></code>: the constant <code class="code docutils literal"><span class="pre">UM</span></code>. Think of it as an object whose attributes are the measurement units.</li>
+<li>&#64;3 Every circuit has to be initialized with a slack voltage source, so <code class="code docutils literal"><span class="pre">Krang</span></code> will need one. In krangpower, voltage sources are represented by <code class="code docutils literal"><span class="pre">Vsource</span></code>. You can initialize <code class="code docutils literal"><span class="pre">Vsource</span></code>, or any other electrical entity, with a set of keyword arguments to override the default values. We will call them “parameters”. Here we edited just the parameter ‘basekv’ to a value of 15000 Volts. More on parameters later.</li>
+<li>&#64;4 Here we instantiate a <code class="code docutils literal"><span class="pre">Krang</span></code> with a name string and our <code class="code docutils literal"><span class="pre">Vsource</span></code>. Both parameters are optional; if not provided, they will default to <code class="code docutils literal"><span class="pre">'Unnamed_Krang'</span></code> and <code class="code docutils literal"><span class="pre">kp.Vsource()</span></code>. We can now start to add stuff to <code class="code docutils literal"><span class="pre">myKrang</span></code>.</li>
+</ul>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">lc</span> <span class="o">=</span> <span class="n">kp</span><span class="o">.</span><span class="n">LineCode_S</span><span class="p">(</span><span class="s1">&#39;lcs1&#39;</span><span class="p">,</span> <span class="n">r0</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="n">um</span><span class="o">.</span><span class="n">ohm</span><span class="o">/</span><span class="n">um</span><span class="o">.</span><span class="n">km</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span> <span class="o">&lt;&lt;</span> <span class="n">lc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;sourcebus&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">]</span>
+<span class="go">&lt;BusView(&#39;sourcebus&#39;, &#39;alpha&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;sourcebus&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="n">kp</span><span class="o">.</span><span class="n">Line</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">45</span><span class="o">*</span><span class="n">um</span><span class="o">.</span><span class="n">ft</span><span class="p">)</span><span class="o">.</span><span class="n">aka</span><span class="p">(</span><span class="s1">&#39;line1&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">lc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;line1&#39;</span><span class="p">]</span>
+<span class="go">&lt;PackedOpendssElement: line1&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;line1&#39;</span><span class="p">][</span><span class="s1">&#39;r0&#39;</span><span class="p">]</span>
+<span class="go">&lt;Quantity(0.001, &#39;ohm / meter&#39;)&gt;</span>
+</pre></div>
+</td></tr></table></div>
+<p>More irons in the fire.</p>
+<ul>
+<li><p class="first">&#64;5 We instantiate a <code class="code docutils literal"><span class="pre">LineCode_S</span></code>. The syntax is the same as the <code class="code docutils literal"><span class="pre">Vsource</span></code>, except that we must specify a name as first parameter. Because they’re not made of iron &amp; copper but of information, LineCodes have a name of their own and do not have to be aliased every time they’re used (see line 9).</p>
+</li>
+<li><p class="first">&#64;6 Linecodes are meant to be associated to Lines. To make use of <code class="code docutils literal"><span class="pre">lc</span></code>, we first have to inform <code class="code docutils literal"><span class="pre">myKrang</span></code> of its existence. A Linecode is not bound to a bus or couple of buses; so we add it directly. In krangpower, the operator that adds a component to a <code class="code docutils literal"><span class="pre">Krang</span></code> is <strong>left shift</strong>, <code class="code docutils literal"><span class="pre">&lt;&lt;</span></code>.</p>
+</li>
+<li><p class="first">&#64;7 This line demonstrates <strong>bracket indexing Krang with a tuple</strong>. The object returned is a <code class="code docutils literal"><span class="pre">BusView</span></code>. You can add object that require topological collocation to <code class="code docutils literal"><span class="pre">BusView</span></code>, in the same way of <code class="code docutils literal"><span class="pre">Krang</span></code> themselves, are</p>
+</li>
+<li><dl class="first docutils">
+<dt>&#64;9 This line is very dense.</dt>
+<dd><ul class="first simple">
+<li>We are instantiating a <code class="code docutils literal"><span class="pre">Line</span></code> specifying its length in feet. In order to be added to the circuit, the line has to be <em>aliased</em> with the method <code class="code docutils literal"><span class="pre">aka</span></code>; in this way, it will have a name inside the circuit.</li>
+<li>The line is then <em>associated</em> with <code class="code docutils literal"><span class="pre">lc</span></code>, so it will make use of it in defining its impedance; the <em>association</em> operator is multiplication, <code class="code docutils literal"><span class="pre">*</span></code>.</li>
+<li>The line is added to the <code class="code docutils literal"><span class="pre">BusView</span></code> we saw at point 7.</li>
+</ul>
+<p class="last"><em>Note: The default name of the output bus of the circuit’s slack :code:`Vsource` is ‘sourcebus’. You can customize it by passing it as a third parameter to Krang’s constructor.</em></p>
+</dd>
+</dl>
+</li>
+<li><p class="first">&#64;10 Now that ‘line1’ is inserted into <code class="code docutils literal"><span class="pre">myKrang</span></code>, we can retrieve it by <strong>bracket indexing Krang with a string</strong> with its name. The object retrieved is a <a class="reference internal" href="#packedopendsselement">PackedOpendssElement</a>.</p>
+</li>
+<li><p class="first">&#64;12 Suffice to say, for now, that we can retrieve a <a class="reference internal" href="#packedopendsselement">PackedOpendssElement</a>’s parameters with bracket indexing; here we print its <code class="code docutils literal"><span class="pre">r0</span></code>. As expected, it’s a <a class="reference external" href="https://pint.readthedocs.io/">pint</a> <code class="code docutils literal"><span class="pre">Quantity</span></code>, and it’s coincident with <code class="code docutils literal"><span class="pre">lc</span></code></p>
+</li>
+</ul>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>14
+15
+16
+17
+18</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">]</span>
+<span class="go">&lt;PackedOpendssElement: alpha&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">,]</span>
+<span class="go">&lt;BusView(&#39;alpha&#39;,)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">myKrang</span><span class="p">[</span><span class="s1">&#39;alpha&#39;</span><span class="p">,]</span> <span class="o">&lt;&lt;</span> <span class="n">kp</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">kv</span><span class="o">=</span><span class="mi">15</span><span class="o">*</span><span class="n">um</span><span class="o">.</span><span class="n">kV</span><span class="p">,</span> <span class="n">kW</span><span class="o">=</span><span class="mi">130</span><span class="o">*</span><span class="n">um</span><span class="o">.</span><span class="n">kW</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<ul class="simple">
+<li>&#64;14,&#64;16 Demonstrate again, in the tricky case of buses, bracket indicization with strings and tuples. In the first case, as expected, we get the bus ‘alpha’ as a <code class="code docutils literal"><span class="pre">PackedOpendssElement</span></code>; in the second case, we get a <code class="code docutils literal"><span class="pre">BusView</span></code> of the single bus ‘alpha’.</li>
+<li>&#64;18 We can add components bound to a single bus to the <code class="code docutils literal"><span class="pre">BusView</span></code>; in this case, for example, we add a <code class="code docutils literal"><span class="pre">Load</span></code>, instantiated with the usual keyword arguments passed to the constructor.</li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+<span class="target" id="packedopendsselement"></span></div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><hr />
+<p>
+<h2 class='logo'>
+<a href="krangpower_docs.html">Home</a>
+</h2>
+</p><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="krang_ref.html">Krang reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="busview_ref.html">BusView reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packed_ref.html">PackedOpendssElement reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference_components.html">Reference for Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="krangpower_docs.html">Documentation overview</a><ul>
+      <li>Previous: <a href="krangpower_docs.html" title="previous chapter">Krangpower</a></li>
+      <li>Next: <a href="krang_ref.html" title="next chapter">Krang reference</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Federico Rosato.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

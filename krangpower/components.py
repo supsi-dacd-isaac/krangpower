@@ -24,7 +24,7 @@ from .nxtable import NxTable
 
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
-           'Vsource',
+           'Vsource', 'dejsonize',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
            'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
 
@@ -328,8 +328,8 @@ def _get_help(config, section):
 # -------------------------------------------------------------
 class _DSSentity:  # implements the dictionary param, the xmlc drive for load and the on-the-fly overwrite
 
-    muldict = NxTable()
-    muldict.from_csv(_ASSOCIATION_TYPES_PATH)
+    _muldict = NxTable()
+    _muldict.from_csv(_ASSOCIATION_TYPES_PATH)
 
     @property
     def _eltype(self):
@@ -337,22 +337,27 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
     @classmethod
     def isnamed(cls):
+        """Returns True if the class is a named entity, like a LineCode, False otherwise."""
         return False
 
     @classmethod
     def isabove(cls):
+        """Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise."""
         return False
 
     @classmethod
     def isai(cls):
+        """Returns true if the class is ai-enabled, False otherwise."""
         return False
 
     @property
     def fullname(self):
+        """Name, in the form eltype.elname"""
         return (self._eltype + '.' + self.name).lower()
 
     @property
-    def help(self):
+    def paramhelp(self):
+        """Prints a cheatsheet for the object's parameters."""
         print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self._eltype))
         print(_get_help(DSSHELP, self._eltype))
         return None
@@ -362,7 +367,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         i1 = self.toe
         i2 = other._eltype
 
-        prop_to_set = self.muldict[i1, i2]
+        prop_to_set = self._muldict[i1, i2]
         # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
         # does not depend on input
         assert prop_to_set in self._associated.keys()
@@ -382,10 +387,9 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         self.toe = self.__class__.__name__.lower()
         self._params = None
-        self.editedParams = None
-        self.default_units = None
+        self._editedParams = None
+        self._default_units = None
         self._load_default_parameters()
-        self.last_edited = []
 
         # todo write automation of typization (don't force the user to use types such as np.matrix, etc)
         self._setparameters(**kwargs)
@@ -406,6 +410,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     #     return tp
 
     def __getitem__(self, item):
+        """Gets a parameter for the object."""
         return self._getparameter(item)
 
     def __setitem__(self, key, value):
@@ -454,7 +459,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # pint quantity check and conversion
             if isinstance(value_raw, _PINT_QTY_TYPE):
-                unt = _resolve_unit(self.default_units[parameter.lower()], self._get_prop_from_matchobj)
+                unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == UM.none:
                     pass
                     # assert parameter_raw == 'length'
@@ -492,7 +497,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
             # finally setting the parameter
             target_list[parameter.lower()] = value
-            self.editedParams.append(parameter.lower())
+            self._editedParams.append(parameter.lower())
 
     def _getparameter(self, param):
 
@@ -505,7 +510,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             # self.logger.warning('Tried to set unknown parameter %s. Blatantly ignored.', parameter)
             # should this raise an exception instead?
 
-        unt = self.default_units.get(param, None)
+        unt = self._default_units.get(param, None)
         if unt is not None:
             if isinstance(target_list[param], np.matrix):
                 unit_matrix = np.eye(len(target_list[param])) * _resolve_unit(unt, self._get_prop_from_matchobj)
@@ -526,12 +531,12 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         Loads the default parameter dictionary from the file specified in odsswr.conf. The default dictionary
         determines also what type the parameters should be.
         """
-        self.editedParams = []  # reset
+        self._editedParams = []  # reset
 
         for elname, el in DEFAULT_COMP.items():
             if el['type'] == self.toe:
                 self._params = copy.deepcopy(el['properties'])
-                self.default_units = copy.deepcopy(el['units'])
+                self._default_units = copy.deepcopy(el['units'])
                 try:
                     self._associated = copy.deepcopy(el['associated'])
                 except KeyError:
@@ -555,6 +560,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         self.params_types_raw = {k: type(v) for k, v in list(self._params.items()) + list(self._associated.items())}
 
     def jsonize(self, all_params=False, flatten_mtx=True, using=_DEFAULT_ENTITIES_PATH):
+        """Returns a dict that describes the element's parameters. It's compatible with the json I/O functions."""
         super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
         if not self.isnamed():
             super_dikt['term_perm'] = self.term_perm
@@ -564,7 +570,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         for parameter, value in self._params.items():
             if not all_params:
-                if parameter not in self.editedParams:
+                if parameter not in self._editedParams:
                     continue
             if isinstance(value, np.matrix):
                 pls_flat[parameter] = value.tolist()
@@ -574,7 +580,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
         # all units in _params are in standard units. Therefore, we pass standard units.
         super_dikt['units'] = {k: v for k, v in DEFAULT_COMP['default_' + self.toe]['units'].items()
-                               if k in self.editedParams}
+                               if k in self._editedParams}
 
         if using is not None:
             pr_cmp = {'properties': pls_mtx, 'type': self.toe}
@@ -604,16 +610,14 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
 
     # this method has to be overridden by descendants who need something different from a pure parameter dump
     def fcs(self, **hookup):
-        """
-        Generates the string for creation of the object in OPENDSS. Needs to be passed the parameters proper not of the
-        object itself, but of the object as being part of a circuit, such as, but not only, name and topological
-        connections.
-        """
+        """Generates the opendss "new..." command for the object. Needs to be passed an appropriate set of keyword
+         arguments to fill whatever topologic parameters are needed. It's meant primarily for internal use by
+         krangpower itself."""
         assert hookup == {}
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name  # _ splitting to allow name personalization outside dss
 
         s2 = ''
-        for parameter in self.editedParams:  # printing of non-default parameters only was preferred for better
+        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s2
@@ -1018,7 +1022,7 @@ class _LineGeometry(_NamedDSSentity):
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
 
         s2 = ''
-        for parameter in [p for p in self.editedParams if p not in self.specialparams]:
+        for parameter in [p for p in self._editedParams if p not in self.specialparams]:
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['nconds']):
@@ -1244,6 +1248,7 @@ class _CircuitElement(_DSSentity):
         # editing
 
     def aka(self, name):
+        """Aliases the object."""
         try:
             assert self.name == ''
         except AssertionError:
@@ -1299,28 +1304,10 @@ class _CircuitElementNBus(_CircuitElement):
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
 
         s2 = ''
-        for parameter in self.editedParams:  # printing of non-default parameters only was preferred for better
+        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s3 + s2
-
-    def _fes(self, params_to_indicate=None):
-        # this function returns in the edit string all the requested _params, even if not different from their default
-        # values
-        s1 = 'Edit ' + self.toe + '.' + self.name
-        s2 = ''
-
-        if params_to_indicate is None:
-            params_selected = self.last_edited
-        else:
-            params_selected = params_to_indicate
-
-        for parameter in params_selected:
-            if not (parameter in self._params):
-                _mlog.warning('Unknown parameter %s requested in edit string. Blatantly ignored.', parameter)
-            else:
-                s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
-        return s1 + s2
 
 
 class Transformer(_DSSentity):  # remember that transformer is special, because has an arrayed mode of specifying
@@ -1436,7 +1423,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
 
         s2 = ''
-        for parameter in [p for p in self.editedParams if p not in self.specialparams]:
+        for parameter in [p for p in self._editedParams if p not in self.specialparams]:
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['windings']):
@@ -2351,7 +2338,7 @@ class FourQ(Generator):
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
 
         s2 = ''
-        for parameter in self.editedParams:  # printing of non-default parameters only was preferred for better
+        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
         return s1 + s3 + s2
@@ -2613,7 +2600,7 @@ class StorageController(_AboveCircuitElement):
                ' terminal=' + str(terminal)
 
         s2 = ''
-        for parameter in self.editedParams:  # printing of non-default parameters only was preferred for better
+        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
 
