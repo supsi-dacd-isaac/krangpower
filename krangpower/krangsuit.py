@@ -14,7 +14,7 @@ from tqdm import tqdm as _tqdm
 import krangpower.components
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.aux_fcn import get_help_out, kml2buscoords
+from krangpower.aux_fcn import get_help_out
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH, _COORDS_FILE_PATH
 from krangpower.enhancer import OpendssdirectEnhancer
@@ -367,13 +367,6 @@ class Krang:
                     row = next(bcr)
                 except StopIteration:
                     return
-
-    def link_kml(self, file_path):
-        """Notifies Krang of a kml file with bus coordinates to use."""
-        rows = kml2buscoords(file_path)
-        bcw = csvwriter(_COORDS_FILE_PATH)
-        bcw.writerows(rows)
-        self._preload_buscoords(_COORDS_FILE_PATH)
 
     def link_coords(self, csv_path):
         """Notifies Krang of a csv file with bus coordinates to use."""
