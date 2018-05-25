@@ -5,23 +5,16 @@ quantities, for sequential simulations (duty-cycle, etc.) of a Circuit. Typical 
 memorized in Curve (with 'xycurve' parameter), temperature profiles (Curve with 'thsape' parameter) and Load
 histories, memorized in loadshapes.
 
-Loadshape
-'''''''''
-.. autoclass:: krangpower.Loadshape
-   :members:
-   :undoc-members:
-   :inherited-members:
-
 CsvLoadshape
 ''''''''''''
-.. autoclass:: krangpower.CsvLoadshape
+.. autoclass:: krangpower.components.CsvLoadshape
    :members:
    :undoc-members:
    :inherited-members:
 
 XYCurve
 ''''''''''''
-.. autoclass:: krangpower.XYCurve
+.. autoclass:: krangpower.components.XYCurve
    :members:
    :undoc-members:
    :inherited-members:
