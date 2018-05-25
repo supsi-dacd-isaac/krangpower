@@ -4,21 +4,21 @@ These entities are capable of memorizing the physical and geometrical data of co
 
 WireData
 ''''''''''''
-.. autoclass:: krangpower.WireData
+.. autoclass:: krangpower.components.WireData
    :members:
    :undoc-members:
    :inherited-members:
 
 TSData
 ''''''''''''
-.. autoclass:: krangpower.TSData
+.. autoclass:: krangpower.components.TSData
    :members:
    :undoc-members:
    :inherited-members:
 
 CNData
 ''''''''''''
-.. autoclass:: krangpower.CNData
+.. autoclass:: krangpower.components.CNData
    :members:
    :undoc-members:
    :inherited-members:

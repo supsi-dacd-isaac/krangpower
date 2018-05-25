@@ -46,14 +46,11 @@
 quantities, for sequential simulations (duty-cycle, etc.) of a Circuit. Typical examples are inverter efficiencies,
 memorized in Curve (with ‘xycurve’ parameter), temperature profiles (Curve with ‘thsape’ parameter) and Load
 histories, memorized in loadshapes.</p>
-<div class="section" id="loadshape">
-<h2>Loadshape<a class="headerlink" href="#loadshape" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="csvloadshape">
 <h2>CsvLoadshape<a class="headerlink" href="#csvloadshape" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.CsvLoadshape">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">CsvLoadshape</code><span class="sig-paren">(</span><em>name</em>, <em>csv_path: str</em>, <em>column_scheme: dict</em>, <em>interval=&lt;class 'pint.quantity.build_quantity_class.&lt;locals&gt;.Quantity'&gt;</em>, <em>use_actual=True</em>, <em>npts=None</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">CsvLoadshape</code><span class="sig-paren">(</span><em>name</em>, <em>csv_path: str</em>, <em>column_scheme: dict</em>, <em>interval=&lt;class 'pint.quantity.build_quantity_class.&lt;locals&gt;.Quantity'&gt;</em>, <em>use_actual=True</em>, <em>npts=None</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows to specify a Loadshape that refers to a CSV file. Requires a path.
 The name of the loadshape will be the same as the file basename.
 Automatically recognizes if header is present or not.</p>
@@ -73,48 +70,48 @@ Automatically recognizes if header is present or not.</p>
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.CsvLoadshape.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.CsvLoadshape.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.CsvLoadshape.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.CsvLoadshape.fullname" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.CsvLoadshape.get_at_hour">
-<code class="descname">get_at_hour</code><a class="headerlink" href="#krangpower.CsvLoadshape.get_at_hour" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.get_at_hour">
+<code class="descname">get_at_hour</code><a class="headerlink" href="#krangpower.components.CsvLoadshape.get_at_hour" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.CsvLoadshape.get_at_row">
-<code class="descname">get_at_row</code><a class="headerlink" href="#krangpower.CsvLoadshape.get_at_row" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.get_at_row">
+<code class="descname">get_at_row</code><a class="headerlink" href="#krangpower.components.CsvLoadshape.get_at_row" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="krangpower.CsvLoadshape.has_hour">
-<code class="descname">has_hour</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape.has_hour" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.has_hour">
+<code class="descname">has_hour</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape.has_hour" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="staticmethod">
-<dt id="krangpower.CsvLoadshape.isabove">
-<em class="property">static </em><code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.isabove">
+<em class="property">static </em><code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape.isabove" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="staticmethod">
-<dt id="krangpower.CsvLoadshape.isnamed">
-<em class="property">static </em><code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.isnamed">
+<em class="property">static </em><code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="krangpower.CsvLoadshape.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.CsvLoadshape.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.CsvLoadshape.uses_actual">
-<code class="descname">uses_actual</code><a class="headerlink" href="#krangpower.CsvLoadshape.uses_actual" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.CsvLoadshape.uses_actual">
+<code class="descname">uses_actual</code><a class="headerlink" href="#krangpower.components.CsvLoadshape.uses_actual" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -122,6 +119,36 @@ Automatically recognizes if header is present or not.</p>
 </div>
 <div class="section" id="xycurve">
 <h2>XYCurve<a class="headerlink" href="#xycurve" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.components.Curve">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Curve</code><span class="sig-paren">(</span><em>curve_type</em>, <em>name</em>, <em>data</em>, <em>interval=None</em>, <em>interval_unit='m'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Curve" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="krangpower.components.Curve.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Curve.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Curve.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Curve.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.components.Curve.x">
+<code class="descname">x</code><a class="headerlink" href="#krangpower.components.Curve.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.components.Curve.y">
+<code class="descname">y</code><a class="headerlink" href="#krangpower.components.Curve.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.components.Curve.z">
+<code class="descname">z</code><a class="headerlink" href="#krangpower.components.Curve.z" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -133,7 +160,7 @@ Automatically recognizes if header is present or not.</p>
         <div class="sphinxsidebarwrapper"><hr />
 <p>
 <h2 class='logo'>
-<a href="krangpower_docs.html">Home</a>
+<a href="index.html">Home</a>
 </h2>
 </p><h3>Navigation</h3>
 <ul class="current">
@@ -144,7 +171,6 @@ Automatically recognizes if header is present or not.</p>
 <li class="toctree-l2"><a class="reference internal" href="linedef.html">Transmission line definition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="condef.html">Conductor definition (for LineGeometry)</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Curves and dependencies</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#loadshape">Loadshape</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#csvloadshape">CsvLoadshape</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#xycurve">XYCurve</a></li>
 </ul>
@@ -158,7 +184,7 @@ Automatically recognizes if header is present or not.</p>
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
-  <li><a href="krangpower_docs.html">Documentation overview</a><ul>
+  <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="reference_components.html">Reference for Components</a><ul>
       <li>Previous: <a href="condef.html" title="previous chapter">Conductor definition (for LineGeometry)</a></li>
       <li>Next: <a href="faq.html" title="next chapter">FAQ</a></li>

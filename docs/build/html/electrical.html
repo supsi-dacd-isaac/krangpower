@@ -46,8 +46,8 @@
 <div class="section" id="transformer">
 <h2>Transformer<a class="headerlink" href="#transformer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Transformer">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Transformer</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Transformer</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transformer object</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -245,54 +245,54 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Transformer.__getitem__">
-<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets a parameter for the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.aka" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Transformer.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Transformer.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Transformer.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Transformer.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Transformer.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Transformer.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Transformer.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Transformer.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Transformer.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Transformer.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -302,8 +302,8 @@
 <div class="section" id="line">
 <h2>Line<a class="headerlink" href="#line" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Line">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Line</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Line</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Line object. Data for the conductors must specified by a LineCode or a LineGeometry.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -357,49 +357,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Line.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Line.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Line.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Line.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Line.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Line.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Line.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Line.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Line.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Line.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Line.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Line.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Line.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Line.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Line.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -409,8 +409,8 @@
 <div class="section" id="vsource">
 <h2>Vsource<a class="headerlink" href="#vsource" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Vsource">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Vsource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Vsource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Voltage source</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -544,49 +544,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Vsource.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Vsource.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Vsource.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Vsource.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Vsource.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Vsource.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Vsource.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Vsource.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Vsource.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Vsource.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Vsource.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Vsource.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Vsource.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Vsource.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Vsource.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -596,8 +596,8 @@
 <div class="section" id="isource">
 <h2>Isource<a class="headerlink" href="#isource" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Isource">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Isource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Isource</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource" title="Permalink to this definition">¶</a></dt>
 <dd><p>Current source</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -663,49 +663,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Isource.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Isource.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Isource.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Isource.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Isource.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Isource.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Isource.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Isource.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Isource.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Isource.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Isource.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Isource.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Isource.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Isource.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Isource.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -715,8 +715,8 @@
 <div class="section" id="capacitor">
 <h2>Capacitor<a class="headerlink" href="#capacitor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Capacitor">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Capacitor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Capacitor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Capacitance</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -798,49 +798,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Capacitor.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Capacitor.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Capacitor.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Capacitor.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Capacitor.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Capacitor.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Capacitor.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Capacitor.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Capacitor.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Capacitor.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Capacitor.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Capacitor.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Capacitor.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Capacitor.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Capacitor.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -850,8 +850,8 @@
 <div class="section" id="reactor">
 <h2>Reactor<a class="headerlink" href="#reactor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Reactor">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Reactor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Reactor</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reactor object</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -953,49 +953,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Reactor.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Reactor.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Reactor.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Reactor.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Reactor.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Reactor.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Reactor.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Reactor.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Reactor.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Reactor.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Reactor.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Reactor.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Reactor.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Reactor.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Reactor.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -1004,12 +1004,240 @@
 </div>
 <div class="section" id="generator">
 <h2>Generator<a class="headerlink" href="#generator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="krangpower.components.Generator">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Generator</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator object</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="21%" />
+<col width="44%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property name</th>
+<th class="head">type</th>
+<th class="head">Default value</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>phases</td>
+<td>int</td>
+<td>3</td>
+</tr>
+<tr class="row-odd"><td>kv</td>
+<td>float</td>
+<td>12.47</td>
+</tr>
+<tr class="row-even"><td>kw</td>
+<td>float</td>
+<td>1000.0</td>
+</tr>
+<tr class="row-odd"><td>pf</td>
+<td>float</td>
+<td>0.88</td>
+</tr>
+<tr class="row-even"><td>kvar</td>
+<td>float</td>
+<td>60.0</td>
+</tr>
+<tr class="row-odd"><td>model</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>vminpu</td>
+<td>float</td>
+<td>0.90</td>
+</tr>
+<tr class="row-odd"><td>vmaxpu</td>
+<td>float</td>
+<td>1.10</td>
+</tr>
+<tr class="row-even"><td>yearly</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>daily</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>duty</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>dispmode</td>
+<td>string</td>
+<td>default</td>
+</tr>
+<tr class="row-even"><td>dispvalue</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>conn</td>
+<td>string</td>
+<td>wye</td>
+</tr>
+<tr class="row-even"><td>rneut</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-odd"><td>xneut</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>status</td>
+<td>string</td>
+<td>variable</td>
+</tr>
+<tr class="row-odd"><td>class</td>
+<td>int</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>vpu</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-odd"><td>maxkvar</td>
+<td>float</td>
+<td>120.0</td>
+</tr>
+<tr class="row-even"><td>minkvar</td>
+<td>float</td>
+<td>-120.0</td>
+</tr>
+<tr class="row-odd"><td>pvfactor</td>
+<td>float</td>
+<td>0.1</td>
+</tr>
+<tr class="row-even"><td>forceon</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>kva</td>
+<td>float</td>
+<td>1200.0</td>
+</tr>
+<tr class="row-even"><td>mva</td>
+<td>float</td>
+<td>1.2</td>
+</tr>
+<tr class="row-odd"><td>xd</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-even"><td>xdp</td>
+<td>float</td>
+<td>0.28</td>
+</tr>
+<tr class="row-odd"><td>xdpp</td>
+<td>float</td>
+<td>0.2</td>
+</tr>
+<tr class="row-even"><td>h</td>
+<td>float</td>
+<td>1.0</td>
+</tr>
+<tr class="row-odd"><td>d</td>
+<td>float</td>
+<td>0.0</td>
+</tr>
+<tr class="row-even"><td>usermodel</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>userdata</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>shaftmodel</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>shaftdata</td>
+<td>string</td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td>dutystart</td>
+<td>float</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>debugtrace</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>balanced</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>xrdp</td>
+<td>float</td>
+<td>20.0</td>
+</tr>
+<tr class="row-even"><td>spectrum</td>
+<td>string</td>
+<td>defaultgen</td>
+</tr>
+<tr class="row-odd"><td>basefreq</td>
+<td>float</td>
+<td>50.0</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="krangpower.components.Generator.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.aka" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aliases the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Generator.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.fcs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.components.Generator.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Generator.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name, in the form eltype.elname</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Generator.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.isabove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Generator.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.isai" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Generator.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.isnamed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.components.Generator.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Generator.jsonize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="krangpower.components.Generator.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Generator.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a cheatsheet for the object’s parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="storage">
 <h2>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.Storage">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">Storage</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">Storage</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage" title="Permalink to this definition">¶</a></dt>
 <dd><p>Storage object</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -1191,49 +1419,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.Storage.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Storage.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Storage.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.Storage.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.Storage.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Storage.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Storage.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Storage.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.Storage.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Storage.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.Storage.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.Storage.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.Storage.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.Storage.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.Storage.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -1243,8 +1471,8 @@
 <div class="section" id="pvsystem">
 <h2>PvSystem<a class="headerlink" href="#pvsystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="krangpower.PvSystem">
-<em class="property">class </em><code class="descclassname">krangpower.</code><code class="descname">PvSystem</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem">
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">PvSystem</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>PvSystem object.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -1406,49 +1634,49 @@
 </tbody>
 </table>
 <dl class="method">
-<dt id="krangpower.PvSystem.aka">
-<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.aka" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.aka">
+<code class="descname">aka</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.aka" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aliases the object.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.PvSystem.fcs">
-<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.fcs" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.fcs">
+<code class="descname">fcs</code><span class="sig-paren">(</span><em>**hookup</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.fcs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.PvSystem.fullname">
-<code class="descname">fullname</code><a class="headerlink" href="#krangpower.PvSystem.fullname" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#krangpower.components.PvSystem.fullname" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name, in the form eltype.elname</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.PvSystem.isabove">
-<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isabove" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.isabove">
+<code class="descname">isabove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.isabove" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.PvSystem.isai">
-<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isai" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.isai">
+<code class="descname">isai</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.isai" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns true if the class is ai-enabled, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.PvSystem.isnamed">
-<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.isnamed" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.isnamed">
+<code class="descname">isnamed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.isnamed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if the class is a named entity, like a LineCode, False otherwise.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="krangpower.PvSystem.jsonize">
-<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.PvSystem.jsonize" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.jsonize">
+<code class="descname">jsonize</code><span class="sig-paren">(</span><em>all_params=False</em>, <em>flatten_mtx=True</em>, <em>using='D:\\GDrive\\Pycharm\\krangpower\\krangpower\\defaults/default_dssentities.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.PvSystem.jsonize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.PvSystem.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.PvSystem.paramhelp" title="Permalink to this definition">¶</a></dt>
+<dt id="krangpower.components.PvSystem.paramhelp">
+<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.PvSystem.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -1465,7 +1693,7 @@
         <div class="sphinxsidebarwrapper"><hr />
 <p>
 <h2 class='logo'>
-<a href="krangpower_docs.html">Home</a>
+<a href="index.html">Home</a>
 </h2>
 </p><h3>Navigation</h3>
 <ul class="current">
@@ -1496,7 +1724,7 @@
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
-  <li><a href="krangpower_docs.html">Documentation overview</a><ul>
+  <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="reference_components.html">Reference for Components</a><ul>
       <li>Previous: <a href="reference_components.html" title="previous chapter">Reference for Components</a></li>
       <li>Next: <a href="above.html" title="next chapter">Above-graph components (element-based)</a></li>

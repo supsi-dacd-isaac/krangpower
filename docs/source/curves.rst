@@ -14,7 +14,7 @@ CsvLoadshape
 
 XYCurve
 ''''''''''''
-.. autoclass:: krangpower.components.XYCurve
+.. autoclass:: krangpower.components.Curve
    :members:
    :undoc-members:
    :inherited-members:
