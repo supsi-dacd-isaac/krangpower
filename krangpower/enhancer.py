@@ -508,7 +508,8 @@ class _PackedOpendssElement:
 
     @property
     def help(self):
-        return self.unpack().help
+        """Displays informations about the object's parameters."""
+        return self.unpack().paramhelp
 
     def _craft_member(self, item: str):
         """This second order function returns a function that invokes self._side_getattr on item. Such returned
