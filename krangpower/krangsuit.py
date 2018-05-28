@@ -11,12 +11,13 @@ import pandas
 from tqdm import tqdm as _tqdm
 
 import krangpower.components
+import krangpower.enhancer.OpendssdirectEnhancer
 from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH
-from krangpower.enhancer import OpendssdirectEnhancer
+import krangpower.enhancer as en
 from krangpower.logging_init import _clog
 
 __all__ = ['Krang', 'from_json']
@@ -54,7 +55,7 @@ class Krang:
         self._initialize(*args)
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
-        self.brain = OpendssdirectEnhancer(oe_id=name)
+        self.brain = en  # (oe_id=name)
         _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
         self.id = name
         self.command('clear')
@@ -389,18 +390,18 @@ class Krang:
             try:
                 exel = gr.nodes[bs][_ELK]
             except KeyError:
-                gr.add_node(bs, **{_ELK: [self.brain[name]]})
+                gr.add_node(bs, **{_ELK: [krangpower.enhancer.OpendssdirectEnhancer.pack(name)]})
                 return
-            exel.append(self.brain[name])
+            exel.append(self.brain.pack(name))
             return
 
         def _update_edge(self, gr, ed, name):
             try:
                 exel = gr.edges[ed][_ELK]
             except KeyError:
-                gr.add_edge(*ed, **{_ELK: [self.brain[name]]})
+                gr.add_edge(*ed, **{_ELK: [krangpower.enhancer.OpendssdirectEnhancer.pack(name)]})
                 return
-            exel.append(self.brain[name])
+            exel.append(krangpower.enhancer.OpendssdirectEnhancer.pack(name))
             return
 
         if self._up_to_date:
@@ -410,7 +411,7 @@ class Krang:
             ns = self.brain.Circuit.AllElementNames()
             for name in ns:
                 try:
-                    buses = self.brain[name].BusNames()
+                    buses = krangpower.enhancer.OpendssdirectEnhancer.pack(name).BusNames()
                 except TypeError:
                     continue
 
@@ -441,8 +442,8 @@ class Krang:
         launched. """
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
-            if self.brain['bus.' + bn].Coorddefined():
-                bp[bn] = (self.brain[bn].X(), self.brain[bn].Y())
+            if krangpower.enhancer.OpendssdirectEnhancer.pack('bus.' + bn).Coorddefined():
+                bp[bn] = (krangpower.enhancer.OpendssdirectEnhancer.pack(bn).X(), krangpower.enhancer.OpendssdirectEnhancer.pack(bn).Y())
             else:
                 bp[bn] = None
         return bp
@@ -474,7 +475,7 @@ def _oe_getitem(item, oeshell):
 
 @_oe_getitem.register(str)
 def _(item, krg):
-    return krg.brain[item]
+    return krangpower.enhancer.OpendssdirectEnhancer.pack(item)
 
 
 @_oe_getitem.register(tuple)

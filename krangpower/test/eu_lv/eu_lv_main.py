@@ -1,5 +1,8 @@
 import csv
 import os
+import requests
+import io
+import zipfile
 import krangpower as kp
 
 um = kp.UM
@@ -12,9 +15,6 @@ def download_extract_zip(url):
     Download a ZIP file and extract its contents in memory
     yields (filename, file-like object) pairs
     """
-    import requests
-    import io
-    import zipfile
 
     response = requests.get(url)
     path = os.path.join(test_dir, 'eulv_originals')
@@ -204,4 +204,4 @@ print(m53_out)
 print(mtr_out)
 
 
-eulv.save_json(r'.\eu.json')
+# eulv.save_json(r'.\eu.json')
