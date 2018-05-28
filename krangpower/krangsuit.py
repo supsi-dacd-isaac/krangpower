@@ -3,7 +3,6 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from csv import reader as csvreader
-from csv import writer as csvwriter
 from functools import singledispatch as _singledispatch
 
 import networkx as nx
@@ -16,7 +15,7 @@ from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    _TMP_PATH, _COORDS_FILE_PATH
+    _TMP_PATH
 from krangpower.enhancer import OpendssdirectEnhancer
 from krangpower.logging_init import _clog
 
@@ -517,7 +516,7 @@ def _(item, krg):
 
 @_oe_getitem.register(tuple)
 def _(item, krg):
-    assert len(item) <= 2
+    # assert len(item) <= 2
     bustermtuples = map(krg._bus_resolve, item)
     return _BusView(krg, list(bustermtuples))
 

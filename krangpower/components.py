@@ -307,19 +307,33 @@ def _resolve_unit(ustring: str, match_unit_getter):
         return [UM.parse_units(s) for s in units]
 
 
-def _get_help(config, section):
+def _get_help(config, cmp):
+    section = cmp._eltype
     helpitems = config.items(section.upper().split('_')[0])
     help_str = ''
     basev = 90
+
     for item in helpitems:
         dname = item[0].split(') ')
-        pname = dname[-1].lower()
+        pname = dname[-1].lower().replace(' ', '')
         if pname in DEFAULT_COMP['default_' + section]['properties'].keys():
             mod = ''
+            def_val = str(DEFAULT_COMP['default_' + section]['properties'][pname])
+            if def_val == '':
+                def_val = '<none>'
+            def_value = '\n\t ' + '[default value=' + def_val + ']'
+            try:
+                cur_value = '\n\t ' + '[current value=' + str(cmp[pname].magnitude) + ']'
+            except AttributeError:
+                cur_value = '\n\t ' + '[current value=' + str(cmp[pname]) + ']'
         else:
             mod = '\u0336'
-        hstr = mod.join(item[0].upper() + ':  ' + item[1])
-        help_str += '\n'+'\n\t '.join(textwrap.wrap(hstr, basev*(len(mod)+1)))
+            def_value = ''
+            cur_value = ''
+        # hstr = mod.join(item[0].upper() + def_value + '\n\t' + item[1])
+
+        wrapper = textwrap.TextWrapper(width=basev*(len(mod)+1), replace_whitespace=True)
+        help_str += mod.join(item[0].upper() + def_value + cur_value + '\n\t ' +'\n\t '.join(wrapper.wrap(item[1])) + '\n')
     return help_str
 
 
@@ -359,7 +373,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
     def paramhelp(self):
         """Prints a cheatsheet for the object's parameters."""
         print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self._eltype))
-        print(_get_help(DSSHELP, self._eltype))
+        print(_get_help(DSSHELP, self))
         return None
 
     def __mul__(self, other):
