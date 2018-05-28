@@ -563,8 +563,6 @@ class _BusView:
             Krang['bus1'].voltage
             Krang['bus1'].totload
 
-        - Getting a _PackedOpendssElement from the ones pertaining the corresponding bus/edge:
-            Krang['bus1']['myload']
     """
 
     def __init__(self, oek: Krang, bustermtuples):
