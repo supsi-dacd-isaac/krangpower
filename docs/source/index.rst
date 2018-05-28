@@ -27,15 +27,16 @@ Design goals:
 .. _`OpenDSSDirect.py`: https://nrel.github.io/OpenDSSDirect.py/index.html
 
 
-Contents tree
-=============
+Contents
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    usage
    reference_components
    io
+   oenh_ref
    faq
 
 Indices and tables

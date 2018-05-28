@@ -623,7 +623,7 @@ class _CallFinalizer:
 
 # <editor-fold desc="Exposed functions">
 def pack(item):
-
+    """Returns a PackedOpendssElement corresponding to item."""
     try:
         assert item.lower() in map(lambda name: name.lower(), _this_module.get_all_names())
     except AssertionError:
