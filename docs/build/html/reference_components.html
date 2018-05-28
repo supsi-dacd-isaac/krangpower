@@ -42,9 +42,12 @@
             
   <div class="section" id="components">
 <h1>Components<a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="paramhelp">
-<h2>paramhelp<a class="headerlink" href="#paramhelp" title="Permalink to this headline">¶</a></h2>
-<p>Don’t forget that every instance of a component has a <code class="code docutils literal"><span class="pre">paramhelp</span></code> method, that will print to console useful information about parameters.</p>
+<p>Components are classes exposed by <code class="code docutils literal"><span class="pre">krangpower</span></code> that identify electrical components, monitors, linecodes…
+They typically are instantiated with keyword arguments to set their parameters, possibly further modified, and then
+added to a Krang with the <code class="code docutils literal"><span class="pre">&lt;&lt;</span></code> operator after, if necessary, associating them to one another with the <code class="code docutils literal"><span class="pre">*</span></code> operator.</p>
+<div class="section" id="the-paramhelp-method">
+<h2>the paramhelp() method<a class="headerlink" href="#the-paramhelp-method" title="Permalink to this headline">¶</a></h2>
+<p>Don’t forget that every instance of a component has a <code class="code docutils literal"><span class="pre">paramhelp()</span></code> method, that will print to console useful information about parameters.</p>
 </div>
 <div class="section" id="reference-pages">
 <h2>reference pages<a class="headerlink" href="#reference-pages" title="Permalink to this headline">¶</a></h2>
@@ -76,11 +79,12 @@ parameters is provided.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Components</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#paramhelp">paramhelp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-paramhelp-method">the paramhelp() method</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reference-pages">reference pages</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">The krangpower.enhancer submodule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
 

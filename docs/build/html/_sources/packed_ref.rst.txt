@@ -15,7 +15,7 @@ this page.
 Class reference
 ...............
 
-.. autoclass:: krangpower.enhancer._PackedOpendssElement
+.. autoclass:: krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement
    :members:
    :special-members:
    :exclude-members: __weakref__
