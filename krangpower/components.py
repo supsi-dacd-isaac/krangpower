@@ -340,10 +340,23 @@ def _get_help(config, cmp):
 # -------------------------------------------------------------
 # GENERIC DSSENTITY AND ITS NAMED VERSION
 # -------------------------------------------------------------
-class _DSSentity:  # implements the dictionary param, the xmlc drive for load and the on-the-fly overwrite
+class _DSSentity:
 
     _muldict = NxTable()
     _muldict.from_csv(_ASSOCIATION_TYPES_PATH)
+
+    def __init__(self, **kwargs):
+        self.term_perm = None
+        self.name = ''
+
+        self.toe = self.__class__.__name__.lower()
+        self._params = None
+        self._editedParams = None
+        self._default_units = None
+        self._load_default_parameters()
+
+        # todo write automation of typization (don't force the user to use types such as np.matrix, etc)
+        self._setparameters(**kwargs)
 
     @property
     def _eltype(self):
@@ -369,7 +382,6 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         """Name, in the form eltype.elname"""
         return (self._eltype + '.' + self.name).lower()
 
-    @property
     def paramhelp(self):
         """Prints a cheatsheet for the object's parameters."""
         print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self._eltype))
@@ -377,7 +389,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         return None
 
     def __mul__(self, other):
-
+        """Associates the multiplier with this object."""
         i1 = self.toe
         i2 = other._eltype
 
@@ -394,19 +406,6 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
             self[prop_to_set] = getattr(other, prop_fmt)
 
         return self
-
-    def __init__(self, **kwargs):
-        self.term_perm = None
-        self.name = ''
-
-        self.toe = self.__class__.__name__.lower()
-        self._params = None
-        self._editedParams = None
-        self._default_units = None
-        self._load_default_parameters()
-
-        # todo write automation of typization (don't force the user to use types such as np.matrix, etc)
-        self._setparameters(**kwargs)
 
     def __call__(self, **kwargs):
         # a call returns a copy of the object edited on the fly with the kwargs passed
@@ -428,6 +427,7 @@ class _DSSentity:  # implements the dictionary param, the xmlc drive for load an
         return self._getparameter(item)
 
     def __setitem__(self, key, value):
+        """Sets a parameter for the object."""
         self._setparameters(**{key: value})
 
     def _setparameters(self, **kwargs):

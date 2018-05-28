@@ -1,5 +1,0 @@
-PackedOpendssElement reference
-''''''''''''''''''''''''''''''
-.. autoclass:: krangpower._PackedOpendssElement
-   :members:
-   :special-members:

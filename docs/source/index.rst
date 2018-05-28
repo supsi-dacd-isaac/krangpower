@@ -26,12 +26,16 @@ Design goals:
 .. _pint: https://pint.readthedocs.io/
 .. _`OpenDSSDirect.py`: https://nrel.github.io/OpenDSSDirect.py/index.html
 
+
+Contents tree
+=============
+
 .. toctree::
-   :hidden:
-   :maxdepth: 3
+   :maxdepth: 2
 
    usage
    reference_components
+   io
    faq
 
 Indices and tables

@@ -40,45 +40,6 @@ def _helpfun(config, section):
 
 
 class Krang:
-    """The Krang is the main class of krangpower. It has facilities to drive the OpenDSS engine, retrieve and query
-    elements and options, saving and loading circuit data as json, representing the circuit as graph, perform repeated
-    solutions and reporting the results as DataFrames.
-
-        >>> myKrang = Krang('myckt', co.Vsource(basekv=15.0 * UM.kV).aka('source'))
-        >>> UM = myKrang.get_unit_register()
-        >>> myKrang.set(number=20, stepsize=15 * UM.min)
-        >>> myKrang['sourcebus', 'a'] << co.Line(length=120 * UM.unitlength).aka('line_1')
-        <BusView('sourcebus', 'a')>
-        >>> l2 = co.Line(units='m', length=0.72 * UM.m).aka('line_2')
-        >>> myKrang[('a.1.3.2', 'b.3.2.1')] << l2
-        <BusView('a', 'b')>
-        >>> myKrang['line.line_2']['length'] = 200 * UM.yard
-        >>> vls = np.matrix([15.0, 7.0]) * UM.kV
-        >>> trf = co.Transformer(windings=2, kvs=vls).aka('trans')
-        >>> myKrang[('b', 'c')] << trf
-        <BusView('b', 'c')>
-        >>> print(myKrang['line.line_2']['rmatrix'])
-        [[ 0.09813333  0.04013333  0.04013333] [ 0.04013333  0.09813333  0.04013333] [ 0.04013333  0.04013333  0.09813333]] ohm / meter
-        >>> bp_load = co.Load(kw=18.2345 * UM.kW, kv=15 * UM.kV)  # * lish
-        >>> myKrang[('a',)] << bp_load.aka('load_a')
-        <BusView('a',)>
-        >>> myKrang[('b',)] << bp_load.aka('load_b')
-        <BusView('b',)>
-        >>> u_load_a= myKrang['load_a'].unpack(verbose=False)
-        >>> myKrang.command('makebuslist')
-        ''
-        >>> i, v = myKrang.drag_solve()
-        >>> np.isclose(i['a.1'][0].to('V').magnitude, 8672.156356-30.933278j)
-        True
-        >>> myKrang.save_json(r'.\krang.json')
-        >>> myKrang.save_dss(r'.\krang.dss')
-        >>> cs = from_json(r'.\krang.json')
-        >>> -cs['line.line_2']
-        >>> i, v = cs.drag_solve()
-        >>> print(i['b.1'][0])
-        0j volt
-    """
-
     def __init__(self, *args):
         self.id = _DEFAULT_KRANG_NAME
         self._up_to_date = False
@@ -87,6 +48,8 @@ class Krang:
         self._ai_list = []
         self.com = ''
         self.brain = None
+        """Krang.brain is an instance of OpendssdirectEnhancer. It has the same interface as OpenDSSDirect.py, but
+        is bracket-indicizable with strings and returns enhanced data structures such as pint qtys and numpy arrays."""
         self._coords_linked = dict()
         self._initialize(*args)
 
@@ -551,19 +514,6 @@ class _DepGraph(nx.DiGraph):
 
 
 class _BusView:
-    """_BusView is meant to be instantiated only by Krang and is returned by indicization like Krang['bus1', 'bus2'] or
-    Krang['bus1']. The main uses of a _BusView are:
-
-        - Adding elements to the corresponding bus/edge:
-            Krang['bus1'] << kp.Load()  # adds a Load to bus1
-            Krang['bus1', 'bus2'] << kp.Line()  # adds a Line between bus1 and bus2
-
-        - Evaluating a function from the submodule 'busquery' on the corresponding bus/edge through attribute resolution:
-            Krang['bus1'].voltage
-            Krang['bus1'].totload
-
-    """
-
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
         self.tp = dict(bustermtuples)

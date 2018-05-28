@@ -205,7 +205,7 @@ class OpendssdirectEnhancer:
     MOE.Laods.Name('load.myload'); the OpendssdirectEnhancer takes care of the selections automatically.
 
     The OpendssdirectEnhancer members are dynamically generated from those of OpenDSSDirect.py, so the api reference is
-    the same and can be found at (https://nrel.github.io/OpenDSSDirect.py/index.html)
+    the same.
     """
 
     line_um = {
@@ -286,9 +286,9 @@ class OpendssdirectEnhancer:
         # unit dictionary references the object itself ('units' or 'useactual'), so the dependency must be resolved
         # dynamically
         if self.stack[0] == 'Lines':
-            um_d = self.line_umd(self.line_um[odr.Lines.Units()])
+            um_d = self._line_umd(self.line_um[odr.Lines.Units()])
         elif self.stack[0] == 'LoadShape':
-            um_d = self.loadshape_umd(self.line_um[bool(odr.LoadShape.UseActual())])
+            um_d = self._loadshape_umd(self.line_um[bool(odr.LoadShape.UseActual())])
         else:
             um_d = self.umr
 
@@ -340,7 +340,7 @@ class OpendssdirectEnhancer:
             return anl
 
     @staticmethod
-    def loadshape_umd(use_actual: bool):
+    def _loadshape_umd(use_actual: bool):
         """Dynamically generates the measurement units dictionary for a loadshape based on the property use_actual."""
 
         if use_actual:
@@ -366,7 +366,7 @@ class OpendssdirectEnhancer:
                          'TimeArray': UM.hr}}
 
     @staticmethod
-    def line_umd(unit_length):
+    def _line_umd(unit_length):
         """Special case of call if the object is a line; needed because it's a type of object for which a "units"
         properties exists that influences the other quantities dimensions."""
 

@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="PackedOpendssElement reference" href="packed_ref.html" />
+    <link rel="next" title="OpendssdirectEnhancer reference" href="oenh_ref.html" />
     <link rel="prev" title="Krang reference" href="krang_ref.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -42,33 +42,18 @@
             
   <div class="section" id="busview-reference">
 <h1>BusView reference<a class="headerlink" href="#busview-reference" title="Permalink to this headline">¶</a></h1>
+<p><code class="code docutils literal"><span class="pre">BusView</span></code> are returned by bracket-indicizing a <code class="code docutils literal"><span class="pre">Krang</span></code> with a tuple containing the id of the desired buses.
+The main functionality of <code class="code docutils literal"><span class="pre">BusView</span></code> is to enable the possibility of adding to a <code class="code docutils literal"><span class="pre">Krang</span></code> circuit components tied to a
+particular set of buses. The operator used to carry out this operation is <code class="code docutils literal"><span class="pre">lshift</span></code>, or <code class="code docutils literal"><span class="pre">&lt;&lt;</span></code>, in the same fashion as direct
+addition to a <code class="code docutils literal"><span class="pre">Krang</span></code>.
+Aside from this, <code class="code docutils literal"><span class="pre">BusViews</span></code> can also return a list of the components already tied to their set of buses, a list of which
+is available in the property content.</p>
+<div class="section" id="class-reference">
+<h2>Class reference<a class="headerlink" href="#class-reference" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="krangpower.krangsuit._BusView">
 <em class="property">class </em><code class="descclassname">krangpower.krangsuit.</code><code class="descname">_BusView</code><span class="sig-paren">(</span><em>oek: krangpower.krangsuit.Krang</em>, <em>bustermtuples</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.krangsuit._BusView" title="Permalink to this definition">¶</a></dt>
-<dd><p>_BusView is meant to be instantiated only by Krang and is returned by indicization like Krang[‘bus1’, ‘bus2’] or
-Krang[‘bus1’]. The main uses of a _BusView are:</p>
-<blockquote>
-<div><ul class="simple">
-<li><dl class="first docutils">
-<dt>Adding elements to the corresponding bus/edge:</dt>
-<dd>Krang[‘bus1’] &lt;&lt; kp.Load()  # adds a Load to bus1
-Krang[‘bus1’, ‘bus2’] &lt;&lt; kp.Line()  # adds a Line between bus1 and bus2</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Evaluating a function from the submodule ‘busquery’ on the corresponding bus/edge through attribute resolution:</dt>
-<dd>Krang[‘bus1’].voltage
-Krang[‘bus1’].totload</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Getting a _PackedOpendssElement from the ones pertaining the corresponding bus/edge:</dt>
-<dd>Krang[‘bus1’][‘myload’]</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
-<dl class="method">
+<dd><dl class="method">
 <dt id="krangpower.krangsuit._BusView.__getattr__">
 <code class="descname">__getattr__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.krangsuit._BusView.__getattr__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates a quantity from the submodule busquery on the BusView.</p>
@@ -81,12 +66,6 @@ Krang[‘bus1’].totload</dd>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="krangpower.krangsuit._BusView.__weakref__">
-<code class="descname">__weakref__</code><a class="headerlink" href="#krangpower.krangsuit._BusView.__weakref__" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of weak references to the object (if defined)</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="krangpower.krangsuit._BusView.content">
 <code class="descname">content</code><a class="headerlink" href="#krangpower.krangsuit._BusView.content" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list containing the PackedOpendssElements bound to the BusView’s buses.</p>
@@ -94,6 +73,7 @@ Krang[‘bus1’].totload</dd>
 
 </dd></dl>
 
+</div>
 </div>
 
 
@@ -111,10 +91,12 @@ Krang[‘bus1’].totload</dd>
 <li class="toctree-l1 current"><a class="reference internal" href="usage.html">Usage</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="krang_ref.html">Krang reference</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">BusView reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oenh_ref.html">OpendssdirectEnhancer reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="packed_ref.html">PackedOpendssElement reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="reference_components.html">Reference for Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference_components.html">Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
 
@@ -124,7 +106,7 @@ Krang[‘bus1’].totload</dd>
   <li><a href="index.html">Documentation overview</a><ul>
   <li><a href="usage.html">Usage</a><ul>
       <li>Previous: <a href="krang_ref.html" title="previous chapter">Krang reference</a></li>
-      <li>Next: <a href="packed_ref.html" title="next chapter">PackedOpendssElement reference</a></li>
+      <li>Next: <a href="oenh_ref.html" title="next chapter">OpendssdirectEnhancer reference</a></li>
   </ul></li>
   </ul></li>
 </ul>

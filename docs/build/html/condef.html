@@ -42,7 +42,7 @@
             
   <div class="section" id="conductor-definition-for-linegeometry">
 <h1>Conductor definition (for LineGeometry)<a class="headerlink" href="#conductor-definition-for-linegeometry" title="Permalink to this headline">¶</a></h1>
-<p>These entities are capable of memorizing the physical and geometrical data of conductors intended to be arranged in a LineGeometry. The backend then derives the impedance matrix of the line for the simulation.</p>
+<p>These entities are capable of memorizing the physical and geometrical data of conductors intended to be arranged in a <code class="code docutils literal"><span class="pre">LineGeometry</span></code>. The backend then derives the impedance matrix of the line for the simulation.</p>
 <div class="section" id="wiredata">
 <h2>WireData<a class="headerlink" href="#wiredata" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -129,9 +129,9 @@ krangpower itself.</p>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="krangpower.components.WireData.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.WireData.paramhelp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">paramhelp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.WireData.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -260,9 +260,9 @@ krangpower itself.</p>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="krangpower.components.TSData.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.TSData.paramhelp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">paramhelp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.TSData.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -391,9 +391,9 @@ krangpower itself.</p>
 <dd><p>Returns a dict that describes the element’s parameters. It’s compatible with the json I/O functions.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="krangpower.components.CNData.paramhelp">
-<code class="descname">paramhelp</code><a class="headerlink" href="#krangpower.components.CNData.paramhelp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">paramhelp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CNData.paramhelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a cheatsheet for the object’s parameters.</p>
 </dd></dl>
 
@@ -415,20 +415,12 @@ krangpower itself.</p>
 </p><h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="reference_components.html">Reference for Components</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="electrical.html">Electrical elements (bus-based)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="above.html">Above-graph components (element-based)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="linedef.html">Transmission line definition</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Conductor definition (for LineGeometry)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#wiredata">WireData</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#tsdata">TSData</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#cndata">CNData</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="curves.html">Curves and dependencies</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="reference_components.html">Components</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="reference_components.html#paramhelp">paramhelp</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="reference_components.html#reference-pages">reference pages</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
 
@@ -436,7 +428,7 @@ krangpower itself.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-  <li><a href="reference_components.html">Reference for Components</a><ul>
+  <li><a href="reference_components.html">Components</a><ul>
       <li>Previous: <a href="linedef.html" title="previous chapter">Transmission line definition</a></li>
       <li>Next: <a href="curves.html" title="next chapter">Curves and dependencies</a></li>
   </ul></li>

@@ -1,5 +1,13 @@
-Reference for Components
-========================
+Components
+==========
+
+paramhelp
+.........
+
+Don't forget that every instance of a component has a :code:`paramhelp` method, that will print to console useful information about parameters.
+
+reference pages
+...............
 
 Here you can find reference for each component available in krangpower. In particular, a table with the component's
 parameters is provided.
@@ -13,9 +21,6 @@ parameters is provided.
    condef
    curves
 
-paramhelp
-.........
 
-Don't forget that every instance of a component has a :code:`paramhelp` method, that will print to console useful information about parameters.
 
 
