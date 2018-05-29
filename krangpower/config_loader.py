@@ -8,7 +8,7 @@ import pint
 
 from krangpower.aux_fcn import load_dictionary_json
 
-__all__ = ['UM']
+__all__ = ['UM', 'krang_directory']
 _THISDIR = os.path.dirname(os.path.realpath(__file__))
 
 # -------------------------------------------------------------
@@ -93,3 +93,5 @@ _PINT_QTY_TYPE = type(1 * UM.m)
 DEFAULT_COMP = load_dictionary_json(_DEFAULT_ENTITIES_PATH)
 with open(_DEFAULT_SETTINGS_PATH, 'r') as f:
     DEFAULT_SETTINGS = json.load(f)
+
+krang_directory = _THISDIR  # we expose our path, because you could want to find the test cases, etc

@@ -5,10 +5,10 @@ The submodule :code:`krangpower.enhancer` constitues an `OpenDSSDirect.py`_ wrap
 
 :code:`krangpower.enhancer` offers several advantages:
 
-- Items returned as a list of floats (e.g., :code:`opendssdirect.dss.Circuit.Losses()`, :code:`opendssdirect.dss.Bus.Voltages()`, etc.) are returned as lists of complex numbers, matrices of [nterm x ncond], etc. as is appropriate. How the results returned by opendss are treated is decided in the configuration files of krangpower.
+- Items that OpenDSS returns as simple lists of floats (e.g., :code:`opendssdirect.dss.Circuit.Losses()`, :code:`opendssdirect.dss.Bus.Voltages()`, etc.) are returned as lists of complex numbers, matrices of [nterm x ncond], etc. as is appropriate.
 - Structured items such as :code:`opendssdirect.Circuit.SistemY()` are returned as :code:`pandas.DataFrame` for easier manipulation and export
 - Items come, where appropriate, as Quantities (from the pint_ package) with the appropriate measurement unit. This enables easy conversions and secures against miscalculations.
-- Through the exposed function :code:`txt_command`, the OpenDSS text interface is checked for errors (that are normally just returned as strings without raising anything) and its output, by default always a string, is packed and enhanced similarly to all the other module members
+- Through the exposed function :code:`txt_command`, the OpenDSS text interface is checked for errors (that are normally just returned as strings without raising anything).
 - The exposed a :code:`pack` function that enables easy and intuitive element exploration by returning a PackedOpendssElement_ corresponding to the name passed as argument, either fully qualified or simple.
 
 Module reference

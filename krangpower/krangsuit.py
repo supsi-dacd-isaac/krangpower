@@ -11,7 +11,7 @@ import pandas
 from tqdm import tqdm as _tqdm
 
 import krangpower.components
-import krangpower.enhancer.OpendssdirectEnhancer
+from krangpower.enhancer.OpendssdirectEnhancer import pack
 from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out
@@ -225,7 +225,11 @@ class Krang:
             else:
                 r_opts[op] = tt(r_opts[op])
             if op in co.DEFAULT_SETTINGS['units'].keys():
-                r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
+                if isinstance(co.DEFAULT_SETTINGS['units'][op], list):
+                    unitlist = np.array([UM.parse_units(x) for x in co.DEFAULT_SETTINGS['units'][op]])
+                    r_opts[op] = np.multiply(r_opts[op], unitlist)
+                else:
+                    r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
 
         return r_opts
 
@@ -279,7 +283,7 @@ class Krang:
                             ' Wait for end message...'.format(nmbr))
         for _ in _tqdm(range(nmbr)):
             for ai_el in self._ai_list:
-                self.command(ai_el.element.fus(self, ai_el.name))
+                self.command(ai_el.fus(self, ai_el.name))
 
             self.solve(echo=False)
             v = v.append(self.brain.Circuit.YNodeVArray(), ignore_index=True)
@@ -293,7 +297,7 @@ class Krang:
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
-        self._declare_buscoords()
+        # self._declare_buscoords()  too slow
         self.command('solve', echo)
         self._up_to_date = True
 
@@ -390,7 +394,7 @@ class Krang:
             try:
                 exel = gr.nodes[bs][_ELK]
             except KeyError:
-                gr.add_node(bs, **{_ELK: [krangpower.enhancer.OpendssdirectEnhancer.pack(name)]})
+                gr.add_node(bs, **{_ELK: [pack(name)]})
                 return
             exel.append(self.brain.pack(name))
             return
@@ -399,9 +403,9 @@ class Krang:
             try:
                 exel = gr.edges[ed][_ELK]
             except KeyError:
-                gr.add_edge(*ed, **{_ELK: [krangpower.enhancer.OpendssdirectEnhancer.pack(name)]})
+                gr.add_edge(*ed, **{_ELK: [pack(name)]})
                 return
-            exel.append(krangpower.enhancer.OpendssdirectEnhancer.pack(name))
+            exel.append(pack(name))
             return
 
         if self._up_to_date:
@@ -411,7 +415,7 @@ class Krang:
             ns = self.brain.Circuit.AllElementNames()
             for name in ns:
                 try:
-                    buses = krangpower.enhancer.OpendssdirectEnhancer.pack(name).BusNames()
+                    buses = pack(name).BusNames()
                 except TypeError:
                     continue
 
@@ -442,8 +446,8 @@ class Krang:
         launched. """
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
-            if krangpower.enhancer.OpendssdirectEnhancer.pack('bus.' + bn).Coorddefined():
-                bp[bn] = (krangpower.enhancer.OpendssdirectEnhancer.pack(bn).X(), krangpower.enhancer.OpendssdirectEnhancer.pack(bn).Y())
+            if pack('bus.' + bn).Coorddefined():
+                bp[bn] = (pack(bn).X(), pack(bn).Y())
             else:
                 bp[bn] = None
         return bp
@@ -475,7 +479,7 @@ def _oe_getitem(item, oeshell):
 
 @_oe_getitem.register(str)
 def _(item, krg):
-    return krangpower.enhancer.OpendssdirectEnhancer.pack(item)
+    return pack(item)
 
 
 @_oe_getitem.register(tuple)

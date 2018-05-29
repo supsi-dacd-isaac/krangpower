@@ -73,6 +73,7 @@
       "defaultbasefrequency": "Hz",
       "frequency": "Hz",
       "genkw": "kW",
-      "voltagebases": "kV"
+      "voltagebases": "kV",
+      "time": ["hr", "s"]
     }
 }

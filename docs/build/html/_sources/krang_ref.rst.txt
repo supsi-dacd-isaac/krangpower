@@ -22,6 +22,11 @@ Class reference
    :exclude-members: __weakref__
 
 
+from_json(path)
+...............
+.. autofunction:: krangpower.from_json
+
+
 .. _`Usage page`: usage.html
 .. _`OpenDSSDirect.py`: https://nrel.github.io/OpenDSSDirect.py/index.html
 .. _pint: https://pint.readthedocs.io/
