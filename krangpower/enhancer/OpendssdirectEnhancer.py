@@ -17,7 +17,7 @@ from pandas import DataFrame as _DataFrame
 
 from krangpower.aux_fcn import lower as _lower, get_classmap as _get_classmap
 from krangpower.aux_fcn import pairwise as _pairwise
-from krangpower.components import _resolve_unit, _type_recovery, _odssrep, _SnpMatrix
+from krangpower.components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from krangpower.config_loader import _DEFAULT_NAME, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
     UM as _UM, _INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, _PINT_QTY_TYPE, _INTERF_SELECTORS_PATH
 from krangpower.logging_init import _clog, _mlog
@@ -138,7 +138,7 @@ with open(_TREATMENTS_PATH, 'r') as _tfile:
     _rtrt = _json_load(_tfile)
 _trt = dict()
 for _subdic_name, _subdic in _rtrt.items():
-    _nsd = {k: tuple([globals()[t] for t in v]) for k, v in _subdic.items()}
+    _nsd = {k: tuple([globals()[_t] for _t in _v]) for k, _v in _subdic.items()}
     _trt[_subdic_name] = _nsd
 
 # loads measurement units for the interface of components without self-referencing.
@@ -147,15 +147,15 @@ with open(_UNIT_MEASUREMENT_PATH, 'r') as _ufile:
     _rumr = _json_load(_ufile)
 _umr = dict()
 for _subdic_name, _subdic in _rumr.items():
-    _nsd = {k: _UM.parse_units(v) for k, v in _subdic.items()}
+    _nsd = {_k: _UM.parse_units(_v) for _k, _v in _subdic.items()}
     _umr[_subdic_name] = _nsd
 
 
-with open(_INTERFACE_METHODS_PATH, 'r') as ifile:
-    _itf = _json_load(ifile)
-_interface_methods = {(k,): v for k, v in _itf.items()}
-with open(_INTERF_SELECTORS_PATH, 'r') as ifile:
-    _itf_sel_names = _json_load(ifile)
+with open(_INTERFACE_METHODS_PATH, 'r') as _ifile:
+    _itf = _json_load(_ifile)
+_interface_methods = {(_k,): _v for _k, _v in _itf.items()}
+with open(_INTERF_SELECTORS_PATH, 'r') as _ifile:
+    _itf_sel_names = _json_load(_ifile)
 # </editor-fold>
 
 
@@ -188,13 +188,13 @@ def _cast_dumbstring(string: str, data_type):
     if data_type in (int, float):
         return data_type(string)
     elif data_type == _np.matrix:
-        return _SnpMatrix(string
-                          .replace(' |', ';')
-                          .replace('|', ';')
-                          .replace('[', '')
-                          .replace(' ]', '')
-                          .replace(']', '')
-                          .replace(' ', ','))
+        return SnpMatrix(string
+                         .replace(' |', ';')
+                         .replace('|', ';')
+                         .replace('[', '')
+                         .replace(' ]', '')
+                         .replace(']', '')
+                         .replace(' ', ','))
     elif data_type == list:
         dp_str = _sub('[\,|\ ]*(\]|"|\))', '', string)
         dp_str = _sub('(\[|"|\()\ *', '', dp_str)
@@ -229,6 +229,7 @@ _line_um = {
     6: _UM.inch,
     7: _UM.cm
 }
+
 
 def _loadshape_umd(use_actual: bool):
     """Dynamically generates the measurement units dictionary for a loadshape based on the property use_actual."""
@@ -319,8 +320,8 @@ def _enh_call(*args, stack, odrobj):
     # leading to dangerous errors.
 
     # the result is finally treated and assigned a unit.
-    for t in ths_trt:
-        e_ordobj = t(e_ordobj)
+    for _t in ths_trt:
+        e_ordobj = _t(e_ordobj)
 
     return _assign_unit(e_ordobj, ums)
 
@@ -662,8 +663,9 @@ def get_all_names():
 
 
 def txt_command(cmd_str: str, echo=True):
-    """Performs a text interface call with the argument passed and logs command and response. The log output can be
-    suppressed by setting the keyword argument echo=False."""
+    """Performs a text interface call with the argument passed and logs command and response. The results are checked for
+     silent errors. **When instantiating components through this function, the update of the names returned by
+     get_all_names()is triggered**. The log output can be suppressed by setting the keyword argument echo=False."""
     rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
     if echo:
         log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_DEFAULT_NAME)))

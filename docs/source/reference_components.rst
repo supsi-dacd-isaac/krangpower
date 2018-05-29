@@ -20,6 +20,7 @@ parameters is provided.
    :maxdepth: 1
 
    electrical
+   smart
    above
    linedef
    condef

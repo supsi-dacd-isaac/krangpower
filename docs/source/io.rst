@@ -1,7 +1,6 @@
 I/O with JSON files
 '''''''''''''''''''
-Krang has facilities to store all the relevant information they contain in structured JSON files. To save a JSON, the
-method used, visible in the `Krang reference page`_, is save_json. The essential structure of such file is this:
+Krang has facilities to store all the relevant information they contain in structured JSON files. The essential structure of such file is this:
 
 .. code::
 
@@ -24,7 +23,20 @@ method used, visible in the `Krang reference page`_, is save_json. The essential
     │   └──"units": {<setting_name>: <unit_string>}
     └──"buscoords": {<bus_name_string>: [x y]}
 
+Full examples are available under the package's :code:`/test` folder. The methods here illustrated are documented in the `Krang reference page`_ too.
 
+Saving
+......
+
+:code:`Krang` can output such a json file through the :code:`Krang.save_json()` method.
+
+
+Loading
+.......
+
+A function :code:`from_json(path)` is exposed directly by krangpower. It returns a :code:`Krang` in the state syntesised by the JSON.
+
+Note: inside the box, :code:`from_json(path)` instantiates an empty :code:`Krang`, adds all the components in the right order of dependency and finally returns it.
 
 
 

@@ -24,7 +24,7 @@ from .nxtable import NxTable
 
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
-           'Vsource', 'dejsonize',
+           'Vsource', 'dejsonize', 'SnpMatrix',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
            'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
 
@@ -87,7 +87,7 @@ def _odssrep(data_raw):
     if isinstance(data, (float, int, str)):
         return str(data)
 
-    elif isinstance(data, _SnpMatrix):
+    elif isinstance(data, SnpMatrix):
 
         order = data.diagonal().size
         ss = ''
@@ -177,7 +177,7 @@ def _is_numeric_data(item):
 
 
 # <editor-fold desc="AUX CLASSES">
-class _SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
+class SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
     """_SnpMatrix extends numpy.matrix. numpy.matrix can be initialized by a 'v11,v12;v21,v22'- like string; _SnpMatrix,
     in addition to this, can be initialized by a 'v11;v21,v22'-like string, representing the tril of a symmetrical
     matrix."""
@@ -2358,9 +2358,9 @@ class FourQ(Generator):
         return s1 + s3 + s2
 
     def fus(self, oek, myname):
-        mybus = oek[myname].topological['bus1']
+        mybus = oek[myname].topological[0]
         p, q = self.update_pq(oek, mybus)
-        s = 'edit generator.' + myname + ' kw=' + str(p) + ' kvar=' + str(q)
+        s = 'edit generator.' + myname + ' kw=' + str(p.to(UM.kW).magnitude) + ' kvar=' + str(q.to(UM.kVA).magnitude)
         return s
 
     def define_dm(self, dm):

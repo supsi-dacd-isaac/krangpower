@@ -9,8 +9,8 @@ Krangpower
 Krangpower is a Python package for electrical network simulations based on OpenDSS_ by EPRI and a Python api for its direct library incarnation, `OpenDSSDirect.py`_, by Dheepak Krishnamurthy.
 
 
-Design goals:
-'''''''''''''
+Design goals
+''''''''''''
 
 - Providing an even easier and more intuitive frontend;
 - Introducing **measurement units** through the package pint_, allowing the user to worry less about errors, to demand the burden of conversion and to correctly interpret the results without recurring to the OpenDSS docs;
@@ -27,11 +27,26 @@ Design goals:
 .. _`OpenDSSDirect.py`: https://nrel.github.io/OpenDSSDirect.py/index.html
 
 
+Installation
+''''''''''''
+
+To install krangpower, just run
+
+.. code::
+
+   pip install krangpower
+
+Alternatively, if you wish to contribute to the codebase too, you can clone and use the `Github repo`_. As of june 2018, krangpower is in intense development and the Github repo is typically a few days ahead of the pypi index.
+
+
+.. _`Github repo`: https://github.com/supsi-dacd-isaac/krangpower
+
+
 Contents
 ========
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    usage
    reference_components
