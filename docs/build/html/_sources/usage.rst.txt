@@ -11,7 +11,7 @@ The central class of the krangpower package is the eponymous :code:`Krang`. It i
    >>> src = kp.Vsource(basekv=15000*um.V)
    >>> myKrang = kp.Krang('mighty_krang', src)
 
-- **@2** Krangpower uses unit management package pint_, so The first thing we did here is to bring in the local namespace krangpower's :code:`UnitRegistry`: the constant :code:`UM`. Think of it as an object whose attributes are the measurement units.
+- **@2** Krangpower uses the physical quantity management package pint_, so the first thing we did here is to bring in the local namespace krangpower's :code:`UnitRegistry`: the constant :code:`UM`. Think of it as an object whose attributes are the measurement units.
 - **@3** Every circuit has to be initialized with a slack voltage source, so :code:`Krang` will need one. In krangpower, voltage sources are represented by :code:`Vsource`. You can initialize :code:`Vsource`, or any other electrical entity, with a set of keyword arguments to override the default values. We will call them "parameters". Here we edited just the parameter 'basekv' to a value of 15000 Volts. More on parameters later.
 - **@4** Here we instantiate a :code:`Krang` with a name string and our :code:`Vsource`. Both parameters are optional; if not provided, they will default to :code:`'Unnamed_Krang'` and :code:`kp.Vsource()`. We can now start to add stuff to :code:`myKrang`.
 

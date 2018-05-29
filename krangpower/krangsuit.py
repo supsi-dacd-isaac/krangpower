@@ -43,14 +43,16 @@ def _helpfun(config, section):
 class Krang:
     def __init__(self, *args):
         self.id = _DEFAULT_KRANG_NAME
-        self._up_to_date = False
+        self.flags = {'coords_preloaded': False,
+                      'coords_declared': False,
+                      'up_to_date': False}
         self._last_gr = None
         self._named_entities = []
         self._ai_list = []
         self.com = ''
         self.brain = None
-        """Krang.brain is an instance of OpendssdirectEnhancer. It has the same interface as OpenDSSDirect.py, but
-        is bracket-indicizable with strings and returns enhanced data structures such as pint qtys and numpy arrays."""
+        """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
+        can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
         self._coords_linked = dict()
         self._initialize(*args)
 
@@ -125,7 +127,7 @@ class Krang:
         return self
 
     def __bool__(self):
-        return self._up_to_date
+        return self.flags['up_to_date']
 
     # def start_console(self):
     #
@@ -195,7 +197,7 @@ class Krang:
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
 
         rslt = self.brain.txt_command(cmd_str, echo)
-        self._up_to_date = False
+        self.flags['up_to_date'] = False
         if echo:
             self.com += cmd_str + '\n'
         return rslt
@@ -210,7 +212,7 @@ class Krang:
             else:
                 vl = value
             self.command('set {0}={1}'.format(option, vl))
-        self._up_to_date = False
+        self.flags['up_to_date'] = False
 
     @_helpfun(DSSHELP, 'OPTIONS')
     def get(self, *opts):
@@ -291,15 +293,16 @@ class Krang:
 
         self.brain.log_line('Drag_solve ended')
         self.brain.Solution.Number(nmbr)
-        self._up_to_date = True
+        self.flags['up_to_date'] = True
 
         return v, i
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
-        # self._declare_buscoords()  too slow
+        if self.flags['coords_preloaded']:
+            self._declare_buscoords()
         self.command('solve', echo)
-        self._up_to_date = True
+        self.flags['up_to_date'] = True
 
     def _declare_buscoords(self):
         """Meant to be called just before solve, so that all buses are already mentioned"""
@@ -313,6 +316,8 @@ class Krang:
                     continue  # we ignore buses present in coords linked, but not generated
             else:
                 continue
+        self.flags['coords_preloaded'] = False
+        self.flags['coords_declared'] = True
 
     def _preload_buscoords(self, path):
         """Loads in a local dict the buscoords from path."""
@@ -323,16 +328,22 @@ class Krang:
                     try:
                         row = next(bcr)
                         float(row[1])
+                        float(row[2])
                         break
                     except ValueError:
                         continue
             except StopIteration:
-                return
+                # this means that we hit stopiteration of bcr without finding a valid line
+                # for which float(row[x]) did not raise ValueError and broke the while
+                raise ValueError('No valid coords found in file "{0}"'.format(path))
+
             while row:
                 self._coords_linked[str(row[0])] = [float(row[1]), float(row[2])]
                 try:
                     row = next(bcr)
                 except StopIteration:
+                    self.flags['coords_preloaded'] = True
+                    self.flags['coords_declared'] = False
                     return
 
     def link_coords(self, csv_path):
@@ -408,7 +419,7 @@ class Krang:
             exel.append(pack(name))
             return
 
-        if self._up_to_date:
+        if self.flags['up_to_date']:
             return self._last_gr
         else:
             gr = nx.Graph()
