@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/krangpower/badge/?version=latest)](https://krangpower.readthedocs.io/en/latest/?badge=latest)
+
 # krangpower
 Distribution System Simulator based on OpenDSS and OpenDSSDirect.py. Modern Syntax, DataFrames, Pint, Networkx.
 

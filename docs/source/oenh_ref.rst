@@ -13,7 +13,7 @@ is a valid expression, then:
 
 .. code::
 
-   krangpower.ehnancer.<X>
+   krangpower.enhancer.<X>
 
 also is, but the results returned by :code:`krangpower.enhancer` have several advantages:
 
