@@ -1,3 +1,4 @@
+[![Latest Version](https://img.shields.io/pypi/v/krangpower.svg)](https://pypi.python.org/pypi/<krangpower>/)
 [![Documentation Status](https://readthedocs.org/projects/krangpower/badge/?version=latest)](https://krangpower.readthedocs.io/en/latest/?badge=latest)
 
 # krangpower
