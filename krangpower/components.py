@@ -343,7 +343,9 @@ def _get_help(config, cmp):
 class _DSSentity:
 
     _muldict = NxTable()
-    _muldict.from_csv(_ASSOCIATION_TYPES_PATH)
+    _fmtdict = NxTable()
+    _muldict.from_csv(_ASSOCIATION_TYPES_PATH, ccol=3)
+    _fmtdict.from_csv(_ASSOCIATION_TYPES_PATH, ccol=4)
 
     def __init__(self, **kwargs):
         self.term_perm = None
@@ -398,7 +400,7 @@ class _DSSentity:
         # does not depend on input
         assert prop_to_set in self._associated.keys()
 
-        prop_fmt = self._associated_fmt.get(prop_to_set, 'fullname')
+        prop_fmt = self._fmtdict[i1, i2]
 
         if isinstance(other, list):
             self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
@@ -555,11 +557,6 @@ class _DSSentity:
                     self._associated = copy.deepcopy(el['associated'])
                 except KeyError:
                     self._associated = {}
-
-                try:
-                    self._associated_fmt = copy.deepcopy(el['associated_format'])
-                except KeyError:
-                    self._associated_fmt = {}
 
                 try:
                     self._ignored_params = copy.deepcopy(el['ignored'])

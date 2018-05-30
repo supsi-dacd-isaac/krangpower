@@ -1,5 +1,11 @@
-Frequently Asked Questions
-==========================
+FAQ
+===
+
+We're waiting for somebody to frequently ask questions!
+
+
+Less-Frequently Asked Questions
+...............................
 
 **Q: Krang?**
 

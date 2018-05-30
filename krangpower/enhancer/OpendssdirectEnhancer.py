@@ -283,7 +283,7 @@ def _line_umd(unit_length):
 
 
 # <editor-fold desc="Module cache variables">
-_names_up2date = False
+names_up2date = False
 _cached_allnames = []
 # </editor-fold>
 
@@ -646,7 +646,7 @@ def get_all_names():
     It's worth noting that object such as LineCodes, WireCodes, etc are not as of today retrievable, because their
     names are not accessible in a direct way."""
     _odr.utils.run_command('makebuslist')
-    if _this_module._names_up2date:
+    if _this_module.names_up2date:
         return _this_module._cached_allnames
     else:
         anl = []
@@ -656,7 +656,7 @@ def get_all_names():
         anl.extend(map(lambda ln: 'loadshape.' + ln, _odr.LoadShape.AllNames()))
         anl.extend(map(lambda ln: 'xycurve.' + ln, _xycurve_names()))
 
-        _this_module._names_up2date = True
+        _this_module.names_up2date = True
         _this_module._cached_allnames = anl
 
         return anl
@@ -672,7 +672,7 @@ def txt_command(cmd_str: str, echo=True):
                  + ']-->[' + rslt.replace('\n', '') + ']')
 
     if _influences_names(cmd_str):
-        _this_module._names_up2date = False
+        _this_module.names_up2date = False
 
     try:
         _validate_text_interface_result(rslt)

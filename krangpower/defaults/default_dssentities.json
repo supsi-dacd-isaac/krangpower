@@ -514,9 +514,6 @@
             "xmatrix",
             "cmatrix"
         ],
-        "associated_format":{
-            "linecode": "name",
-            "geometry": "name"},
         "topological": {
             "bus1": "",
             "bus2": ""}

@@ -56,6 +56,9 @@ class Krang:
         self._coords_linked = dict()
         self._initialize(*args)
 
+    def __hash__(self):
+        pass
+
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = en  # (oe_id=name)
         _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
@@ -128,69 +131,6 @@ class Krang:
 
     def __bool__(self):
         return self.flags['up_to_date']
-
-    # def start_console(self):
-    #
-    #     import sys
-    #     sys.ps1 = '<<>'
-    #     name = self.name
-    #
-    #     class KrangSole(code.InteractiveConsole):
-    #
-    #         def __init__(self, locals=None, filename="<console>"):
-    #             super().__init__(locals, filename)
-    #
-    #         def interact(self, banner=None, exitmsg=None):
-    #             """Closely emulate the interactive Python console.
-    #
-    #             The optional banner argument specifies the banner to print
-    #             before the first interaction; by default it prints a banner
-    #             similar to the one printed by the real Python interpreter,
-    #             followed by the current class name in parentheses (so as not
-    #             to confuse this with the real interpreter -- since it's so
-    #             close!).
-    #
-    #             The optional exitmsg argument specifies the exit message
-    #             printed when exiting. Pass the empty string to suppress
-    #             printing an exit message. If exitmsg is not given or None,
-    #             a default message is printed.
-    #
-    #             """
-    #             banner = 'aye aye!'
-    #             prompt1 = '[krang]>'
-    #             prompt2 = '[krang]...'
-    #             self.write("%s\n" % str(banner))
-    #             more = 0
-    #             while 1:
-    #                 try:
-    #                     if more:
-    #                         prompt = prompt1
-    #                     else:
-    #                         prompt = prompt2
-    #                     try:
-    #                         line = self.raw_input(prompt)
-    #                     except EOFError:
-    #                         self.write("\n")
-    #                         break
-    #                 except KeyboardInterrupt:
-    #                     self.write("\nKeyboardInterrupt\n")
-    #                     self.resetbuffer()
-    #                     more = 0
-    #                 else:
-    #                     more = self.push(line)
-    #             if exitmsg is None:
-    #                 self.write('now exiting %s...\n' % self.__class__.__name__)
-    #             elif exitmsg != '':
-    #                 self.write('%s\n' % exitmsg)
-    #
-    #         def push(self, line):
-    #             if line.startswith('['):
-    #                 super().push(name + line)
-    #             else:
-    #                 super().push(name + '.' + line)
-    #
-    #     conzol = KrangSole(locals={self.name: self, 'load': co.Load})
-    #     conzol.interact()
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     def command(self, cmd_str: str, echo=True):
@@ -293,7 +233,7 @@ class Krang:
 
         self.brain.log_line('Drag_solve ended')
         self.brain.Solution.Number(nmbr)
-        self.flags['up_to_date'] = True
+        # self.flags['up_to_date'] = True  # already in self.solve
 
         return v, i
 
@@ -405,18 +345,18 @@ class Krang:
             try:
                 exel = gr.nodes[bs][_ELK]
             except KeyError:
-                gr.add_node(bs, **{_ELK: [pack(name)]})
+                gr.add_node(bs, **{_ELK: [self[name]]})
                 return
-            exel.append(self.brain.pack(name))
+            exel.append(self[name])
             return
 
         def _update_edge(self, gr, ed, name):
             try:
                 exel = gr.edges[ed][_ELK]
             except KeyError:
-                gr.add_edge(*ed, **{_ELK: [pack(name)]})
+                gr.add_edge(*ed, **{_ELK: [self[name]]})
                 return
-            exel.append(pack(name))
+            exel.append(self[name])
             return
 
         if self.flags['up_to_date']:
@@ -426,7 +366,7 @@ class Krang:
             ns = self.brain.Circuit.AllElementNames()
             for name in ns:
                 try:
-                    buses = pack(name).BusNames()
+                    buses = self[name].BusNames()
                 except TypeError:
                     continue
 
@@ -457,11 +397,17 @@ class Krang:
         launched. """
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
-            if pack('bus.' + bn).Coorddefined():
-                bp[bn] = (pack(bn).X(), pack(bn).Y())
+            if self['bus.' + bn].Coorddefined():
+                bp[bn] = (self[bn].X(), self[bn].Y())
             else:
                 bp[bn] = None
         return bp
+
+    def cached_ybus(self):
+        if self.flags['up_to_date']:
+            pass
+        else:
+            pass
 
     @staticmethod
     def _bus_resolve(bus_descriptor: str):

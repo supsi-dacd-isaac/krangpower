@@ -52,6 +52,7 @@ Contents
    reference_components
    io
    oenh_ref
+   defaults_help
    faq
 
 Indices and tables

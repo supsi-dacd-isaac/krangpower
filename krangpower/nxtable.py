@@ -16,12 +16,12 @@ class NxTable:
         self._check_key(item)
         return self._data[item[0].lower()][item[1].lower()]['data']
 
-    def from_csv(self, path):
+    def from_csv(self, path, ccol=3):
         with open(path, 'r') as f:
             cntnt = csv.reader(f)
 
             for row in cntnt:
-                self[row[0].lower(), row[1].lower()] = row[2].lower()
+                self[row[0].lower(), row[1].lower()] = row[ccol-1].lower()
 
     @staticmethod
     def _check_key(key):
