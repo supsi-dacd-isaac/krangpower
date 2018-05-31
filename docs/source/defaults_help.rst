@@ -63,7 +63,7 @@ It works in the same way as *properties*, but it contains those ones that reflec
 default_settings.json
 .....................
 
-This file is somewhat similar to default_dssentities.json. It's used in :code:`Krang` methods :code:`set()` and :code:`get()`. It contains two dicts:
+This file is somewhat similar to default_dssentities.json. It's used in :code:`Krang` methods :code:`set()` and :code:`get()`. It contains two dicts and a list:
 
 **"values"**
 
@@ -73,6 +73,9 @@ The default value for every opendss option is specified, and, implicitly, its da
 
 The keys of this dictionary are a subset of *values*' ones. For the properties listed, the measurement unit for the properties internally used by OpenDSS is indicated
 
+**"contingent"**
+
+A list of those settings that do not influence the identity and physical characterization of a circuit, but are just computational auxiliary parameters, not to be saved in output files.
 
 interf_sel.json
 ...............

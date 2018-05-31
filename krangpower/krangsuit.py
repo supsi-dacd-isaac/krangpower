@@ -9,6 +9,8 @@ import networkx as nx
 import numpy as np
 import pandas
 from tqdm import tqdm as _tqdm
+import canonicaljson
+import hashlib
 
 import krangpower.components
 from krangpower.enhancer.OpendssdirectEnhancer import pack
@@ -56,8 +58,8 @@ class Krang:
         self._coords_linked = dict()
         self._initialize(*args)
 
-    def __hash__(self):
-        pass
+    def fingerprint(self):
+        return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = en  # (oe_id=name)
@@ -167,11 +169,7 @@ class Krang:
             else:
                 r_opts[op] = tt(r_opts[op])
             if op in co.DEFAULT_SETTINGS['units'].keys():
-                if isinstance(co.DEFAULT_SETTINGS['units'][op], list):
-                    unitlist = np.array([UM.parse_units(x) for x in co.DEFAULT_SETTINGS['units'][op]])
-                    r_opts[op] = np.multiply(r_opts[op], unitlist)
-                else:
-                    r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
+                r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
 
         return r_opts
 
@@ -305,11 +303,14 @@ class Krang:
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # options
-        opts = self.get(*list(co.DEFAULT_SETTINGS['values'].keys()))
+        dumpable_settings = set(co.DEFAULT_SETTINGS['values'].keys()) - set(co.DEFAULT_SETTINGS['contingent'])
+        opts = self.get(*dumpable_settings)
         for on, ov in _tqdm(opts.items()):
             if isinstance(ov, _PINT_QTY_TYPE):
                 opts[on] = ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
+                    # settings are never matrices; this happens because when *ing a list for a unit, the content
+                    # becomes an array.
                     opts[on] = opts[on].tolist()
 
         master_dict['settings']['values'] = opts
@@ -626,6 +627,7 @@ def from_json(path):
                 # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
 
     l_ckt._coords_linked = master_dict['buscoords']
+    l_ckt._declare_buscoords()
 
     return l_ckt
 
