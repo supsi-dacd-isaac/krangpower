@@ -1,3 +1,4 @@
+canonicaljson
 OpenDSSDirect.py
 networkx
 pint
