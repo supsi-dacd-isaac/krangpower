@@ -13,9 +13,9 @@ import scipy.io as sio
 from dateutil.parser import parse as dateparse
 from pandas import read_csv
 
-from krangpower.aux_fcn import load_dictionary_json, _matrix_from_json, get_classmap
+from krangpower.aux_fcn import _matrix_from_json, get_classmap, load_dictionary_json
 from krangpower.config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
-    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP
+    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION
 from krangpower.logging_init import _mlog
 from .nxtable import NxTable
 
@@ -584,7 +584,9 @@ class _DSSentity:
                 if parameter not in self._editedParams:
                     continue
             if isinstance(value, np.matrix):
-                pls_flat[parameter] = value.tolist()
+                pls_flat[parameter] = np.round(value, _GLOBAL_PRECISION).tolist()
+            elif isinstance(value, float):
+                pls_flat[parameter] = np.round(value, _GLOBAL_PRECISION)
             else:
                 pls_flat[parameter] = value
             pls_mtx[parameter] = value

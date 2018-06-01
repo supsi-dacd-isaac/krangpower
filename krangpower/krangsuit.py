@@ -18,11 +18,14 @@ from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    _TMP_PATH
+    _TMP_PATH, _GLOBAL_PRECISION
 import krangpower.enhancer as en
 from krangpower.logging_init import _clog
 
-__all__ = ['Krang', 'from_json']
+__all__ = ['Krang', 'from_json', 'cache_enabled']
+
+
+cache_enabled = True
 
 
 def _helpfun(config, section):
@@ -42,6 +45,56 @@ def _helpfun(config, section):
     return _real_helpfun
 
 
+def _invalidate_cache(f):
+
+    def cached_invalidator_f(self, *args, **kwargs):
+        if hasattr(self, '_fncache'):
+            self._fncache = {}
+        elif hasattr(self.oek, '_fncache'):
+            self.oek._fncache = {}
+        else:
+            raise AttributeError
+        return f(self, *args, **kwargs)
+
+    cached_invalidator_f.__name__ = f.__name__
+    return cached_invalidator_f
+
+
+def _invalidate_cache_outside(oek):
+
+    def _direct_invalidate_cache(f):
+
+        def cached_invalidator_f(self, *args, **kwargs):
+            if hasattr(oek, '_fncache'):
+                oek._fncache = {}
+            else:
+                raise AttributeError
+
+            return f(self, *args, **kwargs)
+
+        cached_invalidator_f.__name__ = f.__name__
+        return cached_invalidator_f
+
+    return _direct_invalidate_cache
+
+
+def _cache(f):
+
+    def cached_f(self, *args, **kwargs):
+        if cache_enabled:
+            try:
+                return self._fncache[f.__name__]
+            except KeyError:
+                value = f(self, *args, **kwargs)
+                self._fncache[f.__name__] = value
+                return value
+        else:
+            return f(self, *args, **kwargs)
+
+    cached_f.__name__ = f.__name__
+    return cached_f
+
+
 class Krang:
     def __init__(self, *args):
         self.id = _DEFAULT_KRANG_NAME
@@ -52,6 +105,7 @@ class Krang:
         self._named_entities = []
         self._ai_list = []
         self.com = ''
+        self._fncache = {}
         self.brain = None
         """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
@@ -108,6 +162,7 @@ class Krang:
                 item
             ))
 
+    @_invalidate_cache
     def __lshift__(self, other):
         """The left-shift operator << adds components to the Krang. Components that can and have to be directly added
         to the krang are those that represent data (WireData, TSData, LineGeometry...) or those that are in the circuit
@@ -135,6 +190,7 @@ class Krang:
         return self.flags['up_to_date']
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
+    @_invalidate_cache
     def command(self, cmd_str: str, echo=True):
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
 
@@ -145,6 +201,7 @@ class Krang:
         return rslt
 
     @_helpfun(DSSHELP, 'OPTIONS')
+    @_invalidate_cache
     def set(self, **opts_vals):
         """Sets circuit options according to a dict. Option that have a physical dimensionality (such as stepsize) can
         be specified as pint quantities; otherwise, the default opendss units will be used."""
@@ -242,6 +299,7 @@ class Krang:
         self.command('solve', echo)
         self.flags['up_to_date'] = True
 
+    @_invalidate_cache
     def _declare_buscoords(self):
         """Meant to be called just before solve, so that all buses are already mentioned"""
         self.command('makebuslist')
@@ -257,6 +315,7 @@ class Krang:
         self.flags['coords_preloaded'] = False
         self.flags['coords_declared'] = True
 
+    @_invalidate_cache
     def _preload_buscoords(self, path):
         """Loads in a local dict the buscoords from path."""
         with open(path, 'r') as bc_file:
@@ -284,11 +343,13 @@ class Krang:
                     self.flags['coords_declared'] = False
                     return
 
+    @_invalidate_cache
     def link_coords(self, csv_path):
         """Notifies Krang of a csv file with bus coordinates to use."""
         # todo sanity check
         self._preload_buscoords(csv_path)
 
+    @_cache
     def make_json_dict(self):
         """Returns a complete description of the circuit and its objects as a json.dumpable-dict."""
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
@@ -307,11 +368,17 @@ class Krang:
         opts = self.get(*dumpable_settings)
         for on, ov in _tqdm(opts.items()):
             if isinstance(ov, _PINT_QTY_TYPE):
-                opts[on] = ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude
+                opts[on] = np.round(ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude, _GLOBAL_PRECISION)
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
                     # settings are never matrices; this happens because when *ing a list for a unit, the content
                     # becomes an array.
                     opts[on] = opts[on].tolist()
+                if isinstance(opts[on], np.int32):
+                    opts[on] = int(opts[on])
+            elif isinstance(ov, float):
+                opts[on] = np.round(opts[on], _GLOBAL_PRECISION)
+            elif isinstance(ov, (np.ndarray, np.matrix)):
+                np.round(opts[on], _GLOBAL_PRECISION).tolist()
 
         master_dict['settings']['values'] = opts
         master_dict['settings']['units'] = co.DEFAULT_SETTINGS['units']
@@ -324,7 +391,7 @@ class Krang:
     def save_json(self, path):
         """Saves in path a complete description of the circuit and its objects"""
         with open(path, 'w') as ofile:
-            json.dump(self.make_json_dict(), ofile, indent=4)
+            json.dump(self.make_json_dict(), ofile, indent=2)
 
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
@@ -338,6 +405,7 @@ class Krang:
         return self.brain.Circuit.Name()
 
     @property
+    @_cache
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
         _PackedOpendssElement's in the edge/node property '{0}'""".format(_ELK)
@@ -392,6 +460,7 @@ class Krang:
         return gr
 
     @property
+    @_cache
     def bus_coords(self):
         """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
         a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
@@ -403,12 +472,6 @@ class Krang:
             else:
                 bp[bn] = None
         return bp
-
-    def cached_ybus(self):
-        if self.flags['up_to_date']:
-            pass
-        else:
-            pass
 
     @staticmethod
     def _bus_resolve(bus_descriptor: str):
@@ -437,7 +500,12 @@ def _oe_getitem(item, oeshell):
 
 @_oe_getitem.register(str)
 def _(item, krg):
-    return pack(item)
+
+    pe = pack(item)
+    # packedopendsselements returned through a krang have to invalidate the whole cache when you use them to modify
+    # something
+    pe.__setitem__ = _invalidate_cache_outside(krg)(pe.__setitem__)
+    return pe
 
 
 @_oe_getitem.register(tuple)
@@ -490,6 +558,7 @@ class _BusView:
 
         self.fcs_kwargs = {buskey: self.buses, tkey: self.tp}
 
+    @_invalidate_cache
     def __lshift__(self, other):
         """Adds a component to the BusView, binding the component added to the buses referenced by the BusView."""
         assert not other.isnamed()

@@ -40,6 +40,7 @@ _ELK = CONFIG.get('misc_settings', 'graph_element_tag')
 _DEFAULT_KRANG_NAME = CONFIG.get('misc_settings', 'default_krang_name')
 _CMD_LOG_NEWLINE_LEN = CONFIG.getint('misc_settings', 'newline_cmdlog_length')
 _DEFAULT_NAME = CONFIG.get('misc_settings', 'default_enhancer_name')
+_GLOBAL_PRECISION = CONFIG.getint('precision', 'global_precision')
 
 # -------------------------------------------------------------
 #  LOG PATH

@@ -47,7 +47,7 @@
     "reduceoption": "",
     "sec": 0,
     "showexport": "No",
-    "stepsize": "1",
+    "stepsize": 1,
     "tolerance": 0.0001,
     "tracecontrol": "No",
     "trapezoidal": "No",
@@ -79,5 +79,5 @@
       "s"
     ]
   },
-  "contingent": ["hour", "sec"]
+  "contingent": ["hour", "sec", "stepsize"]
 }

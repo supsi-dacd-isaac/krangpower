@@ -7,7 +7,7 @@ import krangpower as kp
 
 um = kp.UM
 
-test_dir = os.path.join(os.getenv("AppData"), 'krangpower\\test')
+test_dir = os.path.join(os.getenv("AppData"), 'krangpower//test')
 
 
 def download_extract_zip(url):
@@ -75,7 +75,7 @@ with open(os.path.join(eulv_root, 'Source.csv'), 'r') as sf:
             continue
         else:
             ct = content.split('=')
-            skw[ct[0]] = um.parse_expression(ct[1].strip('\n'))
+            skw[ct[0]] = um.parse_expression(ct[1].strip('/n'))
 skw['basekv'] = skw.pop('Voltage')
 
 
@@ -203,4 +203,4 @@ print(m23_out)
 print(m53_out)
 print(mtr_out)
 
-eulv.save_json(r'C:\Users\Federico\Google Drive\Pycharm\krangpower\krangpower\test\eu_lv\eu_lv.json')
+eulv.save_json(r'D:/GDrive/Pycharm/krangpower/krangpower/test/eu_lv/eu_lv.json')

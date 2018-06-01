@@ -1,7 +1,7 @@
 import json
 import textwrap
-from functools import lru_cache
 from sys import modules
+from functools import lru_cache
 
 import numpy as np
 
@@ -58,28 +58,6 @@ def pairwise(iterable):
     return zip(a, a)
 
 
-@lru_cache(8)
-def load_dictionary_json(path):
-    this_module = modules[__name__]
-    classmap = {}
-    for item in dir(this_module):
-        classmap[item.lower()] = getattr(this_module, item)
-
-    with open(path, 'r') as file:
-        dik = json.load(file)
-
-    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
-    # and we have to convert them back.
-    for entity in dik:
-        for prop, value in dik[entity]['properties'].items():
-            if isinstance(value, list):
-                dik[entity]['properties'][prop] = _matrix_from_json(value)
-
-            # todo give it a unit measure
-
-    return dik
-
-
 def _matrix_from_json(value):
 
     def desym(lol):
@@ -128,3 +106,23 @@ def load_entities(path):
     return dicky
 
 
+@lru_cache(8)
+def load_dictionary_json(path):
+    this_module = modules[__name__]
+    classmap = {}
+    for item in dir(this_module):
+        classmap[item.lower()] = getattr(this_module, item)
+
+    with open(path, 'r') as file:
+        dik = json.load(file)
+
+    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
+    # and we have to convert them back.
+    for entity in dik:
+        for prop, value in dik[entity]['properties'].items():
+            if isinstance(value, list):
+                dik[entity]['properties'][prop] = _matrix_from_json(value)
+
+            # todo give it a unit measure
+
+    return dik
