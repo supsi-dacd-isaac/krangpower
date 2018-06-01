@@ -2,8 +2,17 @@ import json
 import textwrap
 from sys import modules
 from functools import lru_cache
-
+import json
+import hashlib
+import canonicaljson
 import numpy as np
+
+
+def fingerprint(path):
+    with open(path, 'r') as file:
+        md = json.load(file)
+
+    return hashlib.md5(canonicaljson.encode_canonical_json(md)).hexdigest()
 
 
 def get_help_out(config, section):
@@ -126,3 +135,20 @@ def load_dictionary_json(path):
             # todo give it a unit measure
 
     return dik
+
+
+def bus_resolve(bus_descriptor: str):
+    """
+    >>> Krang()._bus_resolve('bus2.3.1.2')
+    ('bus2', (3, 1, 2))
+    >>> Krang()._bus_resolve('bus2.33.14.12323.2.3.3')
+    ('bus2', (33, 14, 12323, 2, 3, 3))
+    """
+
+    bus_descriptor.replace('bus.', '')
+    tkns = bus_descriptor.split('.')
+
+    bus = tkns[0]
+    terminals = tuple(int(x) for x in tkns[1:])
+
+    return bus, terminals

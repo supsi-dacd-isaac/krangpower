@@ -79,5 +79,5 @@
       "s"
     ]
   },
-  "contingent": ["hour", "sec", "stepsize"]
+  "contingent": ["hour", "sec"]
 }

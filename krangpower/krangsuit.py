@@ -11,18 +11,21 @@ import pandas
 from tqdm import tqdm as _tqdm
 import canonicaljson
 import hashlib
+import zipfile
+import io
+import os.path
 
 import krangpower.components
 from krangpower.enhancer.OpendssdirectEnhancer import pack
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.aux_fcn import get_help_out
+from krangpower.aux_fcn import get_help_out, bus_resolve
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    _TMP_PATH, _GLOBAL_PRECISION
+    _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
 import krangpower.enhancer as en
 from krangpower.logging_init import _clog
 
-__all__ = ['Krang', 'from_json', 'cache_enabled']
+__all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
 
 
 cache_enabled = True
@@ -112,9 +115,6 @@ class Krang:
         self._coords_linked = dict()
         self._initialize(*args)
 
-    def fingerprint(self):
-        return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
-
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = en  # (oe_id=name)
         _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
@@ -188,6 +188,25 @@ class Krang:
 
     def __bool__(self):
         return self.flags['up_to_date']
+
+    def fingerprint(self):
+        return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
+
+    def _zip_csv(self):
+        csvflo = io.BytesIO()
+        with zipfile.ZipFile(csvflo, mode='w', compression=zipfile.ZIP_DEFLATED) as csvzip:
+            for csvlsh in [x for x in self._named_entities if isinstance(x, co.CsvLoadshape)]:
+                with open(csvlsh.csv_path, 'br') as cfile:
+                    csvzip.writestr(os.path.basename(csvlsh.csv_path),
+                                    cfile.read())
+        return csvflo
+
+    def pack_ckt(self, path):
+        with zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
+            pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
+            jsio = io.StringIO()
+            json.dump(self.make_json_dict(), jsio, indent=2)
+            pack.writestr(self.name + '.json', jsio.getvalue())
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     @_invalidate_cache
@@ -404,7 +423,6 @@ class Krang:
         """The name of the circuit.."""
         return self.brain.Circuit.Name()
 
-    @property
     @_cache
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
@@ -441,14 +459,14 @@ class Krang:
 
                 # todo encode term perms in the graph
                 if len(buses) == 1:
-                    bs, _ = self._bus_resolve(buses[0])
+                    bs, _ = bus_resolve(buses[0])
 
                     _update_node(self, gr, bs, name)
 
                     # gr.add_node(bs, **{_elk: self.oe[name]})
                 elif len(buses) == 2:
-                    bs0, _ = self._bus_resolve(buses[0])
-                    bs1, _ = self._bus_resolve(buses[1])
+                    bs0, _ = bus_resolve(buses[0])
+                    bs1, _ = bus_resolve(buses[1])
 
                     _update_edge(self, gr, (bs0, bs1), name)
 
@@ -473,23 +491,6 @@ class Krang:
                 bp[bn] = None
         return bp
 
-    @staticmethod
-    def _bus_resolve(bus_descriptor: str):
-        """
-        >>> Krang()._bus_resolve('bus2.3.1.2')
-        ('bus2', (3, 1, 2))
-        >>> Krang()._bus_resolve('bus2.33.14.12323.2.3.3')
-        ('bus2', (33, 14, 12323, 2, 3, 3))
-        """
-
-        bus_descriptor.replace('bus.', '')
-        tkns = bus_descriptor.split('.')
-
-        bus = tkns[0]
-        terminals = tuple(int(x) for x in tkns[1:])
-
-        return bus, terminals
-
 
 @_singledispatch
 def _oe_getitem(item, oeshell):
@@ -502,8 +503,8 @@ def _oe_getitem(item, oeshell):
 def _(item, krg):
 
     pe = pack(item)
-    # packedopendsselements returned through a krang have to invalidate the whole cache when you use them to modify
-    # something
+    # packedopendsselements returned through a krang have to invalidate
+    # the whole cache when their setitem method is used to modify something
     pe.__setitem__ = _invalidate_cache_outside(krg)(pe.__setitem__)
     return pe
 
@@ -511,7 +512,7 @@ def _(item, krg):
 @_oe_getitem.register(tuple)
 def _(item, krg):
     # assert len(item) <= 2
-    bustermtuples = map(krg._bus_resolve, item)
+    bustermtuples = map(bus_resolve, item)
     return _BusView(krg, list(bustermtuples))
 
 
@@ -618,8 +619,11 @@ def from_json(path):
     to dependency between object is automatically taken care of."""
 
     # load all entities
-    with open(path, 'r') as ofile:
-        master_dict = json.load(ofile)
+    if isinstance(path, str):
+        with open(path, 'r') as ofile:
+            master_dict = json.load(ofile)
+    else:
+        master_dict = json.load(path)
 
     # init the krang with the source, then remove it
     l_ckt = Krang(master_dict['cktname'], krangpower.components.dejsonize(master_dict['elements']['vsource.source']))
@@ -654,6 +658,9 @@ def from_json(path):
             d_ov = ov * UM.parse_units(opt_dict['units'][on])
         else:
             d_ov = ov
+
+        if on == 'stepsize':
+            print(d_ov)
 
         l_ckt.set(**{on: d_ov})
 
@@ -699,6 +706,20 @@ def from_json(path):
     l_ckt._declare_buscoords()
 
     return l_ckt
+
+
+def open_ckt(path):
+    with zipfile.ZipFile(path, mode='r') as zf:
+        with zf.open(_LSH_ZIP_NAME) as lsh_file:
+            lsh_data = io.BytesIO(lsh_file.read())
+            zipfile.ZipFile(lsh_data).extractall(_TMP_PATH)
+
+        fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
+        assert len(fls) == 1
+        jso = zf.open(fls[0])
+        krg = from_json(jso)
+
+    return krg
 
 
 def _main():

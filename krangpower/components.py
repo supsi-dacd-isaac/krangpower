@@ -1,5 +1,6 @@
 import copy
 import csv
+import hashlib
 import json
 import os.path
 import re
@@ -15,7 +16,7 @@ from pandas import read_csv
 
 from krangpower.aux_fcn import _matrix_from_json, get_classmap, load_dictionary_json
 from krangpower.config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
-    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION
+    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, _TMP_PATH
 from krangpower.logging_init import _mlog
 from .nxtable import NxTable
 
@@ -675,7 +676,7 @@ class CsvLoadshape:
 
     """
 
-    def __init__(self, name, csv_path: str, column_scheme: dict, interval=_PINT_QTY_TYPE, use_actual=True, npts=None):
+    def __init__(self, name='', csv_path=None, column_scheme={'mult': 1}, interval=_PINT_QTY_TYPE, use_actual=True, npts=None):
 
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
@@ -686,9 +687,16 @@ class CsvLoadshape:
 
         self._data = None
         self.column_scheme = column_scheme
-        self.csv_path = os.path.abspath(csv_path)
+
+        if os.path.isfile(os.path.abspath(csv_path)):
+            self.csv_path = os.path.abspath(csv_path)
+        elif os.path.isfile(os.path.join(_TMP_PATH, name + '.csv')):
+            self.csv_path = os.path.join(_TMP_PATH, name + '.csv')
+        else:
+            raise IOError('Could not find file {0}'.format(self.csv_path))
+
         if name == '':
-            self.name = str(os.path.basename(csv_path)).split('.')[0]
+            self.name = str(os.path.basename(self.csv_path)).split('.')[0]
         else:
             self.name = name
         self.use_actual = use_actual
@@ -712,7 +720,7 @@ class CsvLoadshape:
                 self.interval = self.true_interval.to(UM.h).magnitude
 
         # auto-header recognition
-        head = next(csv.reader(open(csv_path)))
+        head = next(csv.reader(open(self.csv_path)))
         if all([_is_numeric_data(hitem) or _is_timestamp(hitem) for hitem in head]):
             self.header_string = 'No'
             self.shift = 0
@@ -727,6 +735,8 @@ class CsvLoadshape:
         else:
             assert isinstance(npts, int)
             self.npts = str(npts)
+
+        self._calchash()
 
         # auto-metadata recognizing
         row = next(csv.reader(open(csv_path)))  # the second row always has data in it
@@ -743,6 +753,13 @@ class CsvLoadshape:
     @property
     def fullname(self):
         return 'csvloadshape.' + self.name
+
+    def _calchash(self):
+        # hash
+        with open(self.csv_path, 'r') as csvfile:
+            cnt = csvfile.read()
+        self.hash = hashlib.md5(cnt.encode('utf-8')).hexdigest()
+        return self.hash
 
     @lru_cache()
     def get_at_row(self, row_no):
@@ -800,12 +817,13 @@ class CsvLoadshape:
     def jsonize(self):
 
         super_dikt = {'type': 'csvloadshape', 'name': self.name, 'depends': {}, 'properties': {}, 'units': {}}
-        super_dikt['properties']['csv_path'] = self.csv_path
+        super_dikt['properties']['csv_path'] = os.path.basename(self.csv_path)
         super_dikt['properties']['column_scheme'] = self.column_scheme
         super_dikt['properties']['npts'] = int(self.npts)
         super_dikt['properties']['use_actual'] = self.use_actual
         super_dikt['properties']['interval'] = self.true_interval.to('min').magnitude
         super_dikt['units']['interval'] = str(self.true_interval.units)
+        super_dikt['hash'] = self._calchash()
 
         return super_dikt
 

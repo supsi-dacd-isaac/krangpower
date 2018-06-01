@@ -41,26 +41,27 @@ _DEFAULT_KRANG_NAME = CONFIG.get('misc_settings', 'default_krang_name')
 _CMD_LOG_NEWLINE_LEN = CONFIG.getint('misc_settings', 'newline_cmdlog_length')
 _DEFAULT_NAME = CONFIG.get('misc_settings', 'default_enhancer_name')
 _GLOBAL_PRECISION = CONFIG.getint('precision', 'global_precision')
+_LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 
 # -------------------------------------------------------------
 #  LOG PATH
 # -------------------------------------------------------------
 # general log
 if platform.system() == 'Windows':
-    _MAIN_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_folder'),
+    _MAIN_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_subfolder'),
                                  CONFIG.get('log_file', 'general_log_path'))
 elif platform.system() == 'Linux':
-    _MAIN_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_folder'),
+    _MAIN_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_subfolder'),
                                  CONFIG.get('log_file', 'general_log_path'))
 else:
     raise OSError('Could not find a valid log path.')
 
 # command_log
 if platform.system() == 'Windows':
-    _COMMAND_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_folder'),
+    _COMMAND_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_subfolder'),
                                     CONFIG.get('log_file', 'commands_log_path'))
 elif platform.system() == 'Linux':
-    _COMMAND_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_folder'),
+    _COMMAND_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_subfolder'),
                                     CONFIG.get('log_file', 'commands_log_path'))
 else:
     raise OSError('Could not find a valid log path.')
@@ -70,9 +71,9 @@ else:
 #  TEMPORARY FILES PATH
 # -------------------------------------------------------------
 if platform.system() == 'Windows':
-    _TMP_PATH = os.path.join(os.getenv('TEMP'), CONFIG.get('temp_folder', 'temp_folder'))
+    _TMP_PATH = os.path.join(os.getenv('TEMP'), CONFIG.get('temp_files', 'temp_subfolder'))
 elif platform.system() == 'Linux':
-    _TMP_PATH = os.path.join('/var/tmp', CONFIG.get('temp_folder', 'temp_folder'))
+    _TMP_PATH = os.path.join('/var/tmp', CONFIG.get('temp_files', 'temp_subfolder'))
 else:
     raise OSError('Could not find a valid temp path.')
 
