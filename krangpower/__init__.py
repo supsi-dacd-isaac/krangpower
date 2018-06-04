@@ -4,3 +4,4 @@ from krangpower.enhancer import *
 from krangpower.logging_init import set_log_level
 from krangpower.config_loader import *
 from krangpower.aux_fcn import load_entities, fingerprint
+from krangpower.graphview import *

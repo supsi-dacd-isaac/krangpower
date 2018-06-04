@@ -2384,6 +2384,7 @@ class FourQ(Generator):
         assert isinstance(dm, DecisionModel)
         self._dm = dm
 
+
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
 class _AboveCircuitElement(_CircuitElement):

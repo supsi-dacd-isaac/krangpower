@@ -1,32 +1,34 @@
 import copy
+import hashlib
+import io
 import json
+import os.path
+import pickle
 import re
 import xml.etree.ElementTree as ET
+import zipfile
 from csv import reader as csvreader
 from functools import singledispatch as _singledispatch
+from logging import INFO as logging_INFO
 
+import canonicaljson
 import networkx as nx
 import numpy as np
 import pandas
-from tqdm import tqdm as _tqdm
-import canonicaljson
-import hashlib
-import zipfile
-import io
-import os.path
 
 import krangpower.components
-from krangpower.enhancer.OpendssdirectEnhancer import pack
+import krangpower.enhancer as en
 from krangpower import busquery as bq
 from krangpower import components as co
 from krangpower.aux_fcn import get_help_out, bus_resolve
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
-import krangpower.enhancer as en
+from krangpower.enhancer.OpendssdirectEnhancer import pack
 from krangpower.logging_init import _clog
+from krangpower.pbar import PBar as _PBar
 
 __all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
-
+_FQ_DM_NAME = 'dm.pkl'
 
 cache_enabled = True
 
@@ -104,7 +106,6 @@ class Krang:
         self.flags = {'coords_preloaded': False,
                       'coords_declared': False,
                       'up_to_date': False}
-        self._last_gr = None
         self._named_entities = []
         self._ai_list = []
         self.com = ''
@@ -201,9 +202,17 @@ class Krang:
                                     cfile.read())
         return csvflo
 
+    def _pickle_fourq(self):
+        fqglo = io.BytesIO()
+        pickle.dump(self._ai_list, fqglo, protocol=pickle.HIGHEST_PROTOCOL)
+
+        return fqglo
+
     def pack_ckt(self, path):
+
         with zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
             pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
+            pack.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
             jsio = io.StringIO()
             json.dump(self.make_json_dict(), jsio, indent=2)
             pack.writestr(self.name + '.json', jsio.getvalue())
@@ -297,7 +306,7 @@ class Krang:
 
         self.brain.log_line('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
                             ' Wait for end message...'.format(nmbr))
-        for _ in _tqdm(range(nmbr)):
+        for _ in _PBar(range(nmbr), level=logging_INFO):
             for ai_el in self._ai_list:
                 self.command(ai_el.fus(self, ai_el.name))
 
@@ -374,18 +383,18 @@ class Krang:
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
         # elements
-        for Nm in _tqdm(self.brain.Circuit.AllElementNames()):
+        for Nm in _PBar(self.brain.Circuit.AllElementNames(), level=logging_INFO, desc='jsonizing elements...'):
             nm = Nm.lower()
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
-        for ne in _tqdm(self._named_entities):
+        for ne in _PBar(self._named_entities, level=logging_INFO, desc='jsonizing entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # options
         dumpable_settings = set(co.DEFAULT_SETTINGS['values'].keys()) - set(co.DEFAULT_SETTINGS['contingent'])
         opts = self.get(*dumpable_settings)
-        for on, ov in _tqdm(opts.items()):
+        for on, ov in _PBar(opts.items(), level=logging_INFO, desc='jsonizing options...'):
             if isinstance(ov, _PINT_QTY_TYPE):
                 opts[on] = np.round(ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude, _GLOBAL_PRECISION)
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
@@ -446,38 +455,37 @@ class Krang:
             exel.append(self[name])
             return
 
-        if self.flags['up_to_date']:
-            return self._last_gr
-        else:
-            gr = nx.Graph()
-            ns = self.brain.Circuit.AllElementNames()
-            for name in ns:
-                try:
-                    buses = self[name].BusNames()
-                except TypeError:
-                    continue
+        gr = nx.Graph()
+        ns = self.brain.Circuit.AllElementNames()
+        for name in ns:
+            try:
+                buses = self[name].BusNames()
+            except TypeError:
+                continue
 
-                # todo encode term perms in the graph
-                if len(buses) == 1:
-                    bs, _ = bus_resolve(buses[0])
+            # todo encode term perms in the graph
+            if len(buses) == 1:
+                bs, _ = bus_resolve(buses[0])
 
-                    _update_node(self, gr, bs, name)
+                _update_node(self, gr, bs, name)
 
-                    # gr.add_node(bs, **{_elk: self.oe[name]})
-                elif len(buses) == 2:
-                    bs0, _ = bus_resolve(buses[0])
-                    bs1, _ = bus_resolve(buses[1])
+                # gr.add_node(bs, **{_elk: self.oe[name]})
+            elif len(buses) == 2:
+                bs0, _ = bus_resolve(buses[0])
+                bs1, _ = bus_resolve(buses[1])
 
-                    _update_edge(self, gr, (bs0, bs1), name)
+                _update_edge(self, gr, (bs0, bs1), name)
 
-                    # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
-                else:
-                    raise IndexError('Buses were > 2. This is a big problem.')
+                # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
+            else:
+                raise IndexError('Buses were > 2. This is a big problem.')
 
-            self._last_gr = gr
+        # pack all the buses together with the elements
+        for n in gr.nodes:
+            gr.nodes[n]['bus'] = self['bus.' + str(n)]
+
         return gr
 
-    @property
     @_cache
     def bus_coords(self):
         """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
@@ -718,6 +726,9 @@ def open_ckt(path):
         assert len(fls) == 1
         jso = zf.open(fls[0])
         krg = from_json(jso)
+
+        with zf.open(_FQ_DM_NAME) as fq_file:
+            krg._ai_list = pickle.load(fq_file)
 
     return krg
 

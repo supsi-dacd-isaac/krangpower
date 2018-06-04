@@ -3,6 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from krangpower.config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH
+import krangpower.config_loader as cl
 
 
 def _create_main_logger():
@@ -60,5 +61,6 @@ _mlog = _create_main_logger()
 
 
 def set_log_level(lvl):
+    cl._GLOBAL_LOG_LEVEL = lvl
     _clog.setLevel(lvl)
     _mlog.setLevel(lvl)
