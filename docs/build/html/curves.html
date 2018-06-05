@@ -103,9 +103,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">The krangpower.enhancer submodule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="defaults_help.html">[DEV] Configuration files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="iockt.html">I/O with zip archives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">krangpower.enhancer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Krang.graph</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults_help.html">[DEV] Data files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
 
             
@@ -182,7 +184,7 @@ histories, memorized in loadshapes.</p>
 <h2>CsvLoadshape<a class="headerlink" href="#csvloadshape" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="krangpower.components.CsvLoadshape">
-<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">CsvLoadshape</code><span class="sig-paren">(</span><em>name</em>, <em>csv_path: str</em>, <em>column_scheme: dict</em>, <em>interval=&lt;class 'pint.quantity.build_quantity_class.&lt;locals&gt;.Quantity'&gt;</em>, <em>use_actual=True</em>, <em>npts=None</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">krangpower.components.</code><code class="descname">CsvLoadshape</code><span class="sig-paren">(</span><em>name=''</em>, <em>csv_path=None</em>, <em>column_scheme={'mult': 1}</em>, <em>interval=None</em>, <em>use_actual=True</em>, <em>npts=None</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.components.CsvLoadshape" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows to specify a Loadshape that refers to a CSV file. Requires a path.
 The name of the loadshape will be the same as the file basename.
 Automatically recognizes if header is present or not.</p>

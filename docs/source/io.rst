@@ -15,13 +15,18 @@ Krang has facilities to store all the relevant information they contain in struc
     │   │    ├──"properties": {<prop_name>: <value>}
     │   │    ├──("units"): {<prop_name>: <unit_string>}
     │   │    ├──("depends"): {<prop_name>: <name_string>}
-    │   │    └──("topological"): [<bus_name_string>]
+    │   │    ├──("topological"): [<bus_name_string>]
+    │   │    └──("hash"): <string> (*)
     │   └──"type2.name2":
     │       '.....
     ├──"settings":
     │   ├──"values": {<setting_name>: <value>}
     │   └──"units": {<setting_name>: <unit_string>}
     └──"buscoords": {<bus_name_string>: [x y]}
+
+    # NOTES:
+    #  keys in parentheses are not necessarily present
+    #  (*) "hash" is used only for comparisons; when editing a json externally, it can be omitted
 
 Full examples are available under the package's :code:`/test` folder. The methods here illustrated are documented in the `Krang reference page`_ too.
 
@@ -37,7 +42,6 @@ Loading
 A function :code:`from_json(path)` is exposed directly by krangpower. It returns a :code:`Krang` in the state syntesised by the JSON.
 
 Note: inside the box, :code:`from_json(path)` instantiates an empty :code:`Krang`, adds all the components in the right order of dependency and finally returns it.
-
 
 
 .. _`Krang reference page`: krang_ref.html

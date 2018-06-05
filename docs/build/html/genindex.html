@@ -86,7 +86,9 @@
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference_components.html">Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">The krangpower.enhancer submodule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="iockt.html">I/O with zip archives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">krangpower.enhancer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Krang.graph</a></li>
 <li class="toctree-l1"><a class="reference internal" href="defaults_help.html">[DEV] Data files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
@@ -170,6 +172,7 @@
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
@@ -194,19 +197,19 @@
       <li><a href="electrical.html#krangpower.components.Transformer.__getitem__">__getitem__() (krangpower.components.Transformer method)</a>
 
       <ul>
+        <li><a href="graph.html#krangpower.GraphView.__getitem__">(krangpower.GraphView method)</a>
+</li>
         <li><a href="krang_ref.html#krangpower.Krang.__getitem__">(krangpower.Krang method)</a>
 </li>
         <li><a href="packed_ref.html#krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement.__getitem__">(krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement method)</a>
 </li>
       </ul></li>
-      <li><a href="krang_ref.html#krangpower.Krang.__lshift__">__lshift__() (krangpower.Krang method)</a>
-
-      <ul>
-        <li><a href="busview_ref.html#krangpower.krangsuit._BusView.__lshift__">(krangpower.krangsuit._BusView method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="graph.html#krangpower.GraphView.__init__">__init__() (krangpower.GraphView method)</a>
+</li>
+      <li><a href="graph.html#krangpower.GraphView.__module__">__module__ (krangpower.GraphView attribute)</a>
+</li>
       <li><a href="packed_ref.html#krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement.__neg__">__neg__() (krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement method)</a>
 </li>
       <li><a href="packed_ref.html#krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement.__pos__">__pos__() (krangpower.enhancer.OpendssdirectEnhancer._PackedOpendssElement method)</a>
@@ -263,8 +266,6 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="krang_ref.html#krangpower.Krang.bus_coords">bus_coords (krangpower.Krang attribute)</a>
-</li>
       <li><a href="above.html#krangpower.components.BusVoltageMonitor">BusVoltageMonitor (class in krangpower.components)</a>
 </li>
   </ul></td>
@@ -276,8 +277,6 @@
       <li><a href="electrical.html#krangpower.components.Capacitor">Capacitor (class in krangpower.components)</a>
 </li>
       <li><a href="condef.html#krangpower.components.CNData">CNData (class in krangpower.components)</a>
-</li>
-      <li><a href="krang_ref.html#krangpower.Krang.command">command() (krangpower.Krang method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -365,10 +364,12 @@
         <li><a href="condef.html#krangpower.components.WireData.fcs">(krangpower.components.WireData method)</a>
 </li>
       </ul></li>
-      <li><a href="smart.html#krangpower.components.FourQ">FourQ (class in krangpower.components)</a>
+      <li><a href="krang_ref.html#krangpower.Krang.fingerprint">fingerprint() (krangpower.Krang method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="smart.html#krangpower.components.FourQ">FourQ (class in krangpower.components)</a>
+</li>
       <li><a href="krang_ref.html#krangpower.from_json">from_json() (in module krangpower)</a>
 </li>
       <li><a href="above.html#krangpower.components.BusVoltageMonitor.fullname">fullname (krangpower.components.BusVoltageMonitor attribute)</a>
@@ -440,6 +441,8 @@
       <li><a href="curves.html#krangpower.components.CsvLoadshape.get_at_row">get_at_row (krangpower.components.CsvLoadshape attribute)</a>
 </li>
       <li><a href="krang_ref.html#krangpower.Krang.get_unit_registry">get_unit_registry() (krangpower.Krang static method)</a>
+</li>
+      <li><a href="graph.html#krangpower.GraphView">GraphView (class in krangpower)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -685,15 +688,13 @@
 </li>
       <li><a href="linedef.html#krangpower.LineCode_S">LineCode_S (class in krangpower)</a>
 </li>
-      <li><a href="linedef.html#krangpower.LineGeometry_C">LineGeometry_C (class in krangpower)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="linedef.html#krangpower.LineGeometry_C">LineGeometry_C (class in krangpower)</a>
+</li>
       <li><a href="linedef.html#krangpower.LineGeometry_O">LineGeometry_O (class in krangpower)</a>
 </li>
       <li><a href="linedef.html#krangpower.LineGeometry_T">LineGeometry_T (class in krangpower)</a>
-</li>
-      <li><a href="krang_ref.html#krangpower.Krang.link_coords">link_coords() (krangpower.Krang method)</a>
 </li>
       <li><a href="oenh_ref.html#krangpower.enhancer.log_line">log_line() (in module krangpower.enhancer)</a>
 </li>
@@ -702,10 +703,6 @@
 
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="krang_ref.html#krangpower.Krang.make_json_dict">make_json_dict() (krangpower.Krang method)</a>
-</li>
-  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="above.html#krangpower.components.Monitor">Monitor (class in krangpower.components)</a>
 </li>
@@ -720,10 +717,20 @@
   </ul></td>
 </tr></table>
 
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="iockt.html#krangpower.open_ckt">open_ckt() (in module krangpower)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="oenh_ref.html#krangpower.enhancer.pack">pack() (in module krangpower.enhancer)</a>
+</li>
+      <li><a href="krang_ref.html#krangpower.Krang.pack_ckt">pack_ckt() (krangpower.Krang method)</a>
 </li>
       <li><a href="above.html#krangpower.components.BusVoltageMonitor.paramhelp">paramhelp() (krangpower.components.BusVoltageMonitor method)</a>
 
@@ -798,8 +805,6 @@
       <li><a href="krang_ref.html#krangpower.Krang.save_dss">save_dss() (krangpower.Krang method)</a>
 </li>
       <li><a href="krang_ref.html#krangpower.Krang.save_json">save_json() (krangpower.Krang method)</a>
-</li>
-      <li><a href="krang_ref.html#krangpower.Krang.set">set() (krangpower.Krang method)</a>
 </li>
       <li><a href="krang_ref.html#krangpower.Krang.show">show() (krangpower.Krang method)</a>
 </li>
