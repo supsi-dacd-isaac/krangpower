@@ -156,7 +156,7 @@ def _termrep(terminals):
         s = '.'
         try:
             for t in terminals:
-                s += str(t) + '.'  # not very pythonic
+                s += str(t) + '.'
             return s[0:-1]  # shaves final dot
         except TypeError:  # todo clean
             return '.' + str(terminals)
@@ -1450,6 +1450,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
     def fcs(self, **hookup):
 
         buses = hookup['buses']
+        termdic = hookup.get('terminals', None)
 
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
 
@@ -1458,7 +1459,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['windings']):
-            s2 += '\n~ wdg={0} bus={1}'.format(ind + 1, buses[ind]) + ' '
+            s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], _termrep(termdic[buses[ind]])) + ' '
             for parameter in self.specialparams:
                 if isinstance(self[parameter], _PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude

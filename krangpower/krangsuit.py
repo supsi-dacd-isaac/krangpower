@@ -478,7 +478,11 @@ class Krang:
 
                 # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
             else:
-                raise IndexError('Buses were > 2. This is a big problem.')
+                assert self[name]._eltype == 'transformer'
+                nw = self[name].NumWindings()
+                # we ASSUME that there is one primary winding and it's the first
+                for w in range(1, nw):
+                    _update_edge(self, gr, (buses[0], buses[w]), name)
 
         # pack all the buses together with the elements
         for n in gr.nodes:
@@ -583,30 +587,13 @@ class _BusView:
 
         return self
 
-    @property
-    def content(self):
-        """A list containing the PackedOpendssElements bound to the BusView's buses."""
-        if self._content is None:
-            # CONTENT IS NOT UPDATED AFTER FIRST EVAL
-            if len(self.buses) == 1:
-                try:
-                    self._content = self.oek.graph.nodes[self.buses[0]][_ELK]
-                    # it's ok that a KeyError by both indexes is caught in the same way
-                except KeyError:
-                    self._content = []
-            elif len(self.buses) == 2:
-                self._content = list(nx.get_edge_attributes(self.oek.graph.subgraph(self.buses), _ELK).values())
-            else:
-                raise ValueError
-        return self._content
-
     def __getattr__(self, item):
         """Calculates a quantity from the submodule busquery on the BusView."""
         try:
             # attributes requested via getattr are searched in busquery
             f = bq.get_fun(item)
         except KeyError:
-            raise AttributeError('Attribute/query function {0} is not implemented')
+            raise AttributeError('Attribute/query function {0} is not implemented'.format(item))
 
         if self.nb == 1:
             return f(self.oek, self, self.buses[0])
@@ -620,6 +607,29 @@ class _BusView:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def content(self):
+        """A list containing the PackedOpendssElements bound to the BusView's buses."""
+        # todo remove reliance on self.oek.graph (not very urgent)
+        if self._content is None:
+            # CONTENT IS NOT UPDATED AFTER FIRST EVAL
+            if len(self.buses) == 1:
+                try:
+                    self._content = self.oek.graph.nodes[self.buses[0]][_ELK]
+                    # it's ok that a KeyError by both indexes is caught in the same way
+                except KeyError:
+                    self._content = []
+            elif len(self.buses) == 2:
+                self._content = list(nx.get_edge_attributes(self.oek.graph.subgraph(self.buses), _ELK).values())
+            else:
+                # if more than two buses, we search among the transformers.
+                self._content = []
+                for trf_name in self.oek.brain.Transformers.AllNames():
+                    buses_set = set(self.oek[trf_name].BusNames())
+                    if buses_set == set(self.buses):
+                        self._content.append(self.oek[trf_name])
+        return self._content
 
 
 def from_json(path):
