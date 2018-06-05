@@ -4,11 +4,13 @@ import hashlib
 import json
 import os.path
 import re
+import pickle
 import textwrap
 from abc import abstractmethod
 from collections import OrderedDict
 from functools import lru_cache
 
+import io
 import numpy as np
 import scipy.io as sio
 from dateutil.parser import parse as dateparse
@@ -676,7 +678,7 @@ class CsvLoadshape:
 
     """
 
-    def __init__(self, name='', csv_path=None, column_scheme={'mult': 1}, interval=_PINT_QTY_TYPE, use_actual=True, npts=None):
+    def __init__(self, name='', csv_path=None, column_scheme={'mult': 1}, interval=None, use_actual=True, npts=None):
 
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
@@ -2380,6 +2382,17 @@ class FourQ(Generator):
         p, q = self.update_pq(oek, mybus)
         s = 'edit generator.' + myname + ' kw=' + str(p.to(UM.kW).magnitude) + ' kvar=' + str(q.to(UM.kVA).magnitude)
         return s
+
+    def _calchash(self):
+        hash_bio = io.BytesIO()
+        pickle.dump(self._dm, hash_bio, protocol=pickle.HIGHEST_PROTOCOL)
+        return hashlib.md5(hash_bio.getvalue()).hexdigest()
+
+    def jsonize(self, all_params=False, flatten_mtx=True, using=_DEFAULT_ENTITIES_PATH):
+        md = super().jsonize(all_params, flatten_mtx, using)
+        md['hash'] = self._calchash()
+
+        return md
 
     def define_dm(self, dm):
         assert isinstance(dm, DecisionModel)

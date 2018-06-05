@@ -1,13 +1,14 @@
 import networkx as nx
 from functools import singledispatch
-import numpy as np
 from krangpower import Krang
 
-__all__ = ['GraphView', 'CurrentView', 'VoltageView', 'BusVoltageView']
+__all__ = ['GraphView']
 
 
 class GraphView(nx.Graph):
-    def __init__(self, busfun, edgefun, ckgr: Krang):
+    def __init__(self, busfun, edgefun, ckgr: Krang, raw_mode=False):
+        """Applies a busfun and and edgefun to the graph of a Krang. It then is indicizable with bus names and tuples
+        of two bus names to retrieve the relative results."""
         super().__init__(incoming_graph_data=None)
 
         gr = ckgr.graph()
@@ -18,7 +19,9 @@ class GraphView(nx.Graph):
         else:
             self.pad_pos = nx.spring_layout(gr, pos=stpos)
 
-        self.raw_mode = False  # when false, getitem behavior is simplified
+        self.raw_mode = raw_mode  # when false, getitem behavior is simplified
+        """If True, __getitem__ has the same behavior as nx.Graph. If False, __getitem__ returns the values of busfun
+        or edgefun directly."""
 
         if busfun is not None:
             self.bus_prop = busfun.__name__
@@ -39,6 +42,8 @@ class GraphView(nx.Graph):
                 self.add_edge(*e)
 
     def __getitem__(self, item):
+        """Gets the value of busfun at a bus, or the value of edgefun at an edge.
+        If GraphView.raw_mode == True, it behaves like a nx.Graph."""
         if self.raw_mode:
             return super().__getitem__(item)
         else:
@@ -53,36 +58,3 @@ def _lean_getitem(item, gr: GraphView):
 @_lean_getitem.register(tuple)
 def _(item, gr: GraphView):
     return gr.edges[item][gr.edge_prop]
-
-
-class VoltageView(GraphView):
-    def __init__(self, ckgr: Krang):
-        def busV(bus):
-            return bus['bus'].Voltages()
-
-        def edgeV(edg):
-            return edg['el'][0].Voltages()
-
-        super().__init__(busV, edgeV, ckgr)
-
-
-class BusVoltageView(GraphView):
-    def __init__(self, ckgr: Krang):
-        def avgbusV(bus):
-            return np.mean(np.abs(bus['bus'].Voltages()))
-
-        super().__init__(avgbusV, None, ckgr)
-
-    def xyz(self):
-        return np.asarray([x[0] for x in self.pad_pos.values()]), \
-               np.asarray([x[1] for x in self.pad_pos.values()]), \
-               np.asarray([self[k].magnitude for k in self.pad_pos.keys()])
-
-
-class CurrentView(GraphView):
-    def __init__(self, ckgr: Krang):
-
-        def edgeI(edg):
-            return edg['el'][0].Currents()
-
-        super().__init__(None, edgeI, ckgr)

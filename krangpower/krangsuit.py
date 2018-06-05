@@ -20,7 +20,7 @@ import krangpower.components
 import krangpower.enhancer as en
 from krangpower import busquery as bq
 from krangpower import components as co
-from krangpower.aux_fcn import get_help_out, bus_resolve
+from krangpower.aux_fcn import get_help_out, bus_resolve, diff_dicts
 from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
 from krangpower.enhancer.OpendssdirectEnhancer import pack
@@ -191,6 +191,8 @@ class Krang:
         return self.flags['up_to_date']
 
     def fingerprint(self):
+        """Returns the md5 hash digest for Krang.make_json_dict() in canonical form. Its main use is to compare two
+        circuits in order to confirm that they are equivalent."""
         return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
 
     def _zip_csv(self):
@@ -209,6 +211,7 @@ class Krang:
         return fqglo
 
     def pack_ckt(self, path):
+        """Packs a ckt archive with all the information needed to reproduce the Krang."""
 
         with zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
             pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
@@ -216,6 +219,8 @@ class Krang:
             jsio = io.StringIO()
             json.dump(self.make_json_dict(), jsio, indent=2)
             pack.writestr(self.name + '.json', jsio.getvalue())
+            md5io = io.StringIO(self.fingerprint())
+            pack.writestr('krang_hash.md5', md5io.getvalue())
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     @_invalidate_cache
@@ -238,7 +243,9 @@ class Krang:
                 vl = value.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][option])).magnitude
             else:
                 vl = value
+
             self.command('set {0}={1}'.format(option, vl))
+
         self.flags['up_to_date'] = False
 
     @_helpfun(DSSHELP, 'OPTIONS')
@@ -260,9 +267,11 @@ class Krang:
 
     def snap(self):
         """Solves a circuit snapshot."""
+        n = self.get('number')
         self.set(mode='snap')
         self.solve()
         self.set(mode='duty')
+        self.set(**n)  # snaps sets number to 1
 
     @_helpfun(DSSHELP, 'EXPORT')
     def export(self, object_descriptor):
@@ -396,7 +405,7 @@ class Krang:
         opts = self.get(*dumpable_settings)
         for on, ov in _PBar(opts.items(), level=logging_INFO, desc='jsonizing options...'):
             if isinstance(ov, _PINT_QTY_TYPE):
-                opts[on] = np.round(ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude, _GLOBAL_PRECISION)
+                opts[on] = np.round(ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude, decimals=_GLOBAL_PRECISION)
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
                     # settings are never matrices; this happens because when *ing a list for a unit, the content
                     # becomes an array.
@@ -404,15 +413,15 @@ class Krang:
                 if isinstance(opts[on], np.int32):
                     opts[on] = int(opts[on])
             elif isinstance(ov, float):
-                opts[on] = np.round(opts[on], _GLOBAL_PRECISION)
+                opts[on] = np.round(opts[on], decimals=_GLOBAL_PRECISION)
             elif isinstance(ov, (np.ndarray, np.matrix)):
-                np.round(opts[on], _GLOBAL_PRECISION).tolist()
+                np.round(opts[on], decimals=_GLOBAL_PRECISION).tolist()
 
         master_dict['settings']['values'] = opts
         master_dict['settings']['units'] = co.DEFAULT_SETTINGS['units']
 
         # coordinates
-        master_dict['buscoords'] = self.bus_coords
+        master_dict['buscoords'] = self.bus_coords()
 
         return master_dict
 
@@ -435,7 +444,8 @@ class Krang:
     @_cache
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
-        _PackedOpendssElement's in the edge/node property '{0}'""".format(_ELK)
+        _PackedOpendssElement's in the edge/node property '{0}'. More information about how to make use of the graph
+        can be found in the dedicated page.""".format(_ELK)
 
         def _update_node(self, gr, bs, name):
             try:
@@ -677,8 +687,8 @@ def from_json(path):
         else:
             d_ov = ov
 
-        if on == 'stepsize':
-            print(d_ov)
+        # if on == 'stepsize':
+        #     print(d_ov)
 
         l_ckt.set(**{on: d_ov})
 
@@ -723,10 +733,15 @@ def from_json(path):
     l_ckt._coords_linked = master_dict['buscoords']
     l_ckt._declare_buscoords()
 
+    # patch for curing the stepsize bug
+    l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
+    # patch for curing the stepsize bug
+
     return l_ckt
 
 
 def open_ckt(path):
+    """loads a ckt package and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(_LSH_ZIP_NAME) as lsh_file:
             lsh_data = io.BytesIO(lsh_file.read())
@@ -737,8 +752,18 @@ def open_ckt(path):
         jso = zf.open(fls[0])
         krg = from_json(jso)
 
+        raw_dict = json.load(zf.open(fls[0]))
+
         with zf.open(_FQ_DM_NAME) as fq_file:
             krg._ai_list = pickle.load(fq_file)
+
+        with zf.open('krang_hash.md5', 'r') as md5_file:
+            kranghash = md5_file.read().decode('utf-8')
+
+        if krg.fingerprint() != kranghash:
+            err = diff_dicts(raw_dict,
+                             krg.make_json_dict())
+            raise IOError('JSONs not corresponding - see below:\n\n' + err)
 
     return krg
 

@@ -96,8 +96,11 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference_components.html">Components</a></li>
 <li class="toctree-l1"><a class="reference internal" href="io.html">I/O with JSON files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">The krangpower.enhancer submodule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="iockt.html">I/O with zip archives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oenh_ref.html">krangpower.enhancer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Krang.graph</a></li>
+<li class="toctree-l1"><a class="reference internal" href="defaults_help.html">[DEV] Data files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 </ul>
 
             
@@ -199,34 +202,11 @@ Krang[(‘bus.nname’,)], Krang[‘bus.b1’,’bus.b2’] gets a BusView to wh
 Note that in order to get a BusView of a single bus, one needs to explicitly pack it in a tuple.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="krangpower.Krang.__lshift__">
-<code class="descname">__lshift__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.__lshift__" title="Permalink to this definition">¶</a></dt>
-<dd><p>The left-shift operator &lt;&lt; adds components to the Krang. Components that can and have to be directly added
-to the krang are those that represent data (WireData, TSData, LineGeometry…) or those that are in the circuit
-but above the topology (such as Monitors and all the Controllers).
-The names of these elements must not be blank when they are added.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="krangpower.Krang.brain">
 <code class="descname">brain</code><em class="property"> = None</em><a class="headerlink" href="#krangpower.Krang.brain" title="Permalink to this definition">¶</a></dt>
 <dd><p>Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
 can pack objects and returns enhanced data structures such as pint qtys and numpy arrays.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="krangpower.Krang.bus_coords">
-<code class="descname">bus_coords</code><a class="headerlink" href="#krangpower.Krang.bus_coords" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
-a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
-launched.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="krangpower.Krang.command">
-<code class="descname">command</code><span class="sig-paren">(</span><em>cmd_str: str</em>, <em>echo=True</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.command" title="Permalink to this definition">¶</a></dt>
-<dd><p>Performs an opendss textual command and adds the commands to the record Krang.com if echo is True.</p>
 </dd></dl>
 
 <dl class="method">
@@ -244,6 +224,13 @@ Has a help attribute.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="krangpower.Krang.fingerprint">
+<code class="descname">fingerprint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.fingerprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the md5 hash digest for Krang.make_json_dict() in canonical form. Its main use is to compare two
+circuits in order to confirm that they are equivalent.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="krangpower.Krang.get">
 <code class="descname">get</code><span class="sig-paren">(</span><em>*opts</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes a list of circuit options and returns them as dict of name, value.</p>
@@ -255,22 +242,16 @@ Has a help attribute.</p>
 <dd><p>Retrieves krangpower’s UnitRegistry.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="krangpower.Krang.link_coords">
-<code class="descname">link_coords</code><span class="sig-paren">(</span><em>csv_path</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.link_coords" title="Permalink to this definition">¶</a></dt>
-<dd><p>Notifies Krang of a csv file with bus coordinates to use.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="krangpower.Krang.make_json_dict">
-<code class="descname">make_json_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.make_json_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a complete description of the circuit and its objects as a json.dumpable-dict.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="krangpower.Krang.name">
 <code class="descname">name</code><a class="headerlink" href="#krangpower.Krang.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of the circuit..</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="krangpower.Krang.pack_ckt">
+<code class="descname">pack_ckt</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.pack_ckt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Packs a ckt archive with all the information needed to reproduce the Krang.</p>
 </dd></dl>
 
 <dl class="method">
@@ -290,13 +271,6 @@ echo was False. The file output should be loadable and runnable in traditional O
 <dt id="krangpower.Krang.save_json">
 <code class="descname">save_json</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.save_json" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves in path a complete description of the circuit and its objects</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="krangpower.Krang.set">
-<code class="descname">set</code><span class="sig-paren">(</span><em>**opts_vals</em><span class="sig-paren">)</span><a class="headerlink" href="#krangpower.Krang.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets circuit options according to a dict. Option that have a physical dimensionality (such as stepsize) can
-be specified as pint quantities; otherwise, the default opendss units will be used.</p>
 </dd></dl>
 
 <dl class="method">

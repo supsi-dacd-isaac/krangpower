@@ -1,4 +1,6 @@
 import json
+import difflib
+import io
 import textwrap
 from sys import modules
 from functools import lru_cache
@@ -23,6 +25,24 @@ def get_help_out(config, section):
         hstr = item[0].upper() + ':  ' + item[1]
         help_str += '\n'+'\n\t '.join(textwrap.wrap(hstr, basev))
     return help_str
+
+
+def diff_dicts(original: dict, new: dict, context_lines=1):
+
+    oj = io.StringIO()
+    json.dump(original, oj, sort_keys=True, indent=2)
+    original_json = oj.getvalue()
+
+    nj = io.StringIO()
+    json.dump(new, nj, sort_keys=True, indent=2)
+    new_json = nj.getvalue()
+
+    diff = difflib.context_diff(original_json.splitlines(1),
+                                new_json.splitlines(1),
+                                n=context_lines, fromfile='original', tofile='new')
+    err = ''.join(diff)
+
+    return err
 
 
 def get_classmap():

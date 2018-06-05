@@ -1,5 +1,5 @@
-The krangpower.enhancer submodule
-'''''''''''''''''''''''''''''''''
+krangpower.enhancer
+===================
 
 The submodule :code:`krangpower.enhancer` constitues an `OpenDSSDirect.py`_ wrapper and overhaul, and is designed to expose the exact same interface - the api reference is the same you can find in its docs. It is usable in and by itself as a substitute of the `OpenDSSDirect.py`_ module when interested in the additional functionality.
 
