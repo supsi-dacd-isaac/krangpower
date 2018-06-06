@@ -410,7 +410,7 @@ class Krang:
                     # settings are never matrices; this happens because when *ing a list for a unit, the content
                     # becomes an array.
                     opts[on] = opts[on].tolist()
-                if isinstance(opts[on], np.int32):
+                if isinstance(opts[on], (np.int32, np.int64)):
                     opts[on] = int(opts[on])
             elif isinstance(ov, float):
                 opts[on] = np.round(opts[on], decimals=_GLOBAL_PRECISION)

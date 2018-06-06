@@ -55,6 +55,7 @@ Contents
    oenh_ref
    graph
    defaults_help
+   log
    faq
 
 Indices and tables

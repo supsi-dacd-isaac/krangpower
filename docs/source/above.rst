@@ -16,13 +16,6 @@ Monitor
    :undoc-members:
    :inherited-members:
 
-BusVoltageMonitor
-'''''''''''''''''
-.. autoclass:: krangpower.components.BusVoltageMonitor
-   :members:
-   :undoc-members:
-   :inherited-members:
-
 StorageController
 '''''''''''''''''
 .. autoclass:: krangpower.components.StorageController
