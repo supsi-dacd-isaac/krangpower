@@ -1,4 +1,3 @@
-import json
 import difflib
 import io
 import textwrap

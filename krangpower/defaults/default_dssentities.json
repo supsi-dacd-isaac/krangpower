@@ -926,8 +926,6 @@
             "model": 1,
             "vminpu": 0.9,
             "vmaxpu": 1.1,
-            "yearly": "",
-            "daily": "",
             "dispmode": "default",
             "dispvalue": 0.0,
             "conn": "wye",
@@ -966,7 +964,6 @@
             "mva": "MVA",
             "basefreq": "Hz"
         },
-        "associated": {"duty": ""},
         "topological": {"bus1": ""}
     },
     "default_storage": {

@@ -47,16 +47,18 @@ class MyDM(kp.DecisionModel):
 
 
 fq = kp.FourQ(kv=2.0 * um.kV)
-fq.define_dm(MyDM())
-twc['bb', ] << fq.aka('myfq')
+twc['bb', ] << fq.aka('myfq') * MyDM()
 
 
 twc.set(number=6, stepsize=2 * um.min)
 twc.drag_solve()
 
+
+# -------------------------------------------------------
+# GraphView demonstration
 bvo = kp.gv.VoltageView(twc)
 print(round(bvo['bb'], 2))
 print(round(bvo['b', 'bb'], 2))
 
 twc.pack_ckt(r'twc.zip')
-two = kp.open_ckt(r'twc.zip')
+two = kp.open_ckt(r'twc.zip')  # verifies that the hash-checking works

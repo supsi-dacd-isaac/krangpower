@@ -29,7 +29,7 @@ __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
            'Vsource', 'dejsonize', 'SnpMatrix',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'BusVoltageMonitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
+           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
 
 
 # <editor-fold desc="AUX FUNCTIONS">
@@ -573,7 +573,7 @@ class _DSSentity:
 
         self.params_types_raw = {k: type(v) for k, v in list(self._params.items()) + list(self._associated.items())}
 
-    def jsonize(self, all_params=False, flatten_mtx=True, using=_DEFAULT_ENTITIES_PATH):
+    def jsonize(self, all_params=False, flatten_mtx=True):  #, using=_DEFAULT_ENTITIES_PATH):
         """Returns a dict that describes the element's parameters. It's compatible with the json I/O functions."""
         super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
         if not self.isnamed():
@@ -598,20 +598,20 @@ class _DSSentity:
         super_dikt['units'] = {k: v for k, v in DEFAULT_COMP['default_' + self.toe]['units'].items()
                                if k in self._editedParams}
 
-        if using is not None:
-            pr_cmp = {'properties': pls_mtx, 'type': self.toe}
-            compare = load_dictionary_json(using)
-            for k, v in compare.items():
-                try:
-                    np.testing.assert_equal(pr_cmp, v)
-                    dicky = {'type': self.toe,
-                             'path': using,
-                             'name': k}
-                    if not self.isnamed():
-                        dicky['term_perm'] = self.term_perm
-                    return dicky
-                except AssertionError:
-                    pass
+        # if using is not None:
+        #     pr_cmp = {'properties': pls_mtx, 'type': self.toe}
+        #     compare = load_dictionary_json(using)
+        #     for k, v in compare.items():
+        #         try:
+        #             np.testing.assert_equal(pr_cmp, v)
+        #             dicky = {'type': self.toe,
+        #                      'path': using,
+        #                      'name': k}
+        #             if not self.isnamed():
+        #                 dicky['term_perm'] = self.term_perm
+        #             return dicky
+        #         except AssertionError:
+        #             pass
 
         if flatten_mtx:
             super_dikt['properties'] = pls_flat
@@ -2398,6 +2398,17 @@ class FourQ(Generator):
         assert isinstance(dm, DecisionModel)
         self._dm = dm
 
+    def __mul__(self, other):
+        try:
+            super().__mul__(other)
+        except:
+            try:
+                self.define_dm(other)
+            except AssertionError:  # raised by the fact that it's not a DecisionModel
+                raise
+
+        return self
+
 
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
@@ -2410,8 +2421,10 @@ class _AboveCircuitElement(_CircuitElement):
 class Capcontrol(_AboveCircuitElement):
     pass
 
+
 class Energymeter(_AboveCircuitElement):
     pass
+
 
 class Regcontrol(_AboveCircuitElement):
     """Regcontrol object
@@ -2532,25 +2545,25 @@ class Monitor(_AboveCircuitElement):
     #          # ' terminal=' + str(terminal) +\
 
 
-class BusVoltageMonitor(_AboveCircuitElement):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self['mode'] = 0
-
-    def fcs(self, **hookup):
-
-        busname = hookup['busname']
-
-        l = Load(None, kw=0.0, kvar=0.0, model='1')
-        l.name = 'bvm_' + busname
-
-        loadstr = l.fcs(buses=(busname,))
-        monstr = Monitor().fcs(eltype='load', elname='bvm_' + busname, terminal=1, alias='bvm_' + busname)
-
-        return '!FICTITIOUS 0-KW LOAD FOR VOLTAGE MONITORING\n' + \
-               loadstr + '\n' + \
-               monstr + '\n' + \
-               '!END FICTITIOUS LOAD'
+# class BusVoltageMonitor(_AboveCircuitElement):
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         self['mode'] = 0
+#
+#     def fcs(self, **hookup):
+#
+#         busname = hookup['busname']
+#
+#         l = Load(None, kw=0.0, kvar=0.0, model='1')
+#         l.name = 'bvm_' + busname
+#
+#         loadstr = l.fcs(buses=(busname,))
+#         monstr = Monitor().fcs(eltype='load', elname='bvm_' + busname, terminal=1, alias='bvm_' + busname)
+#
+#         return '!FICTITIOUS 0-KW LOAD FOR VOLTAGE MONITORING\n' + \
+#                loadstr + '\n' + \
+#                monstr + '\n' + \
+#                '!END FICTITIOUS LOAD'
 
 
 class StorageController(_AboveCircuitElement):

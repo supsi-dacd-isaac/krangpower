@@ -368,7 +368,7 @@ class Krang:
                         continue
             except StopIteration:
                 # this means that we hit stopiteration of bcr without finding a valid line
-                # for which float(row[x]) did not raise ValueError and broke the while
+                # for which float(row[x]) did not raise ValueError, thus breaking the while
                 raise ValueError('No valid coords found in file "{0}"'.format(path))
 
             while row:
@@ -444,8 +444,8 @@ class Krang:
     @_cache
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
-        _PackedOpendssElement's in the edge/node property '{0}'. More information about how to make use of the graph
-        can be found in the dedicated page.""".format(_ELK)
+        _PackedOpendssElement's in the edge/node property 'el'. More information about how to make use of the graph
+        can be found in the dedicated page."""
 
         def _update_node(self, gr, bs, name):
             try:
