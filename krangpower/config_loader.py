@@ -29,6 +29,7 @@ DSSHELP.read(os.path.join(_THISDIR, 'config/DSSHelp.cfg'))
 # -------------------------------------------------------------
 _INTERFACE_METHODS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'interfaces'))
 _UNIT_MEASUREMENT_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'measurement_units'))
+_MANDATORY_UNITS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'mandatory_units'))
 _TREATMENTS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'treatments'))
 _INTERF_SELECTORS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'interface_selectors'))
 _DEFAULT_SETTINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default_settings'))
@@ -89,6 +90,12 @@ UM.define('none = [generic_length] = unitlength')  # when lengths are set as non
 UM.define('mt = meter')
 _PINT_QTY_TYPE = type(1 * UM.m)
 
+
+# -------------------------------------------------------------
+#  DICTIONARY OF MANDATORY UNITS
+# -------------------------------------------------------------
+with open(_MANDATORY_UNITS_PATH, 'r') as mf:
+    _MANDATORY_UNITS = json.load(mf)
 
 # -------------------------------------------------------------
 #  DEFAULTS DICTIONARIES

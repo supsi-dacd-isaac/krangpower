@@ -18,7 +18,7 @@ from pandas import read_csv
 
 from krangpower.aux_fcn import _matrix_from_json, get_classmap, load_dictionary_json
 from krangpower.config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
-    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, _TMP_PATH
+    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, _TMP_PATH, _MANDATORY_UNITS
 from krangpower.logging_init import _mlog
 from .nxtable import NxTable
 
@@ -301,6 +301,8 @@ def _resolve_unit(ustring: str, match_unit_getter):
 
     units = []
 
+    # todo after unit dereferencing, this is no more necessary
+
     for uidx, string in enumerate(istring):
         old_string = ''
         while old_string != string:
@@ -491,10 +493,7 @@ class _DSSentity:
             if isinstance(value_raw, _PINT_QTY_TYPE):
                 unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == UM.none:
-                    pass
-                    # assert parameter_raw == 'length'
-                    # unt = value_raw.units
-                    # self['units'] = str(unt)  # todo this is wrong
+                    raise ValueError('Theres no unit for {0}. This should not happen, contact the dev.'.format(self.toe))
                 value = value_raw.to(unt).magnitude
             else:
                 value = value_raw
@@ -644,6 +643,11 @@ class _DSSentity:
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name  # _ splitting to allow name personalization outside dss
 
         s2 = ''
+
+        if self.toe in _MANDATORY_UNITS.keys():
+            for muname, muvalue in _MANDATORY_UNITS[self.toe].items():
+                s2 = s2 + ' ' + muname + '=' + muvalue
+
         for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])

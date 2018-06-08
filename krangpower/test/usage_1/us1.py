@@ -3,7 +3,7 @@ from numpy import round
 from numpy.random import random
 import csv
 
-kp.set_log_level(30)
+kp.set_log_level(10)
 
 um = kp.UM
 src = kp.Vsource(basekv=10.0 * um.kV)

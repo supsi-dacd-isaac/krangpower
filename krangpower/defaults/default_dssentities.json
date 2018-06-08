@@ -54,7 +54,6 @@
                     2.8
                 ]
             ],
-            "units": "none",
             "basefreq": 50.0,
             "normamps": 400.0,
             "emergamps": 600.0,
@@ -68,15 +67,15 @@
             "neutral": 3
         },
 		"units": {
-            "r1": "ohm / this.units",
-            "x1": "ohm / this.units",
-            "r0": "ohm / this.units",
-            "x0": "ohm / this.units",
-            "c1": "nF  / this.units",
-            "c0": "nF  / this.units",
-            "rmatrix": "ohm / this.units",
-            "xmatrix": "ohm / this.units",
-            "cmatrix": "nF / this.units",
+            "r1": "ohm / m",
+            "x1": "ohm / m",
+            "r0": "ohm / m",
+            "x0": "ohm / m",
+            "c1": "nF  / m",
+            "c0": "nF  / m",
+            "rmatrix": "ohm / m",
+            "xmatrix": "ohm / m",
+            "cmatrix": "nF / m",
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
@@ -97,7 +96,6 @@
             "x0": 0.4047,
             "c1": 3.4,
             "c0": 1.6,
-            "units": "none",
             "basefreq": 50.0,
             "normamps": 400.0,
             "emergamps": 600.0,
@@ -111,12 +109,12 @@
             "neutral": 3
         },
 		"units": {
-            "r1": "ohm / this.units",
-            "x1": "ohm / this.units",
-            "r0": "ohm / this.units",
-            "x0": "ohm / this.units",
-            "c1": "nF  / this.units",
-            "c0": "nF  / this.units",
+            "r1": "ohm / m",
+            "x1": "ohm / m",
+            "r0": "ohm / m",
+            "x0": "ohm / m",
+            "c1": "nF  / m",
+            "c0": "nF  / m",
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
@@ -131,7 +129,6 @@
         "type": "linecode_a",
         "properties": {
             "nphases": 3,
-            "units": "none",
             "rmatrix": [
                 [
                     0.09813333
@@ -190,16 +187,16 @@
             "neutral": 3
         },
 		"units": {
-            "rmatrix": "ohm / this.units",
-            "xmatrix": "ohm / this.units",
-            "cmatrix": "nF / this.units",
+            "rmatrix": "ohm / m",
+            "xmatrix": "ohm / m",
+            "cmatrix": "nF / m",
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
             "faultrate": "h",
             "repair": "h",
-            "rg": "ohm / this.units",
-            "xg": "ohm / this.units",
+            "rg": "ohm / m",
+            "xg": "ohm / m",
             "rho": "ohm"
         }
     },
@@ -208,19 +205,16 @@
         "properties": {
             "rdc": -1.0,
             "rac": -1.0,
-            "runits": "none",
             "gmrac": -1.0,
-            "gmrunits": "none",
             "normamps": 0.0,
             "emergamps": 0.0,
-            "radunits": "none",
             "diam": -2.0
         },
 		"units": {
-            "rdc": "ohm / this.runits",
-            "rac": "ohm / this.runits",
-            "gmrac": "this.gmrunits",
-            "diam": "this.radunits",
+            "rdc": "ohm / mm",
+            "rac": "ohm / mm",
+            "gmrac": "mm",
+            "diam": "mm",
             "emergamps": "A",
             "normamps": "A"
         }
@@ -238,25 +232,22 @@
             "diacable": -1.0,
             "rdc": -1.0,
             "rac": -2.0,
-            "runits": "none",
             "gmrac": -1.0,
             "normamps": 0.0,
             "emergamps": 0.0,
-            "gmrunits": "none",
-            "radunits": "none",
             "diam": -1.0
         },
 		"units": {
-            "diastrand": "this.radunits",
-            "gmrstrand": "this.gmrunits",
-            "rstrand": "this.runits",
-            "inslayer": "this.radunits",
-            "diains": "this.radunits",
-            "diacable": "this.radunits",
-            "rdc": "ohm / this.runits",
-            "rac": "ohm / this.runits",
-            "gmrac": "this.gmrunits",
-            "diam": "this.radunits",
+            "diastrand": "mm",
+            "gmrstrand": "mm",
+            "rstrand": "mm",
+            "inslayer": "mm",
+            "diains": "mm",
+            "diacable": "mm",
+            "rdc": "ohm / mm",
+            "rac": "ohm / mm",
+            "gmrac": "mm",
+            "diam": "mm",
             "emergamps": "A",
             "normamps": "A"
         }
@@ -282,15 +273,15 @@
             "diam": -1.0
         },
         "units": {
-            "diashield": "this.radunits",
-            "tapelayer": "this.radunits",
-            "inslayer": "this.radunits",
-            "diains": "this.radunits",
-            "diacable": "this.radunits",
-            "rdc": "ohm / this.runits",
-            "rac": "ohm / this.runits",
-            "gmrac": "this.gmrunits",
-            "diam": "this.radunits",
+            "diashield": "mm",
+            "tapelayer": "mm",
+            "inslayer": "mm",
+            "diains": "mm",
+            "diacable": "mm",
+            "rdc": "ohm / mm",
+            "rac": "ohm / mm",
+            "gmrac": "mm",
+            "diam": "mm",
             "emergamps": "A",
             "normamps": "A"
         }
@@ -318,13 +309,12 @@
                     0
                 ]
             ],
-            "units": ["m"],
             "reduce": "",
             "spacing": ""
         },
 		"units": {
-            "x": ["this.units"],
-            "h": ["this.units"]
+            "x": ["m"],
+            "h": ["m"]
         },
         "associated": {"wire": [""],
                        "tsdata": [""],
@@ -350,8 +340,8 @@
             "spacing": ""
         },
 		"units": {
-            "x": ["this.units"],
-            "h": ["this.units"]
+            "x": ["m"],
+            "h": ["m"]
         },
         "associated": {"wire": [""]}
     },
@@ -379,8 +369,8 @@
             "spacing": ""
         },
 		"units": {
-            "x": ["this.units"],
-            "h": ["this.units"]
+            "x": ["m"],
+            "h": ["m"]
         },
         "associated": {"cndata": [""]}
     },
@@ -408,8 +398,8 @@
             "spacing": ""
         },
 		"units": {
-            "x": ["this.units"],
-            "h": ["this.units"]
+            "x": ["m"],
+            "h": ["m"]
         },
         "associated": {"tsdata": [""]}
     },
@@ -487,20 +477,20 @@
             "neutral": 3
         },
 		"units": {
-            "length": "this.units",
-            "rg": "ohm / this.units",
-            "xg": "ohm / this.units",
+            "length": "m",
+            "rg": "ohm / m",
+            "xg": "ohm / m",
             "rho": "ohm",
             
-            "r1": "ohm / this.units",
-            "x1": "ohm / this.units",
-            "r0": "ohm / this.units",
-            "x0": "ohm / this.units",
+            "r1": "ohm / m",
+            "x1": "ohm / m",
+            "r0": "ohm / m",
+            "x0": "ohm / m",
             "c1": "nF",
             "c0": "nF",
-            "rmatrix": "ohm / this.units",
-            "xmatrix": "ohm / this.units",
-            "cmatrix": "nF / this.units",
+            "rmatrix": "ohm / m",
+            "xmatrix": "ohm / m",
+            "cmatrix": "nF / m",
 
             "normamps": "A",
             "emergamps": "A",
