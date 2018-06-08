@@ -5,5 +5,6 @@ from krangpower.gv import *
 from krangpower.graphview import GraphView
 from krangpower.logging_init import set_log_level
 from krangpower.config_loader import *
-from krangpower.aux_fcn import load_entities, fingerprint
+from krangpower.aux_fcn import fingerprint
+from krangpower.components import load_entities
 from krangpower.graphview import *

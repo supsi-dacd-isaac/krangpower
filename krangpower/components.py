@@ -27,7 +27,7 @@ from .nxtable import NxTable
 
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
-           'Vsource', 'dejsonize', 'SnpMatrix',
+           'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
            'Monitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
 
@@ -221,12 +221,12 @@ def dejsonize(obj_repr: dict):
             try:
                 return obj_repr['properties'][matchobj.group(2)]
             except KeyError:
-                return co.DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]
+                return DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]
         else:
             try:
                 return obj_repr['properties'][matchobj.group(2)][indx]
             except KeyError:
-                return co.DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]['indx']
+                return DEFAULT_COMP['default_' + obj_repr['type']]['properties'][matchobj.group(2)]['indx']
 
     # determines class
     elcls = classmap[obj_repr['type']]
@@ -242,7 +242,17 @@ def dejsonize(obj_repr: dict):
             obj_repr['properties'][prop] = _matrix_from_json(value)
 
     # add unit measure
-    for prop, value in obj_repr['units'].items():
+    for prop in obj_repr['properties'].keys():
+
+        if prop not in DEFAULT_COMP['default_' + obj_repr['type']]['units'].keys():
+            continue
+        else:
+            try:
+                value = obj_repr['units'][prop]
+            except KeyError:
+                _mlog.debug('When djsonizing {0}.{1}, property {0} did not have a unit, so the default unit was assumed'.format(
+                    obj_repr['type'], obj_repr['name'], prop))
+                value = DEFAULT_COMP['default_' + obj_repr['type']]['units'][prop]
 
         if isinstance(obj_repr['properties'][prop], np.matrix):
             unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
@@ -251,6 +261,7 @@ def dejsonize(obj_repr: dict):
             obj_repr['properties'][prop] *= _resolve_unit(value, propgetter)
 
     # add in the adjointed parameters
+    # todo refine: if the default doesn't have a depend section, jump
     obj_repr['properties'].update(obj_repr['depends'])
 
     # returns object
@@ -2666,6 +2677,35 @@ class StorageController(_AboveCircuitElement):
         return s1 + s2
 
 
+def load_entities(path):
+
+    classmap = get_classmap()
+
+    with open(path, 'r') as file:
+        dik = json.load(file)
+
+    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
+    # and we have to convert them back.
+    # for entity in dik:
+    #     for property, value in dik[entity]['properties'].items():
+    #         if isinstance(value, list):
+    #             dik[entity]['properties'][property] = _matrix_from_json(value)
+
+    dicky = {}
+
+    for entity_name in dik:
+
+        dicky[entity_name] = dejsonize(dik[entity_name])
+
+        # elcls = classmap[dik[entity_name]['type']]
+        # if elcls.isnamed():
+        #     dicky[entity_name] = elcls(entity_name, dik[entity_name]['properties'])
+        # else:
+        #     dicky[entity_name] = elcls(dik[entity_name]['properties'])
+
+    return dicky
+
+
 # MAIN FUNCTION FOR DEMONSTRATION AND TESTING
 # -------------------------------------------------------------
 def main():
@@ -2674,3 +2714,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

@@ -211,6 +211,8 @@
             "runits": "none",
             "gmrac": -1.0,
             "gmrunits": "none",
+            "normamps": 0.0,
+            "emergamps": 0.0,
             "radunits": "none",
             "diam": -2.0
         },
@@ -218,7 +220,9 @@
             "rdc": "ohm / this.runits",
             "rac": "ohm / this.runits",
             "gmrac": "this.gmrunits",
-            "diam": "this.radunits"
+            "diam": "this.radunits",
+            "emergamps": "A",
+            "normamps": "A"
         }
     },
     "default_cndata": {
@@ -236,6 +240,8 @@
             "rac": -2.0,
             "runits": "none",
             "gmrac": -1.0,
+            "normamps": 0.0,
+            "emergamps": 0.0,
             "gmrunits": "none",
             "radunits": "none",
             "diam": -1.0
@@ -250,7 +256,9 @@
             "rdc": "ohm / this.runits",
             "rac": "ohm / this.runits",
             "gmrac": "this.gmrunits",
-            "diam": "this.radunits"
+            "diam": "this.radunits",
+            "emergamps": "A",
+            "normamps": "A"
         }
     },
     "default_tsdata": {
@@ -273,19 +281,19 @@
             "emergamps": 0.0,
             "diam": -1.0
         },
-		"units": {
-            "diastrand": "this.radunits",
-            "gmrstrand": "this.gmrunits",
-            "rstrand": "this.runits",
+        "units": {
+            "diashield": "this.radunits",
+            "tapelayer": "this.radunits",
             "inslayer": "this.radunits",
             "diains": "this.radunits",
             "diacable": "this.radunits",
             "rdc": "ohm / this.runits",
             "rac": "ohm / this.runits",
             "gmrac": "this.gmrunits",
-            "diam": "this.radunits"
-        },
-        "associated": {"tscable": ""}
+            "diam": "this.radunits",
+            "emergamps": "A",
+            "normamps": "A"
+        }
     },
     "default_linegeometry": {
         "type": "linegeometry",

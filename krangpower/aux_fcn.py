@@ -108,32 +108,6 @@ def _matrix_from_json(value):
             return try_mtx
 
 
-def load_entities(path):
-
-    classmap = get_classmap()
-
-    with open(path, 'r') as file:
-        dik = json.load(file)
-
-    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
-    # and we have to convert them back.
-    for entity in dik:
-        for property, value in dik[entity]['properties'].items():
-            if isinstance(value, list):
-                dik[entity]['properties'][property] = _matrix_from_json(value)
-
-    dicky = {}
-
-    for entity_name in dik:
-        elcls = classmap[dik[entity_name]['type']]
-        if elcls.isnamed():
-            dicky[entity_name] = elcls(entity_name, xml_rep=dik[entity_name]['properties'])
-        else:
-            dicky[entity_name] = elcls(dik[entity_name]['properties'])
-
-    return dicky
-
-
 @lru_cache(8)
 def load_dictionary_json(path):
     this_module = modules[__name__]
@@ -158,9 +132,9 @@ def load_dictionary_json(path):
 
 def bus_resolve(bus_descriptor: str):
     """
-    >>> Krang()._bus_resolve('bus2.3.1.2')
+    >>> bus_resolve('bus2.3.1.2')
     ('bus2', (3, 1, 2))
-    >>> Krang()._bus_resolve('bus2.33.14.12323.2.3.3')
+    >>> bus_resolve('bus2.33.14.12323.2.3.3')
     ('bus2', (33, 14, 12323, 2, 3, 3))
     """
 

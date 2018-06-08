@@ -17,10 +17,10 @@ For Linux, they are created under:
     /var/log/krangpower/commands.log
     /var/log/krangpower/krangpower.log
 
-logging level
-.............
+Log level
+.........
 
-In order to utilize the logs, it is of uttermost importance to correctly set the module-wide logging level. The level has to be set with a dedicated function
+In order to utilize the logs, it is of uttermost importance to correctly set the module-wide log level. The level has to be set with a dedicated function
 exposed at the module level:
 
 .. autofunction:: krangpower.set_log_level
@@ -33,10 +33,15 @@ The default/starting value of the logging level, when using :code:`krangpower` o
     ./config/krang_config.cfg --> misc settings --> default_logging_level
 
 .. warning::
-    The commands.log and krangpower.log files are only written **if the level is <= logging.DEBUG** (10).
+    The commands.log and krangpower.log files are only written **if the log level is <= logging.DEBUG** (10).
 
 .. warning::
-    Keep in mind that these files are quite verbose and writing them often causes a *major* time overhead.
+    The log files are quite verbose and writing them often causes a *major* execution time overhead, so
+    they should be left unactive if not needed.
+
+.. tip::
+    A log level <= logging.INFO (20) does not write the logs, but displays a bit more information on the console at runtime, notably
+    progress bars for the computation/execution of properties/function such as :code:`krang.graph`, etc.
 
 commands.log
 ............
