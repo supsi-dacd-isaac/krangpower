@@ -101,7 +101,7 @@ def _cache(f):
 
 
 class Krang:
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.id = _DEFAULT_KRANG_NAME
         self.flags = {'coords_preloaded': False,
                       'coords_declared': False,
@@ -114,7 +114,7 @@ class Krang:
         """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
         self._coords_linked = dict()
-        self._initialize(*args)
+        self._initialize(*args, **kwargs)
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = en  # (oe_id=name)
@@ -597,21 +597,6 @@ class _BusView:
 
         return self
 
-    def __getattr__(self, item):
-        """Calculates a quantity from the submodule busquery on the BusView."""
-        try:
-            # attributes requested via getattr are searched in busquery
-            f = bq.get_fun(item)
-        except KeyError:
-            raise AttributeError('Attribute/query function {0} is not implemented'.format(item))
-
-        if self.nb == 1:
-            return f(self.oek, self, self.buses[0])
-        elif self.nb == 2:
-            return f(self.oek, self, self.buses)
-        else:
-            raise AttributeError
-
     def __str__(self):
         return '<BusView' + str(self.buses) + '>'
 
@@ -640,6 +625,21 @@ class _BusView:
                     if buses_set == set(self.buses):
                         self._content.append(self.oek[trf_name])
         return self._content
+
+    def __getattr__(self, item):
+        """Calculates a quantity from the submodule busquery on the BusView."""
+        try:
+            # attributes requested via getattr are searched in busquery
+            f = bq.get_fun(item)
+        except KeyError:
+            raise AttributeError('Attribute/query function {0} is not implemented'.format(item))
+
+        if self.nb == 1:
+            return f(self.oek, self, self.buses[0])
+        elif self.nb == 2:
+            return f(self.oek, self, self.buses)
+        else:
+            raise AttributeError
 
 
 def from_json(path):

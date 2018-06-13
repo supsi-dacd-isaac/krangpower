@@ -10,7 +10,7 @@ linegeometry_c,CNData,cncable,fullname
 linegeometry_c,list,cncable,fullname
 linegeometry_t,TSData,tscable,fullname
 linegeometry_t,list,tscable,fullname
-line,linegeometry,geometry,fullname
+line,linegeometry,geometry,name
 line,LineGeometry_C,geometry,name
 line,LineGeometry_O,geometry,name
 line,LineGeometry_T,geometry,name

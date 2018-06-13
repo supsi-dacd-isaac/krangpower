@@ -1,0 +1,29 @@
+{
+  "linecode":{
+    "units": "m"
+  },
+  "line":{
+    "units": "m"
+  },
+  "linecode_s":{
+    "units": "m"
+  },
+  "linecode_a":{
+    "units": "m"
+  },
+  "wiredata":{
+    "runits": "mm",
+    "gmrunits": "mm",
+    "radunits": "mm"
+  },
+  "cndata":{
+    "runits": "mm",
+    "gmrunits": "mm",
+    "radunits": "mm"
+  },
+  "tsdata":{
+    "runits": "mm",
+    "gmrunits": "mm",
+    "radunits": "mm"
+  }
+}

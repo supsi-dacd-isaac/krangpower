@@ -169,7 +169,7 @@ def _validate_text_interface_result(result_string: str):
     """This function is passed the raw, direct output opendss text interface and performs checks on the results to see
     if the string returned is valid (and not, for example, a warning). This function either returns nothing or
     raises an error."""
-    if result_string.lower().startswith(('warning', 'error', 'unknown')):
+    if result_string.lower().startswith(('warning', 'error', 'unknown', 'illegal')):
         raise OpenDSSTextError(result_string)
 
     if result_string.lower().find('not found') != -1:

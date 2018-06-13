@@ -401,7 +401,7 @@
             "x": ["m"],
             "h": ["m"]
         },
-        "associated": {"tsdata": [""]}
+        "associated": {"tscable": [""]}
     },
     "default_line": {
         "type": "line",

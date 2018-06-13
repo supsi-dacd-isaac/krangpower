@@ -256,7 +256,7 @@ def dejsonize(obj_repr: dict):
 
         if isinstance(obj_repr['properties'][prop], np.matrix):
             unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
-            obj_repr['properties'][prop] *= unit_matrix
+            obj_repr['properties'][prop] = np.multiply(obj_repr['properties'][prop], unit_matrix)
         else:
             obj_repr['properties'][prop] *= _resolve_unit(value, propgetter)
 
@@ -490,7 +490,7 @@ class _DSSentity:
                 # should this raise an exception instead?
 
             # pint quantity check and conversion
-            if isinstance(value_raw, _PINT_QTY_TYPE):
+            if hasattr(value_raw, 'magnitude'):  # isinstance pint does not work
                 unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == UM.none:
                     raise ValueError('Theres no unit for {0}. This should not happen, contact the dev.'.format(self.toe))
@@ -1058,7 +1058,6 @@ class TSData(_NamedDSSentity):
 class _LineGeometry(_NamedDSSentity):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        ncond = self['nconds']
         self.specialparams = (self.wiretype, 'x', 'h', 'units')
         # for p in self.specialparams:
         #     if isinstance(self._params[p], np.matrix):
@@ -1085,11 +1084,11 @@ class _LineGeometry(_NamedDSSentity):
                     idx = 0, ind  # matricial indicization necessary
                 else:
                     idx = ind
-                try:
-                    # for fullnames of the wires
-                    s2 += str(parameter) + '=' + str(true_param[idx]).split('.')[1] + ' '
-                except IndexError:
-                    s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
+                # try:
+                #     # for fullnames of the wires
+                #     s2 += str(parameter) + '=' + str(true_param[idx]).split('.')[1] + ' '
+                # except IndexError:
+                s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
         return s1 + s2
 
 

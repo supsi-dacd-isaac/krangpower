@@ -27,6 +27,10 @@ class BusVoltageView(GraphView):
                np.asarray([x[1] for x in self.pad_pos.values()]), \
                np.asarray([self[k].magnitude for k in self.pad_pos.keys()])
 
+    def min_v(self):
+        vs = [self[x] for x in self.nodes]
+        return min(vs)
+
 
 class CurrentView(GraphView):
     def __init__(self, ckgr: Krang):
