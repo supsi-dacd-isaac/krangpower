@@ -150,7 +150,7 @@ print('Creating circuit...')
 SRC = kp.Vsource(**skw)
 eulv = kp.Krang('eu_lv_test', SRC)
 
-eulv.set(basefrequency=50.0 * um.Hz, voltagebases=[11.0, 0.416] * um.kV)
+eulv.set(basefreq=50.0 * um.Hz, voltagebases=[11.0, 0.416] * um.kV)
 eulv.command('calcvoltagebases')
 
 print('Adding transformer...')
@@ -176,7 +176,7 @@ for ldname, lddata in loads_dict.items():
 
 eulv.link_coords(os.path.join(eulv_root, 'Buscoords.csv'))
 
-eulv.set(basefrequency=50.0 * um.Hz)
+eulv.set(basefreq=50.0 * um.Hz)
 
 eulv.set(time=[0, 0], number=1, stepsize=1.0 * um.min)
 eulv.solve()

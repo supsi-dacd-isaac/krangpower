@@ -58,12 +58,16 @@ def replace_env(match):
 if platform.system() == 'Windows':
 
     basepath = CONFIG.get('log_file', 'win_log_folder')
-    re.sub('(%)([^%]+)(%)', replace_env, basepath)
+    basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
                                  CONFIG.get('log_file', 'general_log_name'))
 elif platform.system() == 'Linux':
-    _MAIN_LOGPATH = os.path.join(CONFIG.get('log_file', 'linux_log_folder'),
+
+    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
+
+    _MAIN_LOGPATH = os.path.join(basepath,
                                  CONFIG.get('log_file', 'general_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
@@ -72,12 +76,16 @@ else:
 if platform.system() == 'Windows':
 
     basepath = CONFIG.get('log_file', 'win_log_folder')
-    re.sub('(%)([^%]+)(%)', replace_env, basepath)
+    basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
                                     CONFIG.get('log_file', 'commands_log_name'))
 elif platform.system() == 'Linux':
-    _COMMAND_LOGPATH = os.path.join(CONFIG.get('log_file', 'linux_log_folder'),
+
+    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
+
+    _COMMAND_LOGPATH = os.path.join(basepath,
                                     CONFIG.get('log_file', 'commands_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
