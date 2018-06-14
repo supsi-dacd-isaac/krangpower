@@ -46,14 +46,16 @@ _GLOBAL_PRECISION = CONFIG.getint('precision', 'global_precision')
 _LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 _PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
 
+
 # -------------------------------------------------------------
 #  LOG PATH
 # -------------------------------------------------------------
+def replace_env(match):
+    return os.getenv(match.group(2))
+
+
 # general log
 if platform.system() == 'Windows':
-
-    def replace_env(match):
-        return os.getenv(match.group(2))
 
     basepath = CONFIG.get('log_file', 'win_log_folder')
     re.sub('(%)([^%]+)(%)', replace_env, basepath)
@@ -68,7 +70,11 @@ else:
 
 # command_log
 if platform.system() == 'Windows':
-    _COMMAND_LOGPATH = os.path.join(CONFIG.get('log_file', 'win_log_folder'),
+
+    basepath = CONFIG.get('log_file', 'win_log_folder')
+    re.sub('(%)([^%]+)(%)', replace_env, basepath)
+
+    _COMMAND_LOGPATH = os.path.join(basepath,
                                     CONFIG.get('log_file', 'commands_log_name'))
 elif platform.system() == 'Linux':
     _COMMAND_LOGPATH = os.path.join(CONFIG.get('log_file', 'linux_log_folder'),
