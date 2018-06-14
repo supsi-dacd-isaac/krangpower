@@ -268,10 +268,10 @@ class Krang:
 
                     break
                 except AssertionError:
-                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2}).')
+                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2})'.format(option, vl, self.get(option)[option]))
                     continue
             else:
-                raise IOError('OpenDSS could not acknowledge option')
+                raise IOError('OpenDSS could not acknowledge option {0}={1} (value == {2})'.format(option, vl, self.get(option)[option]))
 
         self.flags['up_to_date'] = False
 
@@ -763,7 +763,7 @@ def from_json(path):
     l_ckt._declare_buscoords()
 
     # patch for curing the stepsize bug
-    l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
+    # l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
 
     return l_ckt
