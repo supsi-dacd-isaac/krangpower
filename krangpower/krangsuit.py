@@ -250,7 +250,7 @@ class Krang:
         """Sets circuit options according to a dict. Option that have a physical dimensionality (such as stepsize) can
         be specified as pint quantities; otherwise, the default opendss units will be used."""
         for option, value in opts_vals.items():
-            if isinstance(value, _PINT_QTY_TYPE):
+            if hasattr(value, 'magnitude'):
                 vl = value.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][option])).magnitude
             else:
                 vl = value
@@ -259,16 +259,17 @@ class Krang:
             for rt in range(_RETRY):
 
                 self.command('set {0}={1}'.format(option, vl))
+                revl = self.get(option)[option]
                 # acknowledge
                 try:
                     if isinstance(value, str):
-                        assert self.get(option)[option].lower().startswith(value.lower())
+                        assert revl.lower().startswith(vl.lower())
                     else:
-                        assert np.allclose(self.get(option)[option], value)
+                        assert np.allclose(revl, vl)
 
                     break
                 except AssertionError:
-                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2})'.format(option, vl, self.get(option)[option]))
+                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2}), retry #{3}/{4}'.format(option, vl, self.get(option)[option], rt, _RETRY))
                     continue
             else:
                 raise IOError('OpenDSS could not acknowledge option {0}={1} (value == {2})'.format(option, vl, self.get(option)[option]))

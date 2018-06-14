@@ -2,6 +2,7 @@ import configparser as cfp
 import json
 import logging
 import os.path
+import re
 import platform
 
 import pint
@@ -50,21 +51,28 @@ _PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
 # -------------------------------------------------------------
 # general log
 if platform.system() == 'Windows':
-    _MAIN_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_subfolder'),
-                                 CONFIG.get('log_file', 'general_log_path'))
+
+    def replace_env(match):
+        return os.getenv(match.group(2))
+
+    basepath = CONFIG.get('log_file', 'win_log_folder')
+    re.sub('(%)([^%]+)(%)', replace_env, basepath)
+
+    _MAIN_LOGPATH = os.path.join(basepath,
+                                 CONFIG.get('log_file', 'general_log_name'))
 elif platform.system() == 'Linux':
-    _MAIN_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_subfolder'),
-                                 CONFIG.get('log_file', 'general_log_path'))
+    _MAIN_LOGPATH = os.path.join(CONFIG.get('log_file', 'linux_log_folder'),
+                                 CONFIG.get('log_file', 'general_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
 
 # command_log
 if platform.system() == 'Windows':
-    _COMMAND_LOGPATH = os.path.join(os.getenv('APPDATA'), CONFIG.get('log_file', 'log_subfolder'),
-                                    CONFIG.get('log_file', 'commands_log_path'))
+    _COMMAND_LOGPATH = os.path.join(CONFIG.get('log_file', 'win_log_folder'),
+                                    CONFIG.get('log_file', 'commands_log_name'))
 elif platform.system() == 'Linux':
-    _COMMAND_LOGPATH = os.path.join('/var/log', CONFIG.get('log_file', 'log_subfolder'),
-                                    CONFIG.get('log_file', 'commands_log_path'))
+    _COMMAND_LOGPATH = os.path.join(CONFIG.get('log_file', 'linux_log_folder'),
+                                    CONFIG.get('log_file', 'commands_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
 
