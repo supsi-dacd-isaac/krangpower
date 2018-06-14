@@ -64,7 +64,7 @@ if platform.system() == 'Windows':
                                  CONFIG.get('log_file', 'general_log_name'))
 elif platform.system() == 'Linux':
 
-    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = CONFIG.get('log_file', 'linux_log_folder')
     basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
@@ -82,7 +82,7 @@ if platform.system() == 'Windows':
                                     CONFIG.get('log_file', 'commands_log_name'))
 elif platform.system() == 'Linux':
 
-    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = CONFIG.get('log_file', 'linux_log_folder')
     basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
