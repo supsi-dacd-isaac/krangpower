@@ -53,6 +53,7 @@
     "trapezoidal": "No",
     "ueregs": [10],
     "ueweight": 1.0,
+    "time":[0,0],
     "voltagebases": [0.208,
       0.48,
       12.47,
@@ -73,11 +74,7 @@
     "hour": "hr",
     "sec": "s",
     "genkw": "kW",
-    "voltagebases": "kV",
-    "time": [
-      "hr",
-      "s"
-    ]
+    "voltagebases": "kV"
   },
-  "contingent": ["hour", "sec"]
+  "contingent": ["hour", "sec", "time"]
 }

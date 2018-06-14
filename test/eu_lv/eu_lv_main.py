@@ -210,5 +210,5 @@ print(m23_out)
 print(m53_out)
 print(mtr_out)
 
-eulv.pack_ckt(r'D:/GDrive/Pycharm/krangpower/krangpower/test/eu_lv/eu_lv.zip')
-eulv.save_json(r'D:/GDrive/Pycharm/krangpower/krangpower/test/eu_lv/eu_lv.json')
+eulv.pack_ckt(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.zip')
+eulv.save_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')

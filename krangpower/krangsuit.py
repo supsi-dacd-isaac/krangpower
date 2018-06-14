@@ -260,6 +260,9 @@ class Krang:
 
                 self.command('set {0}={1}'.format(option, vl))
                 revl = self.get(option)[option]
+                if hasattr(revl, 'magnitude'):
+                    revl = revl.magnitude
+
                 # acknowledge
                 try:
                     if isinstance(value, str):
