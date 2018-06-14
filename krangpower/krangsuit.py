@@ -260,6 +260,9 @@ class Krang:
 
                 self.command('set {0}={1}'.format(option, vl))
                 revl = self.get(option)[option]
+                if hasattr(revl, 'magnitude'):
+                    revl = revl.magnitude
+
                 # acknowledge
                 try:
                     if isinstance(value, str):
@@ -764,7 +767,7 @@ def from_json(path):
     l_ckt._declare_buscoords()
 
     # patch for curing the stepsize bug
-    # l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
+    l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
 
     return l_ckt
