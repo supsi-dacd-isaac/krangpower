@@ -264,7 +264,7 @@ class Krang:
                     if isinstance(value, str):
                         assert self.get(option)[option].lower().startswith(value.lower())
                     else:
-                        assert np.equal(self.get(option)[option], value).all()
+                        assert np.allclose(self.get(option)[option], value)
 
                     break
                 except AssertionError:
