@@ -15,12 +15,12 @@ import numpy as _np
 import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
-from krangpower.aux_fcn import lower as _lower, get_classmap as _get_classmap
-from krangpower.aux_fcn import pairwise as _pairwise
-from krangpower.components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
-from krangpower.config_loader import _DEFAULT_NAME, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
+from ..aux_fcn import lower as _lower, get_classmap as _get_classmap
+from ..aux_fcn import pairwise as _pairwise
+from ..components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
+from ..config_loader import _DEFAULT_NAME, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
     UM as _UM, _INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, _PINT_QTY_TYPE, _INTERF_SELECTORS_PATH
-from krangpower.logging_init import _clog, _mlog
+from ..logging_init import _clog, _mlog
 
 
 # <editor-fold desc="Auxiliary functions">

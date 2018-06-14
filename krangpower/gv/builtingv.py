@@ -1,7 +1,7 @@
 import numpy as np
 
-from krangpower.graphview import GraphView
-from krangpower.krangsuit import Krang
+from ..graphview import GraphView
+from ..krangsuit import Krang
 
 
 class VoltageView(GraphView):

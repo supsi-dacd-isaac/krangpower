@@ -7,6 +7,7 @@ import json
 import hashlib
 import canonicaljson
 import numpy as np
+from . import components
 
 
 def fingerprint(path):
@@ -46,7 +47,7 @@ def diff_dicts(original: dict, new: dict, context_lines=1):
 
 def get_classmap():
 
-    comp_module = modules['krangpower.components']
+    comp_module = components
     classmap = {}
     for item in dir(comp_module):
         classmap[item.lower()] = getattr(comp_module, item)

@@ -6,7 +6,7 @@ import platform
 
 import pint
 
-from krangpower.aux_fcn import load_dictionary_json
+from .aux_fcn import load_dictionary_json
 
 __all__ = ['UM', 'krang_directory']
 _THISDIR = os.path.dirname(os.path.realpath(__file__))

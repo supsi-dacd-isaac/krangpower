@@ -1,6 +1,6 @@
 import tqdm
-from krangpower.logging_init import set_log_level
-import krangpower.config_loader as cl
+from .logging_init import set_log_level
+from . import config_loader as cl
 from logging import INFO
 
 __all__ = ['PBar']

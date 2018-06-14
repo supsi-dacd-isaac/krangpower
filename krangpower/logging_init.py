@@ -2,8 +2,8 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from krangpower.config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH
-import krangpower.config_loader as cl
+from .config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH
+from . import config_loader as cl
 
 
 def _create_main_logger():
