@@ -31,6 +31,7 @@ __all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
 
 cache_enabled = True
+_INSTANCE = None  # krang singleton support variable
 
 
 def _helpfun(config, section):
@@ -102,19 +103,30 @@ def _cache(f):
 
 class Krang:
     def __init__(self, *args, **kwargs):
-        self.id = _DEFAULT_KRANG_NAME
+
+        if _INSTANCE is not None:
+            raise ValueError('Cannot init Krang - A Krang ({0}) is already instanced - Opendss allows 1 circuit only'
+                             .format(_INSTANCE))
+
         self.flags = {'coords_preloaded': False,
                       'coords_declared': False,
                       'up_to_date': False}
         self._named_entities = []
         self._ai_list = []
-        self.com = ''
+        self.com = []
+        """Krang.com is a list of all the commands sent to the text interface."""
         self._fncache = {}
         self.brain = None
         """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
         self._coords_linked = dict()
         self._initialize(*args, **kwargs)
+
+        globals()['_INSTANCE'] = self.id
+
+    def __del__(self):
+        # the destructor clears the global variable _INSTANCE, otherwise you could not re-instantiate after deleting
+        globals()['_INSTANCE'] = None
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
         self.brain = en  # (oe_id=name)
@@ -230,7 +242,7 @@ class Krang:
         rslt = self.brain.txt_command(cmd_str, echo)
         self.flags['up_to_date'] = False
         if echo:
-            self.com += cmd_str + '\n'
+            self.com.append(cmd_str)
         return rslt
 
     @_helpfun(DSSHELP, 'OPTIONS')
@@ -432,9 +444,11 @@ class Krang:
 
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
-        echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications."""
+        echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
+        IMPORTANT NOTE: modifications operated through other means that the text interfa won't be included!
+        """
         with open(path, 'w') as ofile:
-            ofile.write(self.com)
+            ofile.write('\n'.join(self.com))
 
     @property
     def name(self):

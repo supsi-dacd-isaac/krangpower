@@ -3,6 +3,12 @@ Usage
 
 The central class of the krangpower package is the eponymous :code:`Krang`. It is designed to provide easy and intuitive interaction. Let's see the basics of :code:`Krang` usage with a small walkthrough:
 
+.. IMPORTANT::
+   :code:`Krang` is a singleton_, meaning that you cannot have more than one instance around at any given time - an Exception will be raised when trying to instantiate more than one.
+   This is because OpenDSS supports only one circuit at any given time. If, in the future, the capability to have more than one circuit will be built in Opendss, this limitation will be removed.
+
+   :code:`Krang` can be deleted with the :code:`del` keyword.
+
 .. code-block:: python
    :linenos:
 
@@ -71,3 +77,4 @@ More irons in the fire.
 .. _PackedOpendssElement: packed_ref.html
 .. _`bracket indexing Krang with a string`: packed_ref.html
 .. _`bracket indexing Krang with a tuple`: busview_ref.html
+.. _singleton: https://en.wikipedia.org/wiki/Singleton_pattern
