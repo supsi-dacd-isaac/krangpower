@@ -763,7 +763,7 @@ def from_json(path):
     l_ckt._declare_buscoords()
 
     # patch for curing the stepsize bug
-    l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
+    # l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
 
     return l_ckt
