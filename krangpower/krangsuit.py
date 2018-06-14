@@ -16,16 +16,15 @@ import networkx as nx
 import numpy as np
 import pandas
 
-import krangpower.components
-import krangpower.enhancer as en
-from krangpower import busquery as bq
-from krangpower import components as co
-from krangpower.aux_fcn import get_help_out, bus_resolve, diff_dicts
-from krangpower.config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
+from . import busquery as bq
+from . import components as co
+from . import enhancer as en
+from .aux_fcn import get_help_out, bus_resolve, diff_dicts
+from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
-from krangpower.enhancer.OpendssdirectEnhancer import pack
-from krangpower.logging_init import _clog
-from krangpower.pbar import PBar as _PBar
+from .enhancer.OpendssdirectEnhancer import pack
+from .logging_init import _clog
+from .pbar import PBar as _PBar
 
 __all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
@@ -668,7 +667,7 @@ def from_json(path):
         master_dict = json.load(path)
 
     # init the krang with the source, then remove it
-    l_ckt = Krang(master_dict['cktname'], krangpower.components.dejsonize(master_dict['elements']['vsource.source']))
+    l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']))
     del master_dict['elements']['vsource.source']
 
     # load and declare options
@@ -735,7 +734,7 @@ def from_json(path):
             except KeyError:
                 mdmod = {k.split('.')[1]: v for k, v in master_dict['elements'].items()}
                 jobj = copy.deepcopy(mdmod[nm.lower()])
-            dssobj = krangpower.components.dejsonize(jobj)
+            dssobj = co.dejsonize(jobj)
             if dssobj.isnamed():
                 l_ckt << dssobj
             elif dssobj.isabove():

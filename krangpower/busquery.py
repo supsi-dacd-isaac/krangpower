@@ -1,5 +1,5 @@
 import numpy as np
-from krangpower.config_loader import UM
+from .config_loader import UM
 
 
 def get_fun(fun_name):

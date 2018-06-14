@@ -1,6 +1,6 @@
 import networkx as nx
 from functools import singledispatch
-from krangpower import Krang
+from .krangsuit import Krang
 
 __all__ = ['GraphView']
 
