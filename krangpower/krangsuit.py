@@ -23,7 +23,7 @@ from .aux_fcn import get_help_out, bus_resolve, diff_dicts
 from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
 from .enhancer.OpendssdirectEnhancer import pack
-from .logging_init import _clog
+from .logging_init import _clog, _mlog
 from .pbar import PBar as _PBar
 
 __all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
@@ -255,7 +255,23 @@ class Krang:
             else:
                 vl = value
 
-            self.command('set {0}={1}'.format(option, vl))
+            _RETRY = 10
+            for rt in range(_RETRY):
+
+                self.command('set {0}={1}'.format(option, vl))
+                # acknowledge
+                try:
+                    if isinstance(value, str):
+                        assert self.get(option)[option].lower().startswith(value.lower())
+                    else:
+                        assert np.equal(self.get(option)[option], value).all()
+
+                    break
+                except AssertionError:
+                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2}).')
+                    continue
+            else:
+                raise IOError('OpenDSS could not acknowledge option')
 
         self.flags['up_to_date'] = False
 
