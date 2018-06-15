@@ -221,10 +221,15 @@ class Krang:
 
         return fqglo
 
-    def pack_ckt(self, path):
+    def pack_ckt(self, path=None):
         """Packs a ckt archive with all the information needed to reproduce the Krang."""
 
-        with zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
+        if path is None:
+            spath = io.BytesIO()
+        else:
+            spath = path
+
+        with zipfile.ZipFile(spath, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
             pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
             pack.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
             jsio = io.StringIO()
@@ -232,6 +237,11 @@ class Krang:
             pack.writestr(self.name + '.json', jsio.getvalue())
             md5io = io.StringIO(self.fingerprint())
             pack.writestr('krang_hash.md5', md5io.getvalue())
+
+        if path is None:
+            return spath
+        else:
+            return None
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     @_invalidate_cache
@@ -456,10 +466,18 @@ class Krang:
 
         return master_dict
 
-    def save_json(self, path):
+    def save_json(self, path=None):
         """Saves in path a complete description of the circuit and its objects"""
-        with open(path, 'w') as ofile:
-            json.dump(self.make_json_dict(), ofile, indent=2)
+
+        if path is None:
+            vfile = io.StringIO()
+            json.dump(self.make_json_dict(), vfile, indent=2)
+            return vfile
+
+        else:
+            with open(path, 'w') as ofile:
+                json.dump(self.make_json_dict(), ofile, indent=2)
+            return None
 
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which

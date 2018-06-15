@@ -207,12 +207,12 @@ print('     Circuit.AllBusVolts():     ' + str(eulv.brain.Circuit.AllBusVolts())
 print('     Circuit.AllElementLosses():' + str(eulv.brain.Circuit.AllElementLosses()))
 
 print('Packing circuit...')
-eulv.pack_ckt(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.zip')
-eulv.save_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')
+mpck = eulv.pack_ckt()
+jsn = eulv.save_json()
 
 print('Reloading saved circuit...')
 del eulv
-eulv_saved = kp.from_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')
+eulv_saved = kp.open_ckt(mpck)
 
 print('Some edge coverage...')
 kp.do_edge_tests()
