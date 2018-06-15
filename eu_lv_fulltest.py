@@ -8,7 +8,7 @@ import krangpower as kp
 um = kp.UM
 kp.do_edge_tests()
 
-test_dir = os.path.join(os.getenv("AppData"), 'krangpower//test')
+test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
 
 
 def download_extract_zip(url):

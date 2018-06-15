@@ -18,7 +18,7 @@ from pandas import read_csv
 
 from .aux_fcn import _matrix_from_json, get_classmap, load_dictionary_json
 from .config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
-    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, _TMP_PATH, _MANDATORY_UNITS
+    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, TMP_PATH, _MANDATORY_UNITS
 from .logging_init import _mlog
 from .nxtable import NxTable
 
@@ -707,8 +707,8 @@ class CsvLoadshape:
 
         if os.path.isfile(os.path.abspath(csv_path)):
             self.csv_path = os.path.abspath(csv_path)
-        elif os.path.isfile(os.path.join(_TMP_PATH, name + '.csv')):
-            self.csv_path = os.path.join(_TMP_PATH, name + '.csv')
+        elif os.path.isfile(os.path.join(TMP_PATH, name + '.csv')):
+            self.csv_path = os.path.join(TMP_PATH, name + '.csv')
         else:
             raise IOError('Could not find file {0}'.format(self.csv_path))
 

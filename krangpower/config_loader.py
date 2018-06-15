@@ -9,7 +9,7 @@ import pint
 
 from .aux_fcn import load_dictionary_json
 
-__all__ = ['UM', 'krang_directory']
+__all__ = ['UM', 'krang_directory', 'TMP_PATH']
 _THISDIR = os.path.dirname(os.path.realpath(__file__))
 _WIN_ENV_VAR_REGEX = re.compile('(%)([^%]+)(%)')
 _LINUX_ENV_VAR_REGEX = re.compile('(\$)([^(/|\\)]+)')
@@ -101,13 +101,13 @@ else:
 #  TEMPORARY FILES PATH
 # -------------------------------------------------------------
 if platform.system() == 'Windows':
-    _TMP_PATH = os.path.join(os.getenv('TEMP'), CONFIG.get('temp_files', 'temp_subfolder'))
+    TMP_PATH = os.path.join(os.getenv('TEMP'), CONFIG.get('temp_files', 'temp_subfolder'))
 elif platform.system() == 'Linux':
-    _TMP_PATH = os.path.join('/var/tmp', CONFIG.get('temp_files', 'temp_subfolder'))
+    TMP_PATH = os.path.join('/var/tmp', CONFIG.get('temp_files', 'temp_subfolder'))
 else:
     raise OSError('Could not find a valid temp path.')
 
-_COORDS_FILE_PATH = os.path.join(_TMP_PATH, 'bus_coords_fromkml.csv')
+_COORDS_FILE_PATH = os.path.join(TMP_PATH, 'bus_coords_fromkml.csv')
 
 # -------------------------------------------------------------
 #  UNIT MEASURE REGISTRY

@@ -22,7 +22,7 @@ from . import components as co
 from . import enhancer as en
 from .aux_fcn import get_help_out, bus_resolve, diff_dicts
 from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    _TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
+    TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
 from .enhancer.OpendssdirectEnhancer import pack
 from .logging_init import _clog, _mlog
 from .pbar import PBar as _PBar
@@ -136,7 +136,7 @@ class Krang:
         self.command(master_string)
         self.set(mode='duty')
         self.command('makebuslist')  # in order to make sourcebus recognizable
-        self.brain.Basic.DataPath(_TMP_PATH)  # redirects all file output to the temp folder
+        self.brain.Basic.DataPath(TMP_PATH)  # redirects all file output to the temp folder
 
     @staticmethod
     def get_unit_registry():
@@ -797,7 +797,7 @@ def open_ckt(path):
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(_LSH_ZIP_NAME) as lsh_file:
             lsh_data = io.BytesIO(lsh_file.read())
-            zipfile.ZipFile(lsh_data).extractall(_TMP_PATH)
+            zipfile.ZipFile(lsh_data).extractall(TMP_PATH)
 
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
