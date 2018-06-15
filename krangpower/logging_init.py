@@ -64,3 +64,7 @@ def set_log_level(lvl):
     cl._GLOBAL_LOG_LEVEL = lvl
     _clog.setLevel(lvl)
     _mlog.setLevel(lvl)
+
+
+def get_log_level():
+    return cl._GLOBAL_LOG_LEVEL

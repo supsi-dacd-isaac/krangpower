@@ -11,6 +11,8 @@ from .aux_fcn import load_dictionary_json
 
 __all__ = ['UM', 'krang_directory']
 _THISDIR = os.path.dirname(os.path.realpath(__file__))
+_WIN_ENV_VAR_REGEX = re.compile('(%)([^%]+)(%)')
+_LINUX_ENV_VAR_REGEX = re.compile('(\$)([^(/|\\)]+)')
 
 # -------------------------------------------------------------
 # CONFIG LOAD
@@ -58,14 +60,16 @@ def replace_env(match):
 if platform.system() == 'Windows':
 
     basepath = CONFIG.get('log_file', 'win_log_folder')
-    basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
+    basepath = _WIN_ENV_VAR_REGEX.sub(replace_env, basepath)
+    # basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
                                  CONFIG.get('log_file', 'general_log_name'))
 elif platform.system() == 'Linux':
 
     basepath = CONFIG.get('log_file', 'linux_log_folder')
-    basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
+    basepath = _LINUX_ENV_VAR_REGEX.sub(replace_env, basepath)
+    # basepath = re.sub('(\$)([^(/|\\)]+)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
                                  CONFIG.get('log_file', 'general_log_name'))
@@ -76,14 +80,16 @@ else:
 if platform.system() == 'Windows':
 
     basepath = CONFIG.get('log_file', 'win_log_folder')
-    basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
+    basepath = _WIN_ENV_VAR_REGEX.sub(replace_env, basepath)
+    # basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
                                     CONFIG.get('log_file', 'commands_log_name'))
 elif platform.system() == 'Linux':
 
     basepath = CONFIG.get('log_file', 'linux_log_folder')
-    basepath = re.sub('(\$)([^/]+)', replace_env, basepath)
+    basepath = _LINUX_ENV_VAR_REGEX.sub(replace_env, basepath)
+    # basepath = re.sub('(\$)([^/|\\]+)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
                                     CONFIG.get('log_file', 'commands_log_name'))

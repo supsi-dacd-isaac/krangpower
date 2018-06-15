@@ -20,7 +20,7 @@ from ..aux_fcn import pairwise as _pairwise
 from ..components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from ..config_loader import _DEFAULT_NAME, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
     UM as _UM, _INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, _PINT_QTY_TYPE, _INTERF_SELECTORS_PATH
-from ..logging_init import _clog, _mlog
+from ..logging_init import _clog, _mlog, get_log_level
 
 
 # <editor-fold desc="Auxiliary functions">
@@ -663,9 +663,10 @@ def get_all_names():
 def txt_command(cmd_str: str, echo=True):
     """Performs a text interface call with the argument passed and logs command and response. The results are checked for
      silent errors. **When instantiating components through this function, the update of the names returned by
-     get_all_names()is triggered**. The log output can be suppressed by setting the keyword argument echo=False."""
+     get_all_names()is triggered**. The log output can be suppressed by setting the keyword argument echo=False; but even
+     in this case, if kp.get_log_level() is 0, the log of the command will be forced."""
     rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
-    if echo:
+    if echo or get_log_level() == 0:
         log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_DEFAULT_NAME)))
                  + ']-->[' + rslt.replace('\n', '') + ']')
 

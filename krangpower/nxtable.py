@@ -34,11 +34,11 @@ class NxTable:
 
 def _main():
     n = NxTable()
-    n['foo', 2] = 3
+    n['foo', 'roo'] = 3
     n['bar', 'goo'] = tuple
 
-    print(n['bar', 'goo'])
-    print(n['foo', 2])
+    assert n['bar', 'goo'] == tuple
+    assert n['foo', 'roo'] == 3
 
 
 if __name__ == '__main__':

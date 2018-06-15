@@ -24,23 +24,26 @@ class PBar:
             return self._itr.__iter__()
 
 
-def main():
+def _main():
     original_gll = cl._GLOBAL_LOG_LEVEL
 
     set_log_level(10)
+    print('a pbar should appear now:')
     for _ in PBar(range(10), 20, desc='appears'):
         pass
 
     set_log_level(20)
-    for _ in PBar(range(10), 20, desc='appears'):
+    print('a pbar should appear now:')
+    for _ in PBar(range(10), 20, desc='appears, should be the last'):
         pass
 
     set_log_level(30)
-    for _ in PBar(range(10), 20, desc='notappears'):
+    print('a pbar should NOT appear now:')
+    for _ in PBar(range(10), 20, desc='SHOULD NOT APPEAR'):
         pass
 
     set_log_level(original_gll)
 
 
 if __name__ == '__main__':
-    main()
+    _main()

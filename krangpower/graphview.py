@@ -1,3 +1,4 @@
+import weakref
 import networkx as nx
 from functools import singledispatch
 from .krangsuit import Krang
@@ -11,8 +12,10 @@ class GraphView(nx.Graph):
         of two bus names to retrieve the relative results."""
         super().__init__(incoming_graph_data=None)
 
-        gr = ckgr.graph()
-        self.bus_pos = ckgr.bus_coords()
+        wckgr = weakref.proxy(ckgr)
+
+        gr = wckgr.graph()
+        self.bus_pos = wckgr.bus_coords()
         stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
         if stpos == {}:
             self.pad_pos = nx.spring_layout(gr)

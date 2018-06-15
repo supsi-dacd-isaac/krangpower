@@ -5,6 +5,7 @@ import json
 import os.path
 import pickle
 import re
+import weakref
 import xml.etree.ElementTree as ET
 import zipfile
 from csv import reader as csvreader
@@ -124,7 +125,6 @@ class Krang:
         globals()['_INSTANCE'] = self.id
 
     def __del__(self):
-        # the destructor clears the global variable _INSTANCE, otherwise you could not re-instantiate after deleting
         globals()['_INSTANCE'] = None
 
     def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
@@ -560,7 +560,7 @@ def _(item, krg):
     pe = pack(item)
     # packedopendsselements returned through a krang have to invalidate
     # the whole cache when their setitem method is used to modify something
-    pe.__setitem__ = _invalidate_cache_outside(krg)(pe.__setitem__)
+    pe.__setitem__ = _invalidate_cache_outside(weakref.proxy(krg))(pe.__setitem__)
     return pe
 
 
@@ -606,7 +606,7 @@ class _BusView:
         self.tp = dict(bustermtuples)
         self.buses = tuple(self.tp.keys())
         self.nb = len(self.buses)
-        self.oek = oek
+        self.oek = weakref.proxy(oek)
         self._content = None
 
         buskey = 'buses'
@@ -644,12 +644,12 @@ class _BusView:
             # CONTENT IS NOT UPDATED AFTER FIRST EVAL
             if len(self.buses) == 1:
                 try:
-                    self._content = self.oek.graph.nodes[self.buses[0]][_ELK]
+                    self._content = self.oek.graph().nodes[self.buses[0]][_ELK]
                     # it's ok that a KeyError by both indexes is caught in the same way
                 except KeyError:
                     self._content = []
             elif len(self.buses) == 2:
-                self._content = list(nx.get_edge_attributes(self.oek.graph.subgraph(self.buses), _ELK).values())
+                self._content = list(nx.get_edge_attributes(self.oek.graph().subgraph(self.buses), _ELK).values())
             else:
                 # if more than two buses, we search among the transformers.
                 self._content = []
@@ -661,6 +661,7 @@ class _BusView:
 
     def __getattr__(self, item):
         """Calculates a quantity from the submodule busquery on the BusView."""
+
         try:
             # attributes requested via getattr are searched in busquery
             f = bq.get_fun(item)

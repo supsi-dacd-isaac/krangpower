@@ -19572,51 +19572,6 @@
       },
       "topological": []
     },
-    "monitor.m23": {
-      "type": "monitor",
-      "name": "m23",
-      "units": {},
-      "term_perm": null,
-      "properties": {
-        "residual": "NO",
-        "vipolar": "YES",
-        "ppolar": "YES"
-      },
-      "depends": {
-        "element": "load.load32"
-      },
-      "topological": []
-    },
-    "monitor.m53": {
-      "type": "monitor",
-      "name": "m53",
-      "units": {},
-      "term_perm": null,
-      "properties": {
-        "residual": "NO",
-        "vipolar": "YES",
-        "ppolar": "YES"
-      },
-      "depends": {
-        "element": "load.load53"
-      },
-      "topological": []
-    },
-    "monitor.mtr": {
-      "type": "monitor",
-      "name": "mtr",
-      "units": {},
-      "term_perm": null,
-      "properties": {
-        "residual": "NO",
-        "vipolar": "YES",
-        "ppolar": "YES"
-      },
-      "depends": {
-        "element": "transformer.tr1"
-      },
-      "topological": []
-    },
     "linecode.2c_007": {
       "type": "linecode_s",
       "name": "2c_007",
@@ -21630,68 +21585,68 @@
   },
   "settings": {
     "values": {
-      "genpf": 1.0,
-      "stepsize": 60,
-      "%normal": 0.0,
-      "%growth": 2.5,
+      "demandinterval": "No",
+      "mode": "DUtycycle",
+      "lossweight": 1.0,
       "controlmode": "TIME",
-      "keeplist": "",
-      "tolerance": 0.0001,
-      "cktmodel": "multiphase",
-      "loadmult": 1.0,
-      "trapezoidal": "No",
-      "loadmodel": "PowerFlow",
-      "log": "No",
       "reduceoption": "",
-      "tracecontrol": "No",
-      "pricesignal": 25,
-      "number": 1440,
-      "frequency": 50.0,
-      "harmonics": "ALL",
-      "%stddev": 15.3091608,
-      "earthmodel": "Deri",
-      "normvmaxpu": 1.05,
-      "neglectloady": "No",
-      "genkw": 1000.0,
-      "overloadreport": "No",
-      "year": 0,
-      "voltexceptionreport": "No",
+      "addtype": "generator",
+      "capkvar": 600.0,
+      "defaultdaily": "default",
+      "keeplist": "",
+      "defaultbasefrequency": 50.0,
       "genmult": 1.0,
-      "maxiter": 15,
+      "voltexceptionreport": "No",
+      "ueweight": 1.0,
+      "diverbose": "No",
+      "marktransformers": "No",
+      "defaultyearly": "default",
+      "emergvmaxpu": 1.08,
+      "ldcurve": "",
+      "pricesignal": 25,
+      "%stddev": 15.3091608,
+      "stepsize": 60,
+      "tolerance": 0.0001,
+      "maxcontroliter": 10,
+      "showexport": "No",
+      "number": 1,
+      "%growth": 2.5,
       "ueregs": [
         10
       ],
-      "algorithm": "normal",
-      "pricecurve": "",
-      "maxcontroliter": 10,
-      "numallociterations": 2,
-      "capkvar": 600.0,
       "basefreq": 50.0,
+      "cktmodel": "multiphase",
+      "log": "No",
+      "algorithm": "normal",
+      "trapezoidal": "No",
+      "neglectloady": "No",
+      "genpf": 1.0,
+      "maxiter": 15,
+      "earthmodel": "Deri",
+      "%normal": 0.0,
+      "genkw": 1000.0,
       "normvminpu": 0.95,
-      "%mean": 82.5828333,
+      "random": "Gaussian",
+      "pricecurve": "",
+      "loadmult": 1.0,
       "voltagebases": [
         11.0,
         0.416
       ],
-      "demandinterval": "No",
-      "marktransformers": "No",
-      "random": "Gaussian",
-      "addtype": "generator",
-      "diverbose": "No",
-      "defaultdaily": "default",
-      "defaultbasefrequency": 50.0,
-      "showexport": "No",
+      "loadmodel": "PowerFlow",
+      "numallociterations": 2,
+      "overloadreport": "No",
+      "tracecontrol": "No",
       "zonelock": "No",
-      "emergvmaxpu": 1.08,
-      "emergvminpu": 0.9,
       "lossregs": [
         13
       ],
-      "lossweight": 1.0,
-      "ueweight": 1.0,
-      "ldcurve": "",
-      "defaultyearly": "default",
-      "mode": "DUtycycle"
+      "frequency": 50.0,
+      "harmonics": "ALL",
+      "normvmaxpu": 1.05,
+      "emergvminpu": 0.9,
+      "%mean": 82.5828333,
+      "year": 0
     },
     "units": {
       "stepsize": "s",
