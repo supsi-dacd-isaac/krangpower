@@ -1,6 +1,8 @@
 import weakref
-import networkx as nx
 from functools import singledispatch
+
+import networkx as nx
+
 from .krangsuit import Krang
 
 __all__ = ['GraphView']

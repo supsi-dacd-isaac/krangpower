@@ -1,8 +1,12 @@
 import csv
-import os
-import requests
 import io
+import os
+import sys
 import zipfile
+
+import requests
+
+sys.path.append('../krangpower')
 import krangpower as kp
 
 um = kp.UM

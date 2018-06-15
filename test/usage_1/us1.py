@@ -1,7 +1,10 @@
-import krangpower as kp
 from numpy import round
 from numpy.random import random
 import csv
+import sys
+
+sys.path.append('../krangpower')
+import krangpower as kp
 
 kp.set_log_level(10)
 
