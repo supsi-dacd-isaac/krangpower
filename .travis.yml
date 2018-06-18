@@ -10,8 +10,7 @@ install:
   - pip install codecov
 
 script:
-  - coverage run ./test/eu_lv_fulltest.py
-  - coverage run ./test/usage_1/us1.py
+  - coverage run ./test/tests.py
 
 after_success:
   - codecov
