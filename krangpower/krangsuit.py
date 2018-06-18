@@ -27,10 +27,10 @@ from .enhancer.OpendssdirectEnhancer import pack
 from .logging_init import _clog, _mlog
 from .pbar import PBar as _PBar
 
-__all__ = ['Krang', 'from_json', 'cache_enabled', 'open_ckt']
+__all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
 
-cache_enabled = True
+CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
 
 
@@ -87,7 +87,7 @@ def _invalidate_cache_outside(oek):
 def _cache(f):
 
     def cached_f(self, *args, **kwargs):
-        if cache_enabled:
+        if CACHE_ENABLED:
             try:
                 return self._fncache[f.__name__]
             except KeyError:
@@ -222,7 +222,11 @@ class Krang:
         return fqglo
 
     def pack_ckt(self, path=None):
-        """Packs a ckt archive with all the information needed to reproduce the Krang."""
+        """Packs a ckt archive with all the information needed to reproduce the Krang. If a valid path string is passed,
+        a file will be created, and None will be returned; if None is passed as path, a Binary buffered I/O
+        (io.BytesIO) with the exact same information as the file will be returned instead."""
+
+        self._declare_buscoords()  # otherwise dangling coordinates would not be saved
 
         if path is None:
             spath = io.BytesIO()
@@ -467,7 +471,9 @@ class Krang:
         return master_dict
 
     def save_json(self, path=None):
-        """Saves in path a complete description of the circuit and its objects"""
+        """Saves a complete JSON description of the circuit and its objects. If a valid path string is passed,
+        a file will be created, and None will be returned; if None is passed as path, a Text buffered  Stream
+        (io.StringIO) with the exact same information as the file will be returned instead."""
 
         if path is None:
             vfile = io.StringIO()
@@ -793,7 +799,7 @@ def from_json(path):
 
 
 def open_ckt(path):
-    """loads a ckt package and returns a Krang."""
+    """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(_LSH_ZIP_NAME) as lsh_file:
             lsh_data = io.BytesIO(lsh_file.read())

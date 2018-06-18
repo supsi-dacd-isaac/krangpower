@@ -11,6 +11,7 @@ install:
 
 script:
   - coverage run ./test/eu_lv_fulltest.py
+  - coverage run ./test/usage_1/us1.py
 
 after_success:
   - codecov

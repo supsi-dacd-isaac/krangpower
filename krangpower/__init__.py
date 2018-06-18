@@ -9,3 +9,4 @@ from .aux_fcn import fingerprint
 from .components import load_entities
 from .graphview import *
 from ._edge_tests import do_edge_tests
+from .splash import splash  # ishtar egg

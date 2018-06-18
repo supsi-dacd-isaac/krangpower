@@ -64,4 +64,6 @@ print(round(bvo['bb'], 2))
 print(round(bvo['b', 'bb'], 2))
 
 twc.pack_ckt(r'twc.zip')
+
+del twc
 two = kp.open_ckt(r'twc.zip')  # verifies that the hash-checking works
