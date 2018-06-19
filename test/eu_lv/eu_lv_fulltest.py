@@ -115,7 +115,7 @@ def _main():
                 lines_dict[rl[0]]['kwargs'] = {}
                 lines_dict[rl[0]]['Buses'] = [ll['Bus1'], ll['Bus2']]
                 lines_dict[rl[0]]['kwargs']['units'] = ll['Units']
-                lines_dict[rl[0]]['kwargs']['length'] = float(ll['Length'])
+                lines_dict[rl[0]]['kwargs']['length'] = float(ll['Length']) * um.m
                 lines_dict[rl[0]]['kwargs']['phases'] = len(ll['Phases'])
                 lines_dict[rl[0]]['LineCode'] = ll['LineCode'].replace('.', '')
             except StopIteration:
@@ -195,10 +195,10 @@ def _main():
     eulv['745', ].totload
     eulv['745', ].absvoltage
 
-    print('Trying out graphviews...')
-    bv = kp.gv.VoltageView(eulv)
-    bbv = kp.gv.BusVoltageView(eulv)
-    cv = kp.gv.CurrentView(eulv)
+    # print('Trying out graphviews...')
+    # bv = kp.gv.VoltageView(eulv)
+    # bbv = kp.gv.BusVoltageView(eulv)
+    # cv = kp.gv.CurrentView(eulv)
 
 
     print('Trying out raw enhancer...')

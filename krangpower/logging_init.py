@@ -2,7 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from .config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH
+from .config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH, _MAX_LOG_SIZE
 from . import config_loader as cl
 
 
@@ -22,8 +22,7 @@ def _create_main_logger():
     try:
         if not os.path.exists(os.path.dirname(_MAIN_LOGPATH)):
             os.makedirs(os.path.dirname(_MAIN_LOGPATH))
-        maxsize = CONFIG.getfloat('log_settings', 'max_log_size_mb')
-        fh = RotatingFileHandler(_MAIN_LOGPATH, maxBytes=maxsize*1e6, backupCount=0)
+        fh = RotatingFileHandler(_MAIN_LOGPATH, maxBytes=_MAX_LOG_SIZE*1e6, backupCount=0)
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         main_logger.addHandler(fh)
@@ -44,8 +43,7 @@ def _create_command_logger(name):
     try:
         if not os.path.exists(os.path.dirname(_COMMAND_LOGPATH)):
             os.makedirs(os.path.dirname(_COMMAND_LOGPATH))
-        maxsize = CONFIG.getfloat('log_settings', 'max_log_size_mb')
-        fh = RotatingFileHandler(_COMMAND_LOGPATH, maxBytes=maxsize*1e6, backupCount=0)
+        fh = RotatingFileHandler(_COMMAND_LOGPATH, maxBytes=_MAX_LOG_SIZE*1e6, backupCount=0)
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         cmd_logger.addHandler(fh)

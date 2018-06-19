@@ -23,6 +23,7 @@ from . import enhancer as en
 from .aux_fcn import get_help_out, bus_resolve, diff_dicts
 from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
+from .depgraph import DepGraph as _DepGraph
 from .enhancer.OpendssdirectEnhancer import pack
 from .logging_init import _clog, _mlog
 from .pbar import PBar as _PBar
@@ -105,7 +106,7 @@ class Krang:
     def __init__(self, *args, **kwargs):
 
         if _INSTANCE is not None:
-            raise ValueError('Cannot init Krang - A Krang ({0}) is already instanced - Opendss allows 1 circuit only'
+            raise ValueError('Cannot init Krang - A Krang ({0}) already exists. Delete every reference to it if you want to instantiate another.'
                              .format(_INSTANCE))
 
         self.flags = {'coords_preloaded': False,
@@ -135,7 +136,7 @@ class Krang:
         master_string = self._form_newcircuit_string(name, vsource, source_bus_name)
         self.command(master_string)
         self.set(mode='duty')
-        self.command('makebuslist')  # in order to make sourcebus recognizable
+        self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
         self.brain.Basic.DataPath(TMP_PATH)  # redirects all file output to the temp folder
 
     @staticmethod
@@ -593,35 +594,6 @@ def _(item, krg):
     # assert len(item) <= 2
     bustermtuples = map(bus_resolve, item)
     return _BusView(krg, list(bustermtuples))
-
-
-class _DepGraph(nx.DiGraph):
-    """Simple extension of nx.Digraph created to reverse-walk a dependency branching in order to declare the entities
-    in the right order."""
-
-    @property
-    def leaves(self):
-        return [x for x in self.nodes() if self.out_degree(x) == 0]
-
-    def trim(self):
-        self.remove_nodes_from(self.leaves)
-
-    def recursive_prune(self):
-
-        # dependency non-circularity check
-        cy = list(nx.simple_cycles(self))
-        try:
-            assert len(cy) == 0
-        except AssertionError:
-            print('Found circular dependency(s) in the graph!')
-            for cycle in cy:
-                print(cycle)
-            raise ValueError('Cannot recursively prune a directed graph with cycles')
-
-        # actual prune generator
-        while self.leaves:
-            yield self.leaves
-            self.trim()
 
 
 class _BusView:

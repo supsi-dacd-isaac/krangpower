@@ -1,15 +1,20 @@
-[DEV] Data files
-================
+Data files
+==========
 
-Krangpower depends on a series of data/configuration files in order to offer its functionality. These files are contained
-in the :code:`/defaults` fonder and should only be
-touched if you know what you're doing. In order to comprehend what these files do, here follows a brief explanation of
+Krangpower depends on a series of data/configuration files, contained in the :code:`/defaults` folder, in order to offer its functionality.
+
+.. warning::
+    These files should only be touched if you know what you're doing, and modifying them improperly could result in unpredictable and wrong behavior.
+
+.. important::
+
+    As of v0.1.12, these files are not yet complete. In order to contribute to the perfectioning of these files, a detailed knowledge of OpenDSS and meticulous study of its documentation is required.
+    Completing these configuration files is not the current #1 priority, but it will be in the future, when all the important functionality is completely ironed out, and certainly before any development-state changing release.
+
+    In the meantime, any help on completing (and double-checking!!) these files is appreciated!
+
+In order to aid the knowledgeable user to comprehend what these files do, here follows a brief explanation of
 each one.
-
-**As of v0.1.7, these files are not yet complete.** In order to contribute to the perfectioning of these files, a detailed knowledge of opendss and meticulous study of the opendss documentation is required.
-Completing these configuration files is not the current #1 priority, but it will be in the future, when all the important functionality is completely ironed out, and certainly before any development-state changing release.
-
-**In the meantime, any help on completing (and checking!!) these files is appreciated!**
 
 association_types.csv
 .....................
@@ -110,3 +115,12 @@ specified does can be found directly in :code:`krangpower.enhancer` code.
 
 .. _PackedOpendssElement: packed_ref.html
 .. _`JSON i/o files`: io.html
+
+
+mandatory_unit_dec.json
+.......................
+
+In vanilla OpenDSS, some element definitions allow you to specify in what units you are going to provide the numerical data (e.g., Lines).
+Since in krangpower, physical quantities are provided to the element constructors complete with a pint measurement unit, this specification
+becomes superfluous. This file contains the unit declarations chosen by krangpower for its internal workings;
+and krangpower then converts what the user provides to these units when generating an OpenDSS instruction.

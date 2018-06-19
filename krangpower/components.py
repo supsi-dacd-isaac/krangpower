@@ -16,7 +16,7 @@ import scipy.io as sio
 from dateutil.parser import parse as dateparse
 from pandas import read_csv
 
-from .aux_fcn import _matrix_from_json, get_classmap, load_dictionary_json
+from .aux_fcn import _matrix_from_json, get_classmap
 from .config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
     DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, TMP_PATH, _MANDATORY_UNITS
 from .logging_init import _mlog
@@ -1333,6 +1333,12 @@ class _CircuitElementNBus(_CircuitElement):
         term_perm = hookup.get('terminals', None)
 
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name  # _ splitting to allow name personalization outside dss
+
+        s4 = ''
+        if self.toe in _MANDATORY_UNITS.keys():
+            for muname, muvalue in _MANDATORY_UNITS[self.toe].items():
+                s4 = s4 + ' ' + muname + '=' + muvalue
+
         s3 = ' '
         idox = 0
         for busno in range(1, self.nbuses + 1):
@@ -1354,7 +1360,7 @@ class _CircuitElementNBus(_CircuitElement):
         for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
             # readability of the returned string
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
-        return s1 + s3 + s2
+        return s1 + s4 + s3 + s2
 
 
 class Transformer(_DSSentity):  # remember that transformer is special, because has an arrayed mode of specifying
@@ -1595,7 +1601,6 @@ class Line(_CircuitElementNBus):
             return self
         else:
             raise KeyError
-
 
 
 class Vsource(_CircuitElementNBus):

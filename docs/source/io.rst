@@ -43,7 +43,9 @@ Loading
 
 A function :code:`from_json(path)` is exposed directly by krangpower. It returns a :code:`Krang` in the state syntesised by the JSON.
 
-Note: inside the box, :code:`from_json(path)` instantiates an empty :code:`Krang`, adds all the components in the right order of dependency and finally returns it.
+.. note::
+
+   Inside the box, :code:`from_json(path)` instantiates an empty :code:`Krang`, adds all the components in the right order of dependency and finally returns it.
 
 
 .. _`Krang reference page`: krang_ref.html

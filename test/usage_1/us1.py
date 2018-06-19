@@ -15,7 +15,7 @@ def main():
     um = kp.UM
     src = kp.Vsource(basekv=10.0 * um.kV)
     twc = kp.Krang('twc', src)
-    twc['sourcebus', 'a'] << kp.Line(units='m', length=20.0 * um.m).aka('l1')
+    twc['sourcebus', 'a'] << kp.Line(length=20.0 * um.m).aka('l1')
 
     # -------------------------------------------------------
     # 3-winding transformer
@@ -26,8 +26,8 @@ def main():
                          taps=[1.0, 1.0, 1.0],
                          pctrs=[1.0, 1.0, 1.0])
     twc['a', 'b', 'c'] << trf.aka('trf')  # the first winding is considered primary
-    twc['b', 'bb'] << kp.Line(units='m', length=10.0 * um.m).aka('lbb')
-    twc['c', 'cc'] << kp.Line(units='m', length=15.0 * um.m).aka('lcc')
+    twc['b', 'bb'] << kp.Line(length=10.0 * um.m).aka('lbb')
+    twc['c', 'cc'] << kp.Line(length=15.0 * um.m).aka('lcc')
 
     # -------------------------------------------------------
     # live csv loadshape creation

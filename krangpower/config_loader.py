@@ -39,7 +39,8 @@ _DEFAULT_SETTINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'defaul
 _DEFAULT_ENTITIES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default_entities'))
 _ASSOCIATION_TYPES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'association_types'))
 
-_GLOBAL_LOG_LEVEL = getattr(logging, CONFIG.get('misc_settings', 'default_logging_level'))
+_GLOBAL_LOG_LEVEL = getattr(logging, CONFIG.get('log_settings', 'default_logging_level'))
+_MAX_LOG_SIZE = CONFIG.getfloat('log_settings', 'max_log_size_mb')
 _ELK = CONFIG.get('misc_settings', 'graph_element_tag')
 _DEFAULT_KRANG_NAME = CONFIG.get('misc_settings', 'default_krang_name')
 _CMD_LOG_NEWLINE_LEN = CONFIG.getint('misc_settings', 'newline_cmdlog_length')
@@ -59,40 +60,40 @@ def replace_env(match):
 # general log
 if platform.system() == 'Windows':
 
-    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = CONFIG.get('log_settings', 'win_log_folder')
     basepath = _WIN_ENV_VAR_REGEX.sub(replace_env, basepath)
     # basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
-                                 CONFIG.get('log_file', 'general_log_name'))
+                                 CONFIG.get('log_settings', 'general_log_name'))
 elif platform.system() == 'Linux':
 
-    basepath = CONFIG.get('log_file', 'linux_log_folder')
+    basepath = CONFIG.get('log_settings', 'linux_log_folder')
     basepath = _LINUX_ENV_VAR_REGEX.sub(replace_env, basepath)
     # basepath = re.sub('(\$)([^(/|\\)]+)', replace_env, basepath)
 
     _MAIN_LOGPATH = os.path.join(basepath,
-                                 CONFIG.get('log_file', 'general_log_name'))
+                                 CONFIG.get('log_settings', 'general_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
 
 # command_log
 if platform.system() == 'Windows':
 
-    basepath = CONFIG.get('log_file', 'win_log_folder')
+    basepath = CONFIG.get('log_settings', 'win_log_folder')
     basepath = _WIN_ENV_VAR_REGEX.sub(replace_env, basepath)
     # basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
-                                    CONFIG.get('log_file', 'commands_log_name'))
+                                    CONFIG.get('log_settings', 'commands_log_name'))
 elif platform.system() == 'Linux':
 
-    basepath = CONFIG.get('log_file', 'linux_log_folder')
+    basepath = CONFIG.get('log_settings', 'linux_log_folder')
     basepath = _LINUX_ENV_VAR_REGEX.sub(replace_env, basepath)
     # basepath = re.sub('(\$)([^/|\\]+)', replace_env, basepath)
 
     _COMMAND_LOGPATH = os.path.join(basepath,
-                                    CONFIG.get('log_file', 'commands_log_name'))
+                                    CONFIG.get('log_settings', 'commands_log_name'))
 else:
     raise OSError('Could not find a valid log path.')
 

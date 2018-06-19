@@ -10,7 +10,7 @@ install:
   - pip install codecov
 
 script:
-  - coverage run ./tests.py
+  - coverage run --omit=krangpower/method_get.py ./tests.py
 
 after_success:
   - codecov
