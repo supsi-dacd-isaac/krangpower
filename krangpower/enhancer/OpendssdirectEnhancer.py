@@ -615,6 +615,7 @@ class _CallFinalizer:
 
         _mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
+
     @property
     def super_interface(self):
         return self._super_interface_name

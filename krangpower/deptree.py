@@ -1,7 +1,9 @@
 import networkx as nx
 
+__all__ = ['DepTree']
 
-class DepGraph(nx.DiGraph):
+
+class DepTree(nx.DiGraph):
     """Simple extension of nx.Digraph created to reverse-walk a dependency branching in order to declare the entities
     in the right order."""
 

@@ -11,6 +11,7 @@ import zipfile
 from csv import reader as csvreader
 from functools import singledispatch as _singledispatch
 from logging import INFO as logging_INFO
+from tokenize import tokenize, untokenize
 
 import canonicaljson
 import networkx as nx
@@ -23,7 +24,7 @@ from . import enhancer as en
 from .aux_fcn import get_help_out, bus_resolve, diff_dicts
 from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
-from .depgraph import DepGraph as _DepGraph
+from .deptree import DepTree as _DepGraph
 from .enhancer.OpendssdirectEnhancer import pack
 from .logging_init import _clog, _mlog
 from .pbar import PBar as _PBar
@@ -35,6 +36,9 @@ CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
 
 
+# -------------------------------------------------------------
+# HELP DECORATOR
+# -------------------------------------------------------------
 def _helpfun(config, section):
     """This decorator adds a 'help' submethod to a function or method, and is meant to read a series of help (
     property, desc) pairs from a config file. The help method is invoked by function.help(), just prints stuff to the
@@ -52,6 +56,9 @@ def _helpfun(config, section):
     return _real_helpfun
 
 
+# -------------------------------------------------------------
+# VOLATILE METHOD CACHING DECORATORS
+# -------------------------------------------------------------
 def _invalidate_cache(f):
 
     def cached_invalidator_f(self, *args, **kwargs):
@@ -102,6 +109,9 @@ def _cache(f):
     return cached_f
 
 
+# -------------------------------------------------------------
+#                         KRANG
+# -------------------------------------------------------------
 class Krang:
     def __init__(self, *args, **kwargs):
 
@@ -350,7 +360,7 @@ class Krang:
         #     print(content)
 
     def drag_solve(self):
-        """Instead of launching a monolithic duty solve, This command solves one step at a time and saves node currents
+        """This command solves one step at a time and saves node currents
         and voltages in the two DataFrames returned."""
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(1)
@@ -374,6 +384,50 @@ class Krang:
         # self.flags['up_to_date'] = True  # already in self.solve
 
         return v, i
+
+    def custom_drag_solve(self, *qties):
+        """This command solves one step at a time and returns a list of values (of length equal to the number of steps
+        solved) for each of the quantities indicated, as strings, in the arguments.
+        For example:
+
+        pwr, lss = myKrang.custom_drag_solve('myKrang["agent_1"].Powers()', 'myKrang.brain.Circuit.Losses()')
+
+        (returns two lists with the values assumed by the expressions passed after each solution steps).
+        """
+
+        # we tokenize qties in order to replace the name with self
+        r_qties = []
+        for q in qties:
+            rslt = []
+            tkn = tokenize(io.BytesIO(q.encode('utf-8')).readline)
+            for idx, (toknum, tokval, _, _, _) in enumerate(tkn):
+                if idx == 1:  # the content of token number 1 is replaced with "self"
+                    rslt.append((toknum, 'self'))
+                else:  # everything else is left untouched
+                    rslt.append((toknum, tokval))
+
+            r_qties.append(untokenize(rslt).decode('utf-8'))
+
+        nmbr = self.brain.Solution.Number()
+        self.brain.Solution.Number(1)
+        rslt = {q: [] for q in r_qties}
+
+        for n in _PBar(range(nmbr), level=logging_INFO):
+            for ai_el in self._ai_list:
+                if n == 0:  # it's possible that, at the first step, there's no solution for the ai_el to query.
+                    try:    # So we just pass and the solution will use the default values
+                        self.command(ai_el.fus(self, ai_el.name))
+                    except OSError:
+                        self.snap()
+                        self.command(ai_el.fus(self, ai_el.name))
+                else:  # from the 2nd step on, the command has to work correctly, so no try block.
+                    self.command(ai_el.fus(self, ai_el.name))
+            self.solve()
+            for q in r_qties:
+                rslt[q].append(eval(q))
+
+        self.brain.Solution.Number(nmbr)
+        return (v for q, v in rslt.items())
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
@@ -596,6 +650,9 @@ def _(item, krg):
     return _BusView(krg, list(bustermtuples))
 
 
+# -------------------------------------------------------------
+# BusView
+# -------------------------------------------------------------
 class _BusView:
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
@@ -672,6 +729,9 @@ class _BusView:
             raise AttributeError
 
 
+# -------------------------------------------------------------
+#                        SAVE AND LOAD FCNS
+# -------------------------------------------------------------
 def from_json(path):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
