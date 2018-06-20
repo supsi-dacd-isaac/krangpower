@@ -36,6 +36,12 @@ CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
 
 
+def clear():
+    if _INSTANCE is not None:
+        tobj = _INSTANCE()  # calling back the weakref
+        del tobj
+
+
 # -----------------------------------------------------------------------------------------------------------------
 # HELP DECORATOR
 # -----------------------------------------------------------------------------------------------------------------
@@ -159,7 +165,7 @@ class Krang:
         self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
 
         # raising the module-wide _INSTANCE variable
-        globals()['_INSTANCE'] = self.id
+        globals()['_INSTANCE'] = weakref.ref(self)
 
         # file output redirection to the temp folder
         self.brain.Basic.DataPath(TMP_PATH)
