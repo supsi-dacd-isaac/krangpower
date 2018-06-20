@@ -7,7 +7,6 @@ import json
 import hashlib
 import canonicaljson
 import numpy as np
-from . import components
 
 
 def fingerprint(path):
@@ -45,16 +44,6 @@ def diff_dicts(original: dict, new: dict, context_lines=1):
     return err
 
 
-def get_classmap():
-
-    comp_module = components
-    classmap = {}
-    for item in dir(comp_module):
-        classmap[item.lower()] = getattr(comp_module, item)
-
-    return classmap
-
-
 def ebus(bus: str, nt: int):
     return bus + '_' + str(nt)
 
@@ -87,7 +76,7 @@ def pairwise(iterable):
     return zip(a, a)
 
 
-def _matrix_from_json(value):
+def matrix_from_json(value):
 
     def desym(lol):
         size = len(lol)
@@ -124,7 +113,7 @@ def load_dictionary_json(path):
     for entity in dik:
         for prop, value in dik[entity]['properties'].items():
             if isinstance(value, list):
-                dik[entity]['properties'][prop] = _matrix_from_json(value)
+                dik[entity]['properties'][prop] = matrix_from_json(value)
 
             # todo give it a unit measure
 

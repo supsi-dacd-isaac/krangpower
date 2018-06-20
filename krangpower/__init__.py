@@ -1,12 +1,18 @@
-from .components import *
-from .krangsuit import *
-from .enhancer import *
-from .gv import *
-from .graphview import GraphView
-from .logging_init import set_log_level, get_log_level
-from .config_loader import *
-from .aux_fcn import fingerprint
-from .components import load_entities
-from .graphview import *
+# import submodules; we rely on their __init__.py file to correctly set up their namespace
+from . import gv
+from . import enhancer
+
+# imports that rely on the __all__ property to not flood the exposed namespace
+from ._components import *
+
+# selective imports
+from ._krangsuit import Krang, from_json, CACHE_ENABLED, open_ckt
+from ._graphview import GraphView
+from ._logging_init import set_log_level, get_log_level
+from ._config_loader import UM, krang_directory, TMP_PATH
+from ._aux_fcn import fingerprint
 from ._edge_tests import do_edge_tests
-from .splash import splash  # ishtar egg
+from ._splash import splash  # ishtar egg
+
+# the enhancer utility functions are double-exposed in krangpower's main space
+from .enhancer import get_all_names, txt_command, pack, log_line

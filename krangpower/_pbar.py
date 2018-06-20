@@ -1,6 +1,6 @@
 import tqdm
-from .logging_init import set_log_level
-from . import config_loader as cl
+from ._logging_init import set_log_level
+from . import _config_loader as cl
 from logging import INFO
 
 __all__ = ['PBar']
@@ -17,15 +17,15 @@ class PBar:
         self._tqdm = None
 
     def __iter__(self):
-        if self.lvl >= cl._GLOBAL_LOG_LEVEL:
-            self._tqdm = tqdm.tqdm(iterable=self._itr, ascii=cl._PBAR_ISASCII, *self._args, **self._kwargs)
+        if self.lvl >= cl.GLOBAL_LOG_LEVEL:
+            self._tqdm = tqdm.tqdm(iterable=self._itr, ascii=cl.PBAR_ISASCII, *self._args, **self._kwargs)
             return self._tqdm.__iter__()
         else:
             return self._itr.__iter__()
 
 
 def _main():
-    original_gll = cl._GLOBAL_LOG_LEVEL
+    original_gll = cl.GLOBAL_LOG_LEVEL
 
     set_log_level(10)
     print('a pbar should appear now:')

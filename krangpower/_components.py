@@ -1,26 +1,27 @@
 import copy
 import csv
 import hashlib
+import io
 import json
 import os.path
-import re
 import pickle
+import re
+import sys
 import textwrap
 from abc import abstractmethod
 from collections import OrderedDict
 from functools import lru_cache
 
-import io
 import numpy as np
 import scipy.io as sio
 from dateutil.parser import parse as dateparse
 from pandas import read_csv
 
-from .aux_fcn import _matrix_from_json, get_classmap
-from .config_loader import _PINT_QTY_TYPE, _DEFAULT_ENTITIES_PATH, _ASSOCIATION_TYPES_PATH, \
-    DEFAULT_SETTINGS, UM, DEFAULT_COMP, DSSHELP, _GLOBAL_PRECISION, TMP_PATH, _MANDATORY_UNITS
-from .logging_init import _mlog
-from .nxtable import NxTable
+from ._aux_fcn import matrix_from_json
+from ._config_loader import PINT_QTY_TYPE, DEFAULT_ENTITIES_PATH, ASSOCIATION_TYPES_PATH, \
+    UM, DEFAULT_COMP, DSSHELP, GLOBAL_PRECISION, TMP_PATH, MANDATORY_UNITS
+from ._logging_init import mlog
+from ._nxtable import NxTable
 
 # COMPONENTS FOR KRANGSUIT - WRITTEN BY FEDERICO ROSATO
 # -------------------------------------------------------------
@@ -29,7 +30,17 @@ __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
            'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities',
            'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ', 'DEFAULT_SETTINGS']
+           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ']
+
+
+def get_classmap():
+
+    comp_module = sys.modules[__name__]
+    classmap = {}
+    for item in dir(comp_module):
+        classmap[item.lower()] = getattr(comp_module, item)
+
+    return classmap
 
 
 # <editor-fold desc="AUX FUNCTIONS">
@@ -74,7 +85,7 @@ def _odssrep(data_raw):
     :rtype: str
     """
 
-    if isinstance(data_raw, _PINT_QTY_TYPE):
+    if isinstance(data_raw, PINT_QTY_TYPE):
         data = data_raw.magnitude
     else:
         data = data_raw
@@ -239,7 +250,7 @@ def dejsonize(obj_repr: dict):
     # restore matrices
     for prop, value in obj_repr['properties'].items():
         if isinstance(value, list):
-            obj_repr['properties'][prop] = _matrix_from_json(value)
+            obj_repr['properties'][prop] = matrix_from_json(value)
 
     # add unit measure
     for prop in obj_repr['properties'].keys():
@@ -250,7 +261,7 @@ def dejsonize(obj_repr: dict):
             try:
                 value = obj_repr['units'][prop]
             except KeyError:
-                _mlog.debug('When djsonizing {0}.{1}, property {0} did not have a unit, so the default unit was assumed'.format(
+                mlog.debug('When djsonizing {0}.{1}, property {0} did not have a unit, so the default unit was assumed'.format(
                     obj_repr['type'], obj_repr['name'], prop))
                 value = DEFAULT_COMP['default_' + obj_repr['type']]['units'][prop]
 
@@ -324,7 +335,7 @@ def _resolve_unit(ustring: str, match_unit_getter):
 
 
 def _get_help(config, cmp):
-    section = cmp._eltype
+    section = cmp.eltype
     helpitems = config.items(section.upper().split('_')[0])
     help_str = ''
     basev = 90
@@ -356,12 +367,18 @@ def _get_help(config, cmp):
 # -------------------------------------------------------------
 # GENERIC DSSENTITY AND ITS NAMED VERSION
 # -------------------------------------------------------------
-class _DSSentity:
+class _FcsAble:
+    @abstractmethod
+    def fcs(self, **hookup):
+        pass
+
+
+class _DSSentity(_FcsAble):
 
     _muldict = NxTable()
     _fmtdict = NxTable()
-    _muldict.from_csv(_ASSOCIATION_TYPES_PATH, ccol=3)
-    _fmtdict.from_csv(_ASSOCIATION_TYPES_PATH, ccol=4)
+    _muldict.from_csv(ASSOCIATION_TYPES_PATH, ccol=3)
+    _fmtdict.from_csv(ASSOCIATION_TYPES_PATH, ccol=4)
 
     def __init__(self, **kwargs):
         self.term_perm = None
@@ -377,7 +394,7 @@ class _DSSentity:
         self._setparameters(**kwargs)
 
     @property
-    def _eltype(self):
+    def eltype(self):
         return self.toe.split('_')[0]
 
     @classmethod
@@ -398,18 +415,18 @@ class _DSSentity:
     @property
     def fullname(self):
         """Name, in the form eltype.elname"""
-        return (self._eltype + '.' + self.name).lower()
+        return (self.eltype + '.' + self.name).lower()
 
     def paramhelp(self):
         """Prints a cheatsheet for the object's parameters."""
-        print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self._eltype))
+        print('\nPARAMETERS HELP FOR {0} (get/set them with {0}[<param>])\n'.format(self.eltype))
         print(_get_help(DSSHELP, self))
         return None
 
     def __mul__(self, other):
         """Associates the multiplier with this object."""
         i1 = self.toe
-        i2 = other._eltype
+        i2 = other.eltype
 
         prop_to_set = self._muldict[i1, i2]
         # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
@@ -468,7 +485,8 @@ class _DSSentity:
             # check against direct setting of secured parameters
             if parameter_raw.lower() in self._ignored_params:
                 raise ValueError('You cannot directly set property {0} for an object of type {1}. This property has'
-                                 'to be set by associating an entity of the correct type.'.format(parameter_raw, self.toe))
+                                 'to be set by associating an entity of the correct type.'
+                                 .format(parameter_raw, self.toe))
 
             # patch for the 'pct in keyword' problem
             if re.match('pct', parameter_raw.lower()):
@@ -493,7 +511,8 @@ class _DSSentity:
             if hasattr(value_raw, 'magnitude'):  # isinstance pint does not work
                 unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == UM.none:
-                    raise ValueError('Theres no unit for {0}. This should not happen, contact the dev.'.format(self.toe))
+                    raise ValueError('Theres no unit for {0}. This should not happen, contact the dev.'
+                                     .format(self.toe))
                 value = value_raw.to(unt).magnitude
             else:
                 value = value_raw
@@ -521,7 +540,8 @@ class _DSSentity:
                 test = value == DEFAULT_COMP['default_' + self.toe][default_dict][parameter.lower()]
 
             if test:
-                _mlog.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'.format(parameter, str(value), self.toe, self.name))
+                mlog.debug('[{2}-{3}]Ignored setting {0} = {1} because identical to default'
+                           .format(parameter, str(value), self.toe, self.name))
                 continue
 
             # finally setting the parameter
@@ -579,11 +599,11 @@ class _DSSentity:
                 break
         else:
             raise TypeError('Could not  find a suitable reference object for {0} in the default file ("{1}")'
-                            .format(self.toe, _DEFAULT_ENTITIES_PATH))
+                            .format(self.toe, DEFAULT_ENTITIES_PATH))
 
         self.params_types_raw = {k: type(v) for k, v in list(self._params.items()) + list(self._associated.items())}
 
-    def jsonize(self, all_params=False, flatten_mtx=True):  #, using=_DEFAULT_ENTITIES_PATH):
+    def jsonize(self, all_params=False, flatten_mtx=True):
         """Returns a dict that describes the element's parameters. It's compatible with the json I/O functions."""
         super_dikt = {'type': self.toe, 'name': self.name, 'units': {}}
         if not self.isnamed():
@@ -597,9 +617,9 @@ class _DSSentity:
                 if parameter not in self._editedParams:
                     continue
             if isinstance(value, np.matrix):
-                pls_flat[parameter] = np.round(value, _GLOBAL_PRECISION).tolist()
+                pls_flat[parameter] = np.round(value, GLOBAL_PRECISION).tolist()
             elif isinstance(value, float):
-                pls_flat[parameter] = np.round(value, _GLOBAL_PRECISION)
+                pls_flat[parameter] = np.round(value, GLOBAL_PRECISION)
             else:
                 pls_flat[parameter] = value
             pls_mtx[parameter] = value
@@ -644,8 +664,8 @@ class _DSSentity:
 
         s2 = ''
 
-        if self.toe in _MANDATORY_UNITS.keys():
-            for muname, muvalue in _MANDATORY_UNITS[self.toe].items():
+        if self.toe in MANDATORY_UNITS.keys():
+            for muname, muvalue in MANDATORY_UNITS[self.toe].items():
                 s2 = s2 + ' ' + muname + '=' + muvalue
 
         for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
@@ -674,7 +694,7 @@ class _NamedDSSentity(_DSSentity):
 # -------------------------------------------------------------
 # LOADSHAPE CLASS
 # -------------------------------------------------------------
-class CsvLoadshape:
+class CsvLoadshape(_FcsAble):
     """
     Allows to specify a Loadshape that refers to a CSV file. Requires a path.
     The name of the loadshape will be the same as the file basename.
@@ -682,21 +702,30 @@ class CsvLoadshape:
 
     :param csv_path: the csv file path.
     :type csv_path: str
-    :param column_scheme: A dictionary of one or more int:<'hour'|'mult'|'qmult'> couples that associate the column with one of the hour, mult and qmult properties.
+    :param column_scheme: A dictionary of one or more int:<'hour'|'mult'|'qmult'> couples that associate the column with
+     one of the hour, mult and qmult properties.
     :type column_scheme: dict
-    :param interval: length of step in the data as a pint unit with dimension [time]. If unspecified or None the first column of the csv will be used as the vector of times, that can be, in general, non uniformly spaced.
+    :param interval: length of step in the data as a pint unit with dimension [time]. If unspecified or None the first
+     column of the csv will be used as the vector of times, that can be, in general, non uniformly spaced.
     :type interval: _pint_qty_type
-    :param use_actual: setting this to False indicates that you want to use the data values in the csv to rescale the base value of the DSS object, rather than using the values directly.
+    :param use_actual: setting this to False indicates that you want to use the data values in the csv to rescale the
+     base value of the DSS object, rather than using the values directly.
     :type use_actual: bool
-    :param npts: the number of points to load from the csv. If None, all the lines in the csv will be loaded in the loadshape. If greater than the number of lines in the csv, the lines will be tiled from the beginning. Please note that, since the automatic determination of the number of datapoints requires opening the csv and counting the rows, specifying this parameter, when possible, will grant a speed-up, especially for big files and/or multiple imports.
+    :param npts: the number of points to load from the csv. If None, all the lines in the csv will be loaded in the
+    loadshape. If greater than the number of lines in the csv, the lines will be tiled from the beginning. Please note
+    that, since the automatic determination of the number of datapoints requires opening the csv and counting the rows,
+    specifying this parameter, when possible, will grant a speed-up, especially for big files and/or multiple imports.
     :type npts: int
 
     """
 
-    def __init__(self, name='', csv_path=None, column_scheme={'mult': 1}, interval=None, use_actual=True, npts=None):
+    def __init__(self, name='', csv_path=None, column_scheme=None, interval=None, use_actual=True, npts=None):
 
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
+
+        if column_scheme is None:
+            column_scheme = {'mult': 1}
 
         for kay in column_scheme.keys():
             if kay not in ('hour', 'mult', 'qmult'):
@@ -717,7 +746,7 @@ class CsvLoadshape:
         else:
             self.name = name
         self.use_actual = use_actual
-        if isinstance(interval, _PINT_QTY_TYPE):
+        if isinstance(interval, PINT_QTY_TYPE):
             self.true_interval = interval
         else:
             self.true_interval = interval * UM.min
@@ -748,16 +777,16 @@ class CsvLoadshape:
         # auto-row counting if no npts is passed
         if npts is None:  # if npts is not specified, automatic row counting is performed
             fo = csv.reader(open(csv_path))
-            self.npts = str(sum([1 for row in fo]) - self.shift)  # -shift is for the header
+            self.npts = str(sum([1 for _ in fo]) - self.shift)  # -shift is for the header
         else:
             assert isinstance(npts, int)
             self.npts = str(npts)
 
         self._calchash()
 
-        # auto-metadata recognizing
-        row = next(csv.reader(open(csv_path)))  # the second row always has data in it
-        ncol = len(row)
+        # # auto-metadata recognizing
+        # row = next(csv.reader(open(csv_path)))  # the second row always has data in it
+        # ncol = len(row)
 
     @staticmethod
     def isnamed():
@@ -1058,6 +1087,7 @@ class TSData(_NamedDSSentity):
 class _LineGeometry(_NamedDSSentity):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
+        self.wiretype = None
         self.specialparams = (self.wiretype, 'x', 'h', 'units')
         # for p in self.specialparams:
         #     if isinstance(self._params[p], np.matrix):
@@ -1075,7 +1105,7 @@ class _LineGeometry(_NamedDSSentity):
         for ind in range(0, self['nconds']):
             s2 += '\n~ cond={0} '.format(ind + 1)
             for parameter in self.specialparams:
-                if isinstance(self[parameter], _PINT_QTY_TYPE):
+                if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
                 else:
                     true_param = self[parameter]
@@ -1117,8 +1147,8 @@ class LineGeometry_O(_LineGeometry):
     """
 
     def __init__(self, name, **kwargs):
-        self.wiretype = 'wire'
         super().__init__(name, **kwargs)
+        self.wiretype = 'wire'
 
 
 class LineGeometry_T(_LineGeometry):
@@ -1146,8 +1176,8 @@ class LineGeometry_T(_LineGeometry):
     """
 
     def __init__(self, name, **kwargs):
-        self.wiretype = 'tscable'
         super().__init__(name, **kwargs)
+        self.wiretype = 'tscable'
 
 
 class LineGeometry_C(_LineGeometry):
@@ -1175,11 +1205,11 @@ class LineGeometry_C(_LineGeometry):
     """
 
     def __init__(self, name, **kwargs):
-        self.wiretype = 'cncable'
         super().__init__(name, **kwargs)
+        self.wiretype = 'cncable'
 
 
-class Curve:
+class Curve(_FcsAble):
 
     # todo implement csv and direct data polimorphism
     # todo port loadshape as curve
@@ -1261,7 +1291,8 @@ class Curve:
     def z(self):
         return self._dict['z']
 
-    def isnamed(self):
+    @staticmethod
+    def isnamed():
         return True
 
     def fcs(self):
@@ -1283,6 +1314,7 @@ class PtCurve(Curve):
 
 class EffCurve(Curve):
     pass
+
 
 # -------------------------------------------------------------
 # CIRCUIT ELEMENTS
@@ -1307,25 +1339,24 @@ class _CircuitElement(_DSSentity):
 
 class _CircuitElementNBus(_CircuitElement):
     _nbusesdict = {'line': 2,
-                  'reactor': 2,
-                  'capacitor': 2,
-                  'fault': 2,
-                  'vsource': 2,
-                  'isource': 1,
-                  'generator': 1,
-                  'storage': 1,
-                  'load': 1,
-                  'dload': 2,
-                  'transformer': 2,
-                  'switch': 2,
-                  'pvsystem': 1,
-                  'fourq': 1}
+                   'reactor': 2,
+                   'capacitor': 2,
+                   'fault': 2,
+                   'vsource': 2,
+                   'isource': 1,
+                   'generator': 1,
+                   'storage': 1,
+                   'load': 1,
+                   'dload': 2,
+                   'switch': 2,
+                   'pvsystem': 1,
+                   'fourq': 1}
     # Format:
     # New elem.name bus1='a' bus2='b' ...busx='z' prop1=val1 prop2=val2....
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.nbuses = self._nbusesdict[self.toe]  # todo broken for transformers
+        self.nbuses = self._nbusesdict[self.toe]
 
     def fcs(self, **hookup):
 
@@ -1335,8 +1366,8 @@ class _CircuitElementNBus(_CircuitElement):
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name  # _ splitting to allow name personalization outside dss
 
         s4 = ''
-        if self.toe in _MANDATORY_UNITS.keys():
-            for muname, muvalue in _MANDATORY_UNITS[self.toe].items():
+        if self.toe in MANDATORY_UNITS.keys():
+            for muname, muvalue in MANDATORY_UNITS[self.toe].items():
                 s4 = s4 + ' ' + muname + '=' + muvalue
 
         s3 = ' '
@@ -1346,8 +1377,8 @@ class _CircuitElementNBus(_CircuitElement):
                 if isinstance(term_perm[(buses[busno - 1])], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
                         term_perm[(buses[busno - 1])]) + ' '
-                elif isinstance(term_perm[(buses[busno - 1])],
-                                list):  # this happens when you specify more than one set of terminal connections at one bus
+                elif isinstance(term_perm[(buses[busno - 1])], list):
+                    # this happens when you specify more than one set of terminal connections at one bus
                     nthterminal = term_perm[(buses[busno - 1])][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
                     idox += 1
@@ -1483,7 +1514,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
         for ind in range(0, self['windings']):
             s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], _termrep(termdic[buses[ind]])) + ' '
             for parameter in self.specialparams:
-                if isinstance(self[parameter], _PINT_QTY_TYPE):
+                if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
                 else:
                     true_param = self[parameter]
@@ -1495,25 +1526,6 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
                 s2 += str(parameter).strip('s') + '=' + str(true_param[idx]) + ' '
 
         return s1 + s2
-
-        # s2 = 'New transformer.' + self.name
-        #
-        # for parameter in [x for x in self.editedParams if x not in ('conns', 'kvs', 'kvas', 'taps', '%rs')]:
-        #     s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
-        #
-        # s1 = ''
-        # for wdg, propdic in windings.items():
-        #     if wdg[0] != trname + '_b':
-        #         outbus = wdg[0]
-        #     else:
-        #         outbus = wdg[1]
-        #     wgstr = '\n~ wdg=' + str(wdg[2] + 1) + ' '
-        #     wgstr += 'bus=' + outbus + _termrep(terminaldic[wdg]) + ' '
-        #     for propname, propvalue in propdic.items():
-        #         wgstr += propname + '=' + _odssrep(propvalue) + ' '
-        #     s1 += wgstr
-        #
-        # return s2 + s1
 
     def aka(self, name):
         try:
@@ -2304,8 +2316,8 @@ class Switch(_CircuitElementNBus):
     | emergamps            | float       | 600.0                      |
     +----------------------+-------------+----------------------------+
     """
-    def __init__(self, nphases=None, open=False):
-        if open:
+    def __init__(self, nphases=None, is_open=False):
+        if is_open:
             self.disablestring = 'Disable = True'
         else:
             self.disablestring = ''
@@ -2380,8 +2392,8 @@ class FourQ(Generator):
                 if isinstance(terminals[(buses[busno - 1])], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
                         terminals[(buses[busno - 1])]) + ' '
-                elif isinstance(terminals[(buses[busno - 1])],
-                                list):  # this happens when you specify more than one set of terminal connections at one bus
+                elif isinstance(terminals[(buses[busno - 1])], list):
+                    # this happens when you specify more than one set of terminal connections at one bus
                     nthterminal = terminals[(buses[busno - 1])][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
                     idox += 1
@@ -2407,8 +2419,8 @@ class FourQ(Generator):
         pickle.dump(self._dm, hash_bio, protocol=pickle.HIGHEST_PROTOCOL)
         return hashlib.md5(hash_bio.getvalue()).hexdigest()
 
-    def jsonize(self, all_params=False, flatten_mtx=True, using=_DEFAULT_ENTITIES_PATH):
-        md = super().jsonize(all_params, flatten_mtx, using)
+    def jsonize(self, all_params=False, flatten_mtx=True):
+        md = super().jsonize(all_params, flatten_mtx)
         md['hash'] = self._calchash()
 
         return md
@@ -2675,7 +2687,7 @@ class StorageController(_AboveCircuitElement):
             name = 'sc_' + eltype + '_' + elname
 
         s1 = 'New storagecontroller.' + name + ' element=' + eltype + '.' + elname + \
-               ' terminal=' + str(terminal)
+             ' terminal=' + str(terminal)
 
         s2 = ''
         for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
@@ -2687,29 +2699,13 @@ class StorageController(_AboveCircuitElement):
 
 def load_entities(path):
 
-    classmap = get_classmap()
-
     with open(path, 'r') as file:
         dik = json.load(file)
-
-    # json entity file contain jsonized objects. This means that all lists are np.matrix.tolist representation
-    # and we have to convert them back.
-    # for entity in dik:
-    #     for property, value in dik[entity]['properties'].items():
-    #         if isinstance(value, list):
-    #             dik[entity]['properties'][property] = _matrix_from_json(value)
 
     dicky = {}
 
     for entity_name in dik:
-
         dicky[entity_name] = dejsonize(dik[entity_name])
-
-        # elcls = classmap[dik[entity_name]['type']]
-        # if elcls.isnamed():
-        #     dicky[entity_name] = elcls(entity_name, dik[entity_name]['properties'])
-        # else:
-        #     dicky[entity_name] = elcls(dik[entity_name]['properties'])
 
     return dicky
 
@@ -2722,5 +2718,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 

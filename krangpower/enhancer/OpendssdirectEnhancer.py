@@ -15,12 +15,13 @@ import numpy as _np
 import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
-from ..aux_fcn import lower as _lower, get_classmap as _get_classmap
-from ..aux_fcn import pairwise as _pairwise
-from ..components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
-from ..config_loader import _DEFAULT_NAME, _UNIT_MEASUREMENT_PATH, _TREATMENTS_PATH, \
-    UM as _UM, _INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, _PINT_QTY_TYPE, _INTERF_SELECTORS_PATH
-from ..logging_init import _clog, _mlog, get_log_level
+from .._aux_fcn import lower as _lower
+from krangpower._components import get_classmap as _get_classmap
+from .._aux_fcn import pairwise as _pairwise
+from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
+from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, \
+    UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
+from .._logging_init import clog, mlog, get_log_level
 
 
 # <editor-fold desc="Auxiliary functions">
@@ -134,7 +135,7 @@ setattr(_this_module, 'utils', _odr.utils)
 
 
 # loads chains of functions through which to pass the rough outputs of opendss.
-with open(_TREATMENTS_PATH, 'r') as _tfile:
+with open(TREATMENTS_PATH, 'r') as _tfile:
     _rtrt = _json_load(_tfile)
 _trt = dict()
 for _subdic_name, _subdic in _rtrt.items():
@@ -143,7 +144,7 @@ for _subdic_name, _subdic in _rtrt.items():
 
 # loads measurement units for the interface of components without self-referencing.
 # the components with self referencing, like lines and loadshapes, are taken care of at runtime.
-with open(_UNIT_MEASUREMENT_PATH, 'r') as _ufile:
+with open(UNIT_MEASUREMENT_PATH, 'r') as _ufile:
     _rumr = _json_load(_ufile)
 _umr = dict()
 for _subdic_name, _subdic in _rumr.items():
@@ -151,10 +152,10 @@ for _subdic_name, _subdic in _rumr.items():
     _umr[_subdic_name] = _nsd
 
 
-with open(_INTERFACE_METHODS_PATH, 'r') as _ifile:
+with open(INTERFACE_METHODS_PATH, 'r') as _ifile:
     _itf = _json_load(_ifile)
 _interface_methods = {(_k,): _v for _k, _v in _itf.items()}
-with open(_INTERF_SELECTORS_PATH, 'r') as _ifile:
+with open(INTERF_SELECTORS_PATH, 'r') as _ifile:
     _itf_sel_names = _json_load(_ifile)
 # </editor-fold>
 
@@ -385,7 +386,7 @@ class _PackedOpendssElement:
         self._name = name
         # todo perform sanity checks on name
         # todo distinct linecode_a, etc and make sure that _eltype is coherent with components
-        self._eltype = eltype
+        self.eltype = eltype
 
         # dynamically add methods to expose
         for i in self._available_interfaces:
@@ -397,7 +398,7 @@ class _PackedOpendssElement:
     def topological(self):
         """Returns those properties that are marked as 'topological' in the configuration files and identify the wiring
         location of the element. (Typically, bus1 and, if it exists, bus2.)"""
-        top_par_names = _DEFAULT_COMP['default_' + self._eltype]['topological']
+        top_par_names = _DEFAULT_COMP['default_' + self.eltype]['topological']
 
         rt = [self[t] for t in top_par_names.keys()]
         if len(rt) == 1 and isinstance(rt[0], list):
@@ -407,11 +408,11 @@ class _PackedOpendssElement:
 
     @property
     def type(self):
-        return self._eltype
+        return self.eltype
 
     @property
     def fullname(self):
-        return self._eltype + '.' + self._name
+        return self.eltype + '.' + self._name
 
     @property
     def name(self):
@@ -448,7 +449,7 @@ class _PackedOpendssElement:
         else:
             raise AttributeError('"{0}" is neither an attribute of the _PackedOpendssElement nor of the {1}-type object'
                                  ' it wraps.'
-                                 .format(item, self._eltype.upper()))
+                                 .format(item, self.eltype.upper()))
 
     def dump(self):
         """Returns a dict with all the properties-values pairs of the object as they would be returned
@@ -458,7 +459,7 @@ class _PackedOpendssElement:
                 sel(self.fullname)
             props = _this_module.Element.AllPropertyNames()
         except AttributeError:
-            raise ValueError('{0}-type objects are not dumpable.'.format(self._eltype.upper()))
+            raise ValueError('{0}-type objects are not dumpable.'.format(self.eltype.upper()))
         return {p: self[p] for p in props}
     # @profile(immediate=True)
 
@@ -466,17 +467,17 @@ class _PackedOpendssElement:
         """Returns a _DssEntity (or a descendant) corresponding to _PackedOpendssElement."""
 
         # identify the corresponding class in the components file
-        myclass = _classmap[self._eltype]
+        myclass = _classmap[self.eltype]
 
         # properties are dumped
         all_props = self.dump()
 
         # the names of those properties that are ok to pass to the _DssEntity are taken from the components'
         # configuration file
-        valid_props = _deepcopy(_DEFAULT_COMP['default_' + self._eltype]['properties'])
-        valid_props.update(_DEFAULT_COMP['default_' + self._eltype].get('associated', {}))
+        valid_props = _deepcopy(_DEFAULT_COMP['default_' + self.eltype]['properties'])
+        valid_props.update(_DEFAULT_COMP['default_' + self.eltype].get('associated', {}))
 
-        ignored_props = _DEFAULT_COMP['default_' + self._eltype].get('ignored', [])
+        ignored_props = _DEFAULT_COMP['default_' + self.eltype].get('ignored', [])
 
         valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props}
 
@@ -544,14 +545,14 @@ class _PackedOpendssElement:
         """Gets what type of data corresponds to the property name passed as argument. The information is retrieved from
         the configuration files."""
         try:
-            return type(_DEFAULT_COMP['default_' + self._eltype]['properties'][item.lower()])
+            return type(_DEFAULT_COMP['default_' + self.eltype]['properties'][item.lower()])
         except KeyError:
-            return type(_DEFAULT_COMP['default_' + self._eltype]['topological'][item.lower()])
+            return type(_DEFAULT_COMP['default_' + self.eltype]['topological'][item.lower()])
 
     def _get_builtin_units(self, item):
         """Gets what measurement unit corresponds to the property name passed as argument. The information is retrieved
         from the configuration files."""
-        raw_unit = _DEFAULT_COMP['default_' + self._eltype]['units'].get(item.lower(), None)
+        raw_unit = _DEFAULT_COMP['default_' + self.eltype]['units'].get(item.lower(), None)
         if raw_unit is None:
             return None
         else:
@@ -571,7 +572,7 @@ class _PackedOpendssElement:
         # it is checked whether you passed a _pint_qty_type as value or not. Throughout the function, errors will be
         # trhown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
         # the content of the _pint_qty_type is not the right data type (such as a matrix instead of an int).
-        if isinstance(value, _PINT_QTY_TYPE):
+        if isinstance(value, PINT_QTY_TYPE):
             unt = self._get_builtin_units(key)
             ref_value = value.to(unt).magnitude
         else:
@@ -613,7 +614,7 @@ class _CallFinalizer:
         for sel in self._selectors:
             sel(self._name_to_select)
 
-        _mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
+        mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
 
     @property
@@ -668,7 +669,7 @@ def txt_command(cmd_str: str, echo=True):
      in this case, if kp.get_log_level() is 0, the log of the command will be forced."""
     rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
     if echo or get_log_level() == 0:
-        log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(_DEFAULT_NAME)))
+        log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(DEFAULT_ENH_NAME)))
                  + ']-->[' + rslt.replace('\n', '') + ']')
 
     if _influences_names(cmd_str):
@@ -684,5 +685,5 @@ def txt_command(cmd_str: str, echo=True):
 
 def log_line(line: str, lvl=_DBG_LVL):
     """Logs a line in the command log."""
-    _clog.log(lvl, '(id:{0})-'.format(_ID) + line)
+    clog.log(lvl, '(id:{0})-'.format(_ID) + line)
 # </editor-fold>

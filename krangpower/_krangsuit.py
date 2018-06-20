@@ -6,11 +6,11 @@ import os.path
 import pickle
 import re
 import weakref
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElTr
 import zipfile
 from csv import reader as csvreader
 from functools import singledispatch as _singledispatch
-from logging import INFO as logging_INFO
+from logging import INFO as LOGGING_INFO
 from tokenize import tokenize, untokenize
 
 import canonicaljson
@@ -18,18 +18,18 @@ import networkx as nx
 import numpy as np
 import pandas
 
-from . import busquery as bq
-from . import components as co
+from . import _busquery as bq
+from . import _components as co
 from . import enhancer
-from .aux_fcn import get_help_out, bus_resolve, diff_dicts
-from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
-from .deptree import DepTree as _DepGraph
+from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
+from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
+    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS
+from ._deptree import DepTree as _DepGraph
 from .enhancer.OpendssdirectEnhancer import pack
-from .logging_init import _clog, _mlog
-from .pbar import PBar as _PBar
+from ._logging_init import clog, mlog
+from ._pbar import PBar as _PBar
 
-__all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
+# __all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
 
 CACHE_ENABLED = True
@@ -124,7 +124,7 @@ def _cache(f):
 # -----------------------------------------------------------------------------------------------------------------
 class Krang:
     def __init__(self,
-                 name=_DEFAULT_KRANG_NAME,
+                 name=DEFAULT_KRANG_NAME,
                  voltage_source=co.Vsource(),
                  source_bus_name='sourcebus'):
 
@@ -151,7 +151,7 @@ class Krang:
         self._coords_linked = {}
 
         # OpenDSS initialization commands
-        _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
+        clog.debug('\n' + '$%&' * CMD_LOG_NEWLINE_LEN)
         self.command('clear')
         master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
         self.command(master_string)
@@ -236,7 +236,6 @@ class Krang:
         self.brain._names_up2date = False
         return self
 
-
     # -----------------------------------------------------------------------------------------------------------------
     # OPENDSS COMMANDS AND OPTIONS
     # -----------------------------------------------------------------------------------------------------------------
@@ -258,7 +257,7 @@ class Krang:
         be specified as pint quantities; otherwise, the default opendss units will be used."""
         for option, value in opts_vals.items():
             if hasattr(value, 'magnitude'):
-                vl = value.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][option])).magnitude
+                vl = value.to(UM.parse_units(DEFAULT_SETTINGS['units'][option])).magnitude
             else:
                 vl = value
 
@@ -279,25 +278,27 @@ class Krang:
 
                     break
                 except AssertionError:
-                    _mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2}), retry #{3}/{4}'.format(option, vl, self.get(option)[option], rt, _RETRY))
+                    mlog.warning('Option {0}={1} was not correctly acknowledged (value == {2}), retry #{3}/{4}'
+                                 .format(option, vl, self.get(option)[option], rt, _RETRY))
                     continue
             else:
-                raise IOError('OpenDSS could not acknowledge option {0}={1} (value == {2})'.format(option, vl, self.get(option)[option]))
+                raise IOError('OpenDSS could not acknowledge option {0}={1} (value == {2})'
+                              .format(option, vl, self.get(option)[option]))
 
     @_helpfun(DSSHELP, 'OPTIONS')
     def get(self, *opts):
         """Takes a list of circuit options and returns them as dict of name, value."""
-        assert all([x in list(co.DEFAULT_SETTINGS['values'].keys()) for x in opts])
+        assert all([x in list(DEFAULT_SETTINGS['values'].keys()) for x in opts])
         r_opts = {opt: self.command('get {0}'.format(opt), echo=False).split('!')[0] for opt in opts}
 
         for op in r_opts.keys():
-            tt = type(co.DEFAULT_SETTINGS['values'][op])
+            tt = type(DEFAULT_SETTINGS['values'][op])
             if tt is list:
                 r_opts[op] = eval(r_opts[op])  # lists are literals like [13]
             else:
                 r_opts[op] = tt(r_opts[op])
-            if op in co.DEFAULT_SETTINGS['units'].keys():
-                r_opts[op] *= UM.parse_units(co.DEFAULT_SETTINGS['units'][op])
+            if op in DEFAULT_SETTINGS['units'].keys():
+                r_opts[op] *= UM.parse_units(DEFAULT_SETTINGS['units'][op])
 
         return r_opts
 
@@ -309,7 +310,7 @@ class Krang:
         if tmp_filename.lower().endswith('csv'):
             return pandas.read_csv(tmp_filename)
         elif tmp_filename.lower().endswith('xml'):
-            return ET.parse(tmp_filename)
+            return ElTr.parse(tmp_filename)
         else:
             raise ValueError('Unknown format for export file {0}, contact the developer'.format(tmp_filename))
 
@@ -341,7 +342,7 @@ class Krang:
 
         self.brain.log_line('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
                             ' Wait for end message...'.format(nmbr))
-        for _ in _PBar(range(nmbr), level=logging_INFO):
+        for _ in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
                 self.command(ai_el.fus(self, ai_el.name))
 
@@ -393,7 +394,7 @@ class Krang:
         self.brain.Solution.Number(1)
         rslt = {q: [] for q in r_qties}
 
-        for n in _PBar(range(nmbr), level=logging_INFO):
+        for n in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
                 if n == 0:  # it's possible that, at the first step, there's no solution for the ai_el to query.
                     try:    # So we just pass and the solution will use the default values
@@ -514,20 +515,21 @@ class Krang:
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
         # elements
-        for Nm in _PBar(self.brain.Circuit.AllElementNames(), level=logging_INFO, desc='jsonizing elements...'):
+        for Nm in _PBar(self.brain.Circuit.AllElementNames(), level=LOGGING_INFO, desc='jsonizing elements...'):
             nm = Nm.lower()
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
-        for ne in _PBar(self._named_entities, level=logging_INFO, desc='jsonizing entities...'):
+        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # options
-        dumpable_settings = set(co.DEFAULT_SETTINGS['values'].keys()) - set(co.DEFAULT_SETTINGS['contingent'])
+        dumpable_settings = set(DEFAULT_SETTINGS['values'].keys()) - set(DEFAULT_SETTINGS['contingent'])
         opts = self.get(*dumpable_settings)
-        for on, ov in _PBar(opts.items(), level=logging_INFO, desc='jsonizing options...'):
-            if isinstance(ov, _PINT_QTY_TYPE):
-                opts[on] = np.round(ov.to(UM.parse_units(co.DEFAULT_SETTINGS['units'][on])).magnitude, decimals=_GLOBAL_PRECISION)
+        for on, ov in _PBar(opts.items(), level=LOGGING_INFO, desc='jsonizing options...'):
+            if isinstance(ov, PINT_QTY_TYPE):
+                opts[on] = np.round(ov.to(UM.parse_units(DEFAULT_SETTINGS['units'][on])).magnitude,
+                                    decimals=GLOBAL_PRECISION)
                 if isinstance(opts[on], (np.ndarray, np.matrix)):
                     # settings are never matrices; this happens because when *ing a list for a unit, the content
                     # becomes an array.
@@ -535,12 +537,12 @@ class Krang:
                 if isinstance(opts[on], (np.int32, np.int64)):
                     opts[on] = int(opts[on])
             elif isinstance(ov, float):
-                opts[on] = np.round(opts[on], decimals=_GLOBAL_PRECISION)
+                opts[on] = np.round(opts[on], decimals=GLOBAL_PRECISION)
             elif isinstance(ov, (np.ndarray, np.matrix)):
-                np.round(opts[on], decimals=_GLOBAL_PRECISION).tolist()
+                np.round(opts[on], decimals=GLOBAL_PRECISION).tolist()
 
         master_dict['settings']['values'] = opts
-        master_dict['settings']['units'] = co.DEFAULT_SETTINGS['units']
+        master_dict['settings']['units'] = DEFAULT_SETTINGS['units']
 
         # coordinates
         master_dict['buscoords'] = self.bus_coords()
@@ -574,14 +576,14 @@ class Krang:
         else:
             spath = path
 
-        with zipfile.ZipFile(spath, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
-            pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
-            pack.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
+        with zipfile.ZipFile(spath, mode='w', compression=zipfile.ZIP_DEFLATED) as packfile:
+            packfile.writestr(LSH_ZIP_NAME, self._zip_csv().getvalue())
+            packfile.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
             jsio = io.StringIO()
             json.dump(self.make_json_dict(), jsio, indent=2)
-            pack.writestr(self.name + '.json', jsio.getvalue())
+            packfile.writestr(self.name + '.json', jsio.getvalue())
             md5io = io.StringIO(self.fingerprint())
-            pack.writestr('krang_hash.md5', md5io.getvalue())
+            packfile.writestr('krang_hash.md5', md5io.getvalue())
 
         if path is None:
             return spath
@@ -606,22 +608,22 @@ class Krang:
         _PackedOpendssElement's in the edge/node property 'el'. More information about how to make use of the graph
         can be found in the dedicated page."""
 
-        def _update_node(self, gr, bs, name):
+        def _update_node(myself, graph, bus, myname):
             try:
-                exel = gr.nodes[bs][_ELK]
+                exel = graph.nodes[bus][ELK]
             except KeyError:
-                gr.add_node(bs, **{_ELK: [self[name]]})
+                graph.add_node(bus, **{ELK: [myself[myname]]})
                 return
-            exel.append(self[name])
+            exel.append(myself[myname])
             return
 
-        def _update_edge(self, gr, ed, name):
+        def _update_edge(myself, graph, ed, myname):
             try:
-                exel = gr.edges[ed][_ELK]
+                exel = graph.edges[ed][ELK]
             except KeyError:
-                gr.add_edge(*ed, **{_ELK: [self[name]]})
+                graph.add_edge(*ed, **{ELK: [myself[myname]]})
                 return
-            exel.append(self[name])
+            exel.append(myself[myname])
             return
 
         gr = nx.Graph()
@@ -647,7 +649,7 @@ class Krang:
 
                 # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
             else:
-                assert self[name]._eltype == 'transformer'
+                assert self[name].eltype == 'transformer'
                 nw = self[name].NumWindings()
                 # we ASSUME that there is one primary winding and it's the first
                 for w in range(1, nw):
@@ -665,7 +667,7 @@ class Krang:
 # -------------------------------------------------------------
 
 @_singledispatch
-def _oe_getitem(item, oeshell):
+def _oe_getitem():
     # no default implementation
     raise TypeError('Invalid identificator passed. You can specify fully qualified element names as str, or bus/'
                     'couples of buses as tuples of str.')
@@ -739,12 +741,12 @@ class _BusView:
             # CONTENT IS NOT UPDATED AFTER FIRST EVAL
             if len(self.buses) == 1:
                 try:
-                    self._content = self.oek.graph().nodes[self.buses[0]][_ELK]
+                    self._content = self.oek.graph().nodes[self.buses[0]][ELK]
                     # it's ok that a KeyError by both indexes is caught in the same way
                 except KeyError:
                     self._content = []
             elif len(self.buses) == 2:
-                self._content = list(nx.get_edge_attributes(self.oek.graph().subgraph(self.buses), _ELK).values())
+                self._content = list(nx.get_edge_attributes(self.oek.graph().subgraph(self.buses), ELK).values())
             else:
                 # if more than two buses, we search among the transformers.
                 self._content = []
@@ -803,13 +805,13 @@ def from_json(path):
         if on in opt_dict['units'].keys():
             # we get the actual unit and the default unit
             actual_unit = ov * UM.parse_units(opt_dict['units'][on])
-            default_unit = co.DEFAULT_SETTINGS['units'][on]
+            default_unit = DEFAULT_SETTINGS['units'][on]
             try:
                 # on is a physical qty, so we can compare it with numpy
                 if np.isclose(np.asarray((ov * actual_unit).to(default_unit).magnitude),
-                              np.asarray(co.DEFAULT_SETTINGS['values'][on])
+                              np.asarray(DEFAULT_SETTINGS['values'][on])
                               ).all():
-                    _mlog.debug('option {0}={1} was skipped'.format(on, (ov * actual_unit).to(default_unit)))
+                    mlog.debug('option {0}={1} was skipped'.format(on, (ov * actual_unit).to(default_unit)))
                     continue
                 else:
                     pass
@@ -818,15 +820,15 @@ def from_json(path):
 
         else:  # on is, therefore, a measureless qty, but may be of many types
             try:  # we try to see if it quacks like a string...
-                if ov.lower() == co.DEFAULT_SETTINGS['values'][on].lower():
-                    _mlog.debug('option {0}={1} was skipped'.format(on, ov))
+                if ov.lower() == DEFAULT_SETTINGS['values'][on].lower():
+                    mlog.debug('option {0}={1} was skipped'.format(on, ov))
                     continue
             except AttributeError:  # if it doesn't, we perform a flexible numeric comparison with numpy
                 try:
                     if np.isclose(np.asarray(ov),
-                                  np.asarray(co.DEFAULT_SETTINGS['values'][on])
+                                  np.asarray(DEFAULT_SETTINGS['values'][on])
                                   ).all():
-                        _mlog.debug('option {0}={1} was skipped'.format(on, ov))
+                        mlog.debug('option {0}={1} was skipped'.format(on, ov))
                         continue
                 except ValueError as ve:  # happens with arrays of variable dimensions, e.g. voltage bases
                     pass
@@ -837,7 +839,7 @@ def from_json(path):
         else:
             d_ov = ov
         l_ckt.set(**{on: d_ov})
-        _mlog.debug('option {0}={1} was DECLARED'.format(on, d_ov))
+        mlog.debug('option {0}={1} was DECLARED'.format(on, d_ov))
 
     # reconstruction of dependency graph and declarations
     dep_graph = _DepGraph()
@@ -871,18 +873,18 @@ def from_json(path):
             dssobj = co.dejsonize(jobj)
             if dssobj.isnamed():
                 l_ckt << dssobj
-                _mlog.debug('element {0} was added as named'.format(nm))
+                mlog.debug('element {0} was added as named'.format(nm))
             elif dssobj.isabove():
                 l_ckt << dssobj.aka(jobj['name'])
-                _mlog.debug('element {0} was added as abova'.format(nm))
+                mlog.debug('element {0} was added as abova'.format(nm))
             else:
                 l_ckt[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
-                _mlog.debug('element {0} was added as regular'.format(nm))
+                mlog.debug('element {0} was added as regular'.format(nm))
                 # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
 
     l_ckt._coords_linked = master_dict['buscoords']
     l_ckt._declare_buscoords()
-    _mlog.debug('coordinates just declared, exiting'.format(nm))
+    mlog.debug('coordinates just declared, exiting'.format(nm))
 
     # patch for curing the stepsize bug
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
@@ -894,7 +896,7 @@ def from_json(path):
 def open_ckt(path):
     """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
-        with zf.open(_LSH_ZIP_NAME) as lsh_file:
+        with zf.open(LSH_ZIP_NAME) as lsh_file:
             # the loadshapes csv are extracted in the temp_path, where they will be looked for by their
             # csvloadshapes, since in the json no explicit path will be specified
             lsh_data = io.BytesIO(lsh_file.read())

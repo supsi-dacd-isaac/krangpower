@@ -3,7 +3,7 @@ from functools import singledispatch
 
 import networkx as nx
 
-from .krangsuit import Krang
+from ._krangsuit import Krang
 
 __all__ = ['GraphView']
 

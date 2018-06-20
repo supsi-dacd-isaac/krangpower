@@ -1,5 +1,5 @@
 import os.path
-from .config_loader import krang_directory
+from ._config_loader import krang_directory
 
 
 def splash():

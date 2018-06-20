@@ -2,29 +2,29 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from .config_loader import _GLOBAL_LOG_LEVEL, CONFIG, _DEFAULT_NAME, _COMMAND_LOGPATH, _MAIN_LOGPATH, _MAX_LOG_SIZE
-from . import config_loader as cl
+from ._config_loader import GLOBAL_LOG_LEVEL, DEFAULT_ENH_NAME, COMMAND_LOGPATH, MAIN_LOGPATH, MAX_LOG_SIZE_MB
+from . import _config_loader as cl
 
-MiB = 2**20
+_MiB = 2 ** 20
 
 
 def _create_main_logger():
     logformat = '%(asctime)s - %(levelname)s (%(funcName)s) -------------> %(message)s'
     main_logger = logging.getLogger('krangpower')
-    main_logger.setLevel(_GLOBAL_LOG_LEVEL)
+    main_logger.setLevel(GLOBAL_LOG_LEVEL)
     logformatter = logging.Formatter(logformat)
 
     # streamhandler
-    _ch = logging.StreamHandler()
-    _ch.setLevel(logging.WARN)
-    _ch.setFormatter(logformatter)
-    main_logger.addHandler(_ch)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARN)
+    ch.setFormatter(logformatter)
+    main_logger.addHandler(ch)
 
     # filehandler
     try:
-        if not os.path.exists(os.path.dirname(_MAIN_LOGPATH)):
-            os.makedirs(os.path.dirname(_MAIN_LOGPATH))
-        fh = RotatingFileHandler(_MAIN_LOGPATH, maxBytes=_MAX_LOG_SIZE*MiB, backupCount=1)
+        if not os.path.exists(os.path.dirname(MAIN_LOGPATH)):
+            os.makedirs(os.path.dirname(MAIN_LOGPATH))
+        fh = RotatingFileHandler(MAIN_LOGPATH, maxBytes=MAX_LOG_SIZE_MB * _MiB, backupCount=1)
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         main_logger.addHandler(fh)
@@ -38,14 +38,14 @@ def _create_main_logger():
 def _create_command_logger(name):
     logformat = '%(asctime)s - %(message)s'
     cmd_logger = logging.getLogger(name)
-    cmd_logger.setLevel(_GLOBAL_LOG_LEVEL)
+    cmd_logger.setLevel(GLOBAL_LOG_LEVEL)
     logformatter = logging.Formatter(logformat)
 
     # filehandler
     try:
-        if not os.path.exists(os.path.dirname(_COMMAND_LOGPATH)):
-            os.makedirs(os.path.dirname(_COMMAND_LOGPATH))
-        fh = RotatingFileHandler(_COMMAND_LOGPATH, maxBytes=_MAX_LOG_SIZE*MiB, backupCount=1)
+        if not os.path.exists(os.path.dirname(COMMAND_LOGPATH)):
+            os.makedirs(os.path.dirname(COMMAND_LOGPATH))
+        fh = RotatingFileHandler(COMMAND_LOGPATH, maxBytes=MAX_LOG_SIZE_MB * _MiB, backupCount=1)
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         cmd_logger.addHandler(fh)
@@ -56,15 +56,15 @@ def _create_command_logger(name):
     return cmd_logger
 
 
-_clog = _create_command_logger(_DEFAULT_NAME)
-_mlog = _create_main_logger()
+clog = _create_command_logger(DEFAULT_ENH_NAME)
+mlog = _create_main_logger()
 
 
 def set_log_level(lvl):
-    cl._GLOBAL_LOG_LEVEL = lvl
-    _clog.setLevel(lvl)
-    _mlog.setLevel(lvl)
+    cl.GLOBAL_LOG_LEVEL = lvl
+    clog.setLevel(lvl)
+    mlog.setLevel(lvl)
 
 
 def get_log_level():
-    return cl._GLOBAL_LOG_LEVEL
+    return cl.GLOBAL_LOG_LEVEL
