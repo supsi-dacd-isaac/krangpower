@@ -20,7 +20,7 @@ import pandas
 
 from . import busquery as bq
 from . import components as co
-from . import enhancer as en
+from . import enhancer
 from .aux_fcn import get_help_out, bus_resolve, diff_dicts
 from .config_loader import _PINT_QTY_TYPE, _ELK, _DEFAULT_KRANG_NAME, _CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     TMP_PATH, _GLOBAL_PRECISION, _LSH_ZIP_NAME
@@ -36,9 +36,9 @@ CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
 
 
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 # HELP DECORATOR
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 def _helpfun(config, section):
     """This decorator adds a 'help' submethod to a function or method, and is meant to read a series of help (
     property, desc) pairs from a config file. The help method is invoked by function.help(), just prints stuff to the
@@ -56,11 +56,12 @@ def _helpfun(config, section):
     return _real_helpfun
 
 
-# -------------------------------------------------------------
-# VOLATILE METHOD CACHING DECORATORS
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
+# DECORATORS FOR VOLATILE METHOD CACHING
+# -----------------------------------------------------------------------------------------------------------------
 def _invalidate_cache(f):
-
+    # this decorator is meant to be used with those Krang methods that alter the circuit described by the Krang,
+    # thus invalidating the method cache accumulated till that moment
     def cached_invalidator_f(self, *args, **kwargs):
         if hasattr(self, '_fncache'):
             self._fncache = {}
@@ -75,6 +76,8 @@ def _invalidate_cache(f):
 
 
 def _invalidate_cache_outside(oek):
+    # this decorator is meant to be used with functions outside Krang  that nevertheless alter the circuit described by
+    # the currently instantiated Krang, thus invalidating the method cache
 
     def _direct_invalidate_cache(f):
 
@@ -93,6 +96,8 @@ def _invalidate_cache_outside(oek):
 
 
 def _cache(f):
+    # this decorator is meant to be used with expensive Krang methods that can be cached and don't change value
+    # until the Krang is actively modified
 
     def cached_f(self, *args, **kwargs):
         if CACHE_ENABLED:
@@ -109,45 +114,67 @@ def _cache(f):
     return cached_f
 
 
-# -------------------------------------------------------------
-#                         KRANG
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
+# ------------------------------------------ _ --------------------------------------------------------------------
+#                                           | | ___ __ __ _ _ __   __ _
+#                                           | |/ | '__/ _` | '_ \ / _` |
+#                                           |   <| | | (_| | | | | (_| |
+#                                           |_|\_|_|  \__,_|_| |_|\__, |
+# ----------------------------------------------------------------|___/--------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 class Krang:
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 name=_DEFAULT_KRANG_NAME,
+                 voltage_source=co.Vsource(),
+                 source_bus_name='sourcebus'):
 
+        # Krang is a singleton; attempting to instantiate a second one will raise an error
         if _INSTANCE is not None:
-            raise ValueError('Cannot init Krang - A Krang ({0}) already exists. Delete every reference to it if you want to instantiate another.'
+            raise ValueError('Cannot init Krang - A Krang ({0}) already exists.'
+                             'Delete every reference to it if you want to instantiate another.'
                              .format(_INSTANCE))
 
-        self.flags = {'coords_preloaded': False,
-                      'coords_declared': False,
-                      'up_to_date': False}
-        self._named_entities = []
-        self._ai_list = []
+        # public attributes
+        self.flags = {'coords_preloaded': False}
+        self.id = name
+        """Krang.id is a string identifier for the krang that is used in the logs."""
         self.com = []
-        """Krang.com is a list of all the commands sent to the text interface."""
-        self._fncache = {}
-        self.brain = None
+        """Krang.com is a list of all the commands sent to the text interface throughout the Krang's lifespan."""
+        self.brain = enhancer
         """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
-        self._coords_linked = dict()
-        self._initialize(*args, **kwargs)
 
+        # private attributes
+        self._named_entities = []
+        self._ai_list = []
+        self._fncache = {}
+        self._coords_linked = {}
+
+        # OpenDSS initialization commands
+        _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
+        self.command('clear')
+        master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
+        self.command(master_string)
+        self.set(mode='duty')
+        self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
+
+        # raising the module-wide _INSTANCE variable
         globals()['_INSTANCE'] = self.id
+
+        # file output redirection to the temp folder
+        self.brain.Basic.DataPath(TMP_PATH)
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # DUNDERS AND PRIMITIVE FUNCTIONALITY
+    # -----------------------------------------------------------------------------------------------------------------
 
     def __del__(self):
         globals()['_INSTANCE'] = None
 
-    def _initialize(self, name=_DEFAULT_KRANG_NAME, vsource=co.Vsource(), source_bus_name='sourcebus'):
-        self.brain = en  # (oe_id=name)
-        _clog.debug('\n' + '$%&' * _CMD_LOG_NEWLINE_LEN)
-        self.id = name
-        self.command('clear')
-        master_string = self._form_newcircuit_string(name, vsource, source_bus_name)
-        self.command(master_string)
-        self.set(mode='duty')
-        self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
-        self.brain.Basic.DataPath(TMP_PATH)  # redirects all file output to the temp folder
+    @property
+    def name(self):
+        """The name of the circuit.."""
+        return self.brain.Circuit.Name()
 
     @staticmethod
     def get_unit_registry():
@@ -209,54 +236,10 @@ class Krang:
         self.brain._names_up2date = False
         return self
 
-    def __bool__(self):
-        return self.flags['up_to_date']
 
-    def fingerprint(self):
-        """Returns the md5 hash digest for Krang.make_json_dict() in canonical form. Its main use is to compare two
-        circuits in order to confirm that they are equivalent."""
-        return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
-
-    def _zip_csv(self):
-        csvflo = io.BytesIO()
-        with zipfile.ZipFile(csvflo, mode='w', compression=zipfile.ZIP_DEFLATED) as csvzip:
-            for csvlsh in [x for x in self._named_entities if isinstance(x, co.CsvLoadshape)]:
-                with open(csvlsh.csv_path, 'br') as cfile:
-                    csvzip.writestr(os.path.basename(csvlsh.csv_path),
-                                    cfile.read())
-        return csvflo
-
-    def _pickle_fourq(self):
-        fqglo = io.BytesIO()
-        pickle.dump(self._ai_list, fqglo, protocol=pickle.HIGHEST_PROTOCOL)
-
-        return fqglo
-
-    def pack_ckt(self, path=None):
-        """Packs a ckt archive with all the information needed to reproduce the Krang. If a valid path string is passed,
-        a file will be created, and None will be returned; if None is passed as path, a Binary buffered I/O
-        (io.BytesIO) with the exact same information as the file will be returned instead."""
-
-        self._declare_buscoords()  # otherwise dangling coordinates would not be saved
-
-        if path is None:
-            spath = io.BytesIO()
-        else:
-            spath = path
-
-        with zipfile.ZipFile(spath, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
-            pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
-            pack.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
-            jsio = io.StringIO()
-            json.dump(self.make_json_dict(), jsio, indent=2)
-            pack.writestr(self.name + '.json', jsio.getvalue())
-            md5io = io.StringIO(self.fingerprint())
-            pack.writestr('krang_hash.md5', md5io.getvalue())
-
-        if path is None:
-            return spath
-        else:
-            return None
+    # -----------------------------------------------------------------------------------------------------------------
+    # OPENDSS COMMANDS AND OPTIONS
+    # -----------------------------------------------------------------------------------------------------------------
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     @_invalidate_cache
@@ -264,7 +247,6 @@ class Krang:
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
 
         rslt = self.brain.txt_command(cmd_str, echo)
-        self.flags['up_to_date'] = False
         if echo:
             self.com.append(cmd_str)
         return rslt
@@ -302,8 +284,6 @@ class Krang:
             else:
                 raise IOError('OpenDSS could not acknowledge option {0}={1} (value == {2})'.format(option, vl, self.get(option)[option]))
 
-        self.flags['up_to_date'] = False
-
     @_helpfun(DSSHELP, 'OPTIONS')
     def get(self, *opts):
         """Takes a list of circuit options and returns them as dict of name, value."""
@@ -321,18 +301,10 @@ class Krang:
 
         return r_opts
 
-    def snap(self):
-        """Solves a circuit snapshot."""
-        n = self.get('number')
-        self.set(mode='snap')
-        self.solve()
-        self.set(mode='duty')
-        self.set(**n)  # snaps sets number to 1
-
     @_helpfun(DSSHELP, 'EXPORT')
     def export(self, object_descriptor):
         """Wraps the OpenDSS export command. Returns a DataFrame for csv exports, an ElementTree for xml exports.
-        Has a help attribute."""
+        This method has a help attribute that prints to console the available options."""
         tmp_filename = self.command('export ' + object_descriptor)
         if tmp_filename.lower().endswith('csv'):
             return pandas.read_csv(tmp_filename)
@@ -341,23 +313,21 @@ class Krang:
         else:
             raise ValueError('Unknown format for export file {0}, contact the developer'.format(tmp_filename))
 
+    # -----------------------------------------------------------------------------------------------------------------
+    # INTERNAL OPENDSS REPRESENTATION WRAPPERS
+    # -----------------------------------------------------------------------------------------------------------------
+
     @_helpfun(DSSHELP, 'PLOT')
     def plot(self, object_descriptor):
-        """Wraps the OpenDSS export command. Has a help attribute."""
+        """Wraps the OpenDSS export command. This method has a help attribute that prints to console the available
+         options."""
         self.command('plot ' + object_descriptor)
 
     @_helpfun(DSSHELP, 'SHOW')
     def show(self, object_descriptor):
-        """Wraps the OpenDSS show command. Has a help attribute."""
+        """Wraps the OpenDSS show command. This method has a help attribute that prints to console the available
+         options."""
         self.command('show ' + object_descriptor)
-        # tmp_filename = self.command('show ' + object_descriptor)
-        # with open(tmp_filename) as show_file:
-        #     content = show_file.read()
-        #
-        # if rtrn:
-        #     return content
-        # else:
-        #     print(content)
 
     def drag_solve(self):
         """This command solves one step at a time and saves node currents
@@ -381,9 +351,20 @@ class Krang:
 
         self.brain.log_line('Drag_solve ended')
         self.brain.Solution.Number(nmbr)
-        # self.flags['up_to_date'] = True  # already in self.solve
 
         return v, i
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # SOLUTION METHODS
+    # -----------------------------------------------------------------------------------------------------------------
+
+    def snap(self):
+        """Solves a circuit snapshot."""
+        n = self.get('number')
+        self.set(mode='snap')
+        self.solve()
+        self.set(mode='duty')
+        self.set(**n)  # a snap solve internally sets number to 1, so we have to reset it
 
     def custom_drag_solve(self, *qties):
         """This command solves one step at a time and returns a list of values (of length equal to the number of steps
@@ -434,7 +415,6 @@ class Krang:
         if self.flags['coords_preloaded']:
             self._declare_buscoords()
         self.command('solve', echo)
-        self.flags['up_to_date'] = True
 
     @_invalidate_cache
     def _declare_buscoords(self):
@@ -450,7 +430,10 @@ class Krang:
             else:
                 continue
         self.flags['coords_preloaded'] = False
-        self.flags['coords_declared'] = True
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # COORDINATES-RELATED METHODS
+    # -----------------------------------------------------------------------------------------------------------------
 
     @_invalidate_cache
     def _preload_buscoords(self, path):
@@ -477,7 +460,6 @@ class Krang:
                     row = next(bcr)
                 except StopIteration:
                     self.flags['coords_preloaded'] = True
-                    self.flags['coords_declared'] = False
                     return
 
     @_invalidate_cache
@@ -485,6 +467,46 @@ class Krang:
         """Notifies Krang of a csv file with bus coordinates to use."""
         # todo sanity check
         self._preload_buscoords(csv_path)
+
+    @_cache
+    def bus_coords(self):
+        """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
+        a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
+        launched. """
+        bp = {}
+        for bn in self.brain.Circuit.AllBusNames():
+            if self['bus.' + bn].Coorddefined():
+                bp[bn] = (self[bn].X(), self[bn].Y())
+            else:
+                bp[bn] = None
+        return bp
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # PICKLING, PACKING, HASHING
+    # -----------------------------------------------------------------------------------------------------------------
+
+    @_cache
+    def fingerprint(self):
+        """Returns the md5 hash digest for Krang.make_json_dict() in canonical form. Its main use is to compare two
+        circuits in order to confirm that they are equivalent."""
+        return hashlib.md5(canonicaljson.encode_canonical_json(self.make_json_dict())).hexdigest()
+
+    @_cache
+    def _zip_csv(self):
+        csvflo = io.BytesIO()
+        with zipfile.ZipFile(csvflo, mode='w', compression=zipfile.ZIP_DEFLATED) as csvzip:
+            for csvlsh in [x for x in self._named_entities if isinstance(x, co.CsvLoadshape)]:
+                with open(csvlsh.csv_path, 'br') as cfile:
+                    csvzip.writestr(os.path.basename(csvlsh.csv_path),
+                                    cfile.read())
+        return csvflo
+
+    @_cache
+    def _pickle_fourq(self):
+        fqglo = io.BytesIO()
+        pickle.dump(self._ai_list, fqglo, protocol=pickle.HIGHEST_PROTOCOL)
+
+        return fqglo
 
     @_cache
     def make_json_dict(self):
@@ -540,6 +562,32 @@ class Krang:
                 json.dump(self.make_json_dict(), ofile, indent=2)
             return None
 
+    def pack_ckt(self, path=None):
+        """Packs a ckt archive with all the information needed to reproduce the Krang. If a valid path string is passed,
+        a file will be created, and None will be returned; if None is passed as path, a Binary buffered I/O
+        (io.BytesIO) with the exact same information as the file will be returned instead."""
+
+        self._declare_buscoords()  # otherwise dangling coordinates would not be saved
+
+        if path is None:
+            spath = io.BytesIO()
+        else:
+            spath = path
+
+        with zipfile.ZipFile(spath, mode='w', compression=zipfile.ZIP_DEFLATED) as pack:
+            pack.writestr(_LSH_ZIP_NAME, self._zip_csv().getvalue())
+            pack.writestr(_FQ_DM_NAME, self._pickle_fourq().getvalue())
+            jsio = io.StringIO()
+            json.dump(self.make_json_dict(), jsio, indent=2)
+            pack.writestr(self.name + '.json', jsio.getvalue())
+            md5io = io.StringIO(self.fingerprint())
+            pack.writestr('krang_hash.md5', md5io.getvalue())
+
+        if path is None:
+            return spath
+        else:
+            return None
+
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
         echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
@@ -548,10 +596,9 @@ class Krang:
         with open(path, 'w') as ofile:
             ofile.write('\n'.join(self.com))
 
-    @property
-    def name(self):
-        """The name of the circuit.."""
-        return self.brain.Circuit.Name()
+    # -----------------------------------------------------------------------------------------------------------------
+    #  GRAPH
+    # -----------------------------------------------------------------------------------------------------------------
 
     @_cache
     def graph(self):
@@ -612,19 +659,10 @@ class Krang:
 
         return gr
 
-    @_cache
-    def bus_coords(self):
-        """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
-        a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
-        launched. """
-        bp = {}
-        for bn in self.brain.Circuit.AllBusNames():
-            if self['bus.' + bn].Coorddefined():
-                bp[bn] = (self[bn].X(), self[bn].Y())
-            else:
-                bp[bn] = None
-        return bp
 
+# -------------------------------------------------------------
+# Single-dispatched __getitem__
+# -------------------------------------------------------------
 
 @_singledispatch
 def _oe_getitem(item, oeshell):
@@ -650,9 +688,13 @@ def _(item, krg):
     return _BusView(krg, list(bustermtuples))
 
 
-# -------------------------------------------------------------
-# BusView
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------_---------------------_-------------------------------------------------
+#                                   | |__  _   _ _____   _(_) _____      __
+#                                   | '_ \| | | / __\ \ / / |/ _ \ \ /\ / /
+#                                   | |_) | |_| \__ \\ V /| |  __/\ V  V /
+# ----------------------------------|_.__/ \__,_|___/ \_/ |_|\___| \_/\_/ -----------------------------------
+# -----------------------------------------------------------------------------------------------------------
 class _BusView:
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
@@ -729,13 +771,16 @@ class _BusView:
             raise AttributeError
 
 
-# -------------------------------------------------------------
-#                        SAVE AND LOAD FCNS
-# -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------___-----_---------------------------------------------
+#                               ___  __ ___   _____   ( _ )   | | ___   __ _  __| |
+#                              / __|/ _` \ \ / / _ \  / _ \/\ | |/ _ \ / _` |/ _` |
+#                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
+# -----------------------------|___/\__,_| \_/ \___|  \___/\/ |_|\___/ \__,_|\__,_|--------------------------
+# -----------------------------------------------------------------------------------------------------------
 def from_json(path):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
-
     # load all entities
     if isinstance(path, str):
         with open(path, 'r') as ofile:
@@ -743,44 +788,56 @@ def from_json(path):
     else:
         master_dict = json.load(path)
 
-    # init the krang with the source, then remove it
+    # init the krang with the source, then remove it from the dict
     l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']))
+    # todo see if it's sourcebus
     del master_dict['elements']['vsource.source']
 
     # load and declare options
     opt_dict = master_dict['settings']
     for on, ov in opt_dict['values'].items():
-        # we try in any way to see if the value is the same as the default and, if so, we continue
-        # todo there is an edge case where the value of a measured quantity is the same, but the unit is different
-        if ov == co.DEFAULT_SETTINGS['values'][on]:
-            continue
-        try:
-            if np.isclose(ov, co.DEFAULT_SETTINGS['values'][on]):
-                continue
-        except ValueError:
+
+        # the purpose of the following block is to see if the value is the same as the default and, if so, we
+        # don't bother setting it and instead continue the for loop
+
+        if on in opt_dict['units'].keys():
+            # we get the actual unit and the default unit
+            actual_unit = ov * UM.parse_units(opt_dict['units'][on])
+            default_unit = co.DEFAULT_SETTINGS['units'][on]
             try:
-                if np.isclose(ov, co.DEFAULT_SETTINGS['values'][on]).all():
+                # on is a physical qty, so we can compare it with numpy
+                if np.isclose(np.asarray((ov * actual_unit).to(default_unit).magnitude),
+                              np.asarray(co.DEFAULT_SETTINGS['values'][on])
+                              ).all():
+                    _mlog.debug('option {0}={1} was skipped'.format(on, (ov * actual_unit).to(default_unit)))
                     continue
-            except ValueError:
+                else:
+                    pass
+            except ValueError:  # happens with arrays of variable dimensions, e.g. voltage bases
                 pass
-        except TypeError:
-            pass
 
-        try:
-            if ov.lower() == co.DEFAULT_SETTINGS['values'][on].lower():
-                continue
-        except AttributeError:
-            pass
+        else:  # on is, therefore, a measureless qty, but may be of many types
+            try:  # we try to see if it quacks like a string...
+                if ov.lower() == co.DEFAULT_SETTINGS['values'][on].lower():
+                    _mlog.debug('option {0}={1} was skipped'.format(on, ov))
+                    continue
+            except AttributeError:  # if it doesn't, we perform a flexible numeric comparison with numpy
+                try:
+                    if np.isclose(np.asarray(ov),
+                                  np.asarray(co.DEFAULT_SETTINGS['values'][on])
+                                  ).all():
+                        _mlog.debug('option {0}={1} was skipped'.format(on, ov))
+                        continue
+                except ValueError as ve:  # happens with arrays of variable dimensions, e.g. voltage bases
+                    pass
 
+        # ... if we're here, no continue command was reached, so we have to actually set the option.
         if on in opt_dict['units'].keys():
             d_ov = ov * UM.parse_units(opt_dict['units'][on])
         else:
             d_ov = ov
-
-        # if on == 'stepsize':
-        #     print(d_ov)
-
         l_ckt.set(**{on: d_ov})
+        _mlog.debug('option {0}={1} was DECLARED'.format(on, d_ov))
 
     # reconstruction of dependency graph and declarations
     dep_graph = _DepGraph()
@@ -814,14 +871,18 @@ def from_json(path):
             dssobj = co.dejsonize(jobj)
             if dssobj.isnamed():
                 l_ckt << dssobj
+                _mlog.debug('element {0} was added as named'.format(nm))
             elif dssobj.isabove():
                 l_ckt << dssobj.aka(jobj['name'])
+                _mlog.debug('element {0} was added as abova'.format(nm))
             else:
                 l_ckt[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
+                _mlog.debug('element {0} was added as regular'.format(nm))
                 # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
 
     l_ckt._coords_linked = master_dict['buscoords']
     l_ckt._declare_buscoords()
+    _mlog.debug('coordinates just declared, exiting'.format(nm))
 
     # patch for curing the stepsize bug
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
@@ -834,23 +895,29 @@ def open_ckt(path):
     """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(_LSH_ZIP_NAME) as lsh_file:
+            # the loadshapes csv are extracted in the temp_path, where they will be looked for by their
+            # csvloadshapes, since in the json no explicit path will be specified
             lsh_data = io.BytesIO(lsh_file.read())
             zipfile.ZipFile(lsh_data).extractall(TMP_PATH)
 
+        # as of 0.1.12, only one json, the main one, is to be found in the pack. we get it and load it.
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
         jso = zf.open(fls[0])
         krg = from_json(jso)
 
-        raw_dict = json.load(zf.open(fls[0]))
-
+        # If any AI are present, they are loaded from their pickle file and put inside _ai_list.
         with zf.open(_FQ_DM_NAME) as fq_file:
             krg._ai_list = pickle.load(fq_file)
 
+        # We load the md5 checksum that was packed with the zip file when it was created.
         with zf.open('krang_hash.md5', 'r') as md5_file:
             kranghash = md5_file.read().decode('utf-8')
 
+        # We check that the hashes match.
         if krg.fingerprint() != kranghash:
+            # If not, we throw an IOError with a nice diff display of the jsons differences.
+            raw_dict = json.load(zf.open(fls[0]))
             err = diff_dicts(raw_dict,
                              krg.make_json_dict())
             raise IOError('JSONs not corresponding - see below:\n\n' + err)
