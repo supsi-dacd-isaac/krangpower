@@ -1,4 +1,5 @@
 import copy
+import gc
 import hashlib
 import io
 import json
@@ -6,7 +7,7 @@ import os.path
 import pickle
 import re
 import weakref
-import xml.etree.ElementTree as ElTr
+import xml.etree.ElementTree as ElementTree
 import zipfile
 from csv import reader as csvreader
 from functools import singledispatch as _singledispatch
@@ -25,9 +26,9 @@ from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
 from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
     TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS
 from ._deptree import DepTree as _DepGraph
-from .enhancer.OpendssdirectEnhancer import pack
 from ._logging_init import clog, mlog
 from ._pbar import PBar as _PBar
+from .enhancer.OpendssdirectEnhancer import pack
 
 # __all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
@@ -37,6 +38,7 @@ _INSTANCE = None  # krang singleton support variable
 
 
 def clear():
+    # tries to remove dangling references - experimental
     if _INSTANCE is not None:
         tobj = _INSTANCE()  # calling back the weakref
         del tobj
@@ -128,17 +130,29 @@ def _cache(f):
 #                                           |_|\_|_|  \__,_|_| |_|\__, |
 # ----------------------------------------------------------------|___/--------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------
-class Krang:
+class Krang(object):
+    def __new__(cls, *args, **kwargs):
+
+        # For increased safety, we explicitly garbage-collect
+        gc.collect()
+
+        # Krang is a singleton; attempting to create a second one will raise an error
+        if globals()['_INSTANCE'] is not None:
+            raise ValueError('Cannot create a new Krang - A Krang ({0}) already exists.'
+                             'Delete every reference to it if you want to instantiate another.'
+                             .format(globals()['_INSTANCE']))
+
+        return super().__new__(cls)
+
     def __init__(self,
                  name=DEFAULT_KRANG_NAME,
                  voltage_source=co.Vsource(),
                  source_bus_name='sourcebus'):
 
-        # Krang is a singleton; attempting to instantiate a second one will raise an error
-        if _INSTANCE is not None:
-            raise ValueError('Cannot init Krang - A Krang ({0}) already exists.'
-                             'Delete every reference to it if you want to instantiate another.'
-                             .format(_INSTANCE))
+        # first of all, we double-check that we arrived at initialization with _INSTANCE == None
+        assert globals()['_INSTANCE'] is None
+        # we immediately assign a weakref to self
+        globals()['_INSTANCE'] = weakref.ref(self)
 
         # public attributes
         self.flags = {'coords_preloaded': False}
@@ -163,9 +177,6 @@ class Krang:
         self.command(master_string)
         self.set(mode='duty')
         self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
-
-        # raising the module-wide _INSTANCE variable
-        globals()['_INSTANCE'] = weakref.ref(self)
 
         # file output redirection to the temp folder
         self.brain.Basic.DataPath(TMP_PATH)
@@ -316,7 +327,7 @@ class Krang:
         if tmp_filename.lower().endswith('csv'):
             return pandas.read_csv(tmp_filename)
         elif tmp_filename.lower().endswith('xml'):
-            return ElTr.parse(tmp_filename)
+            return ElementTree.parse(tmp_filename)
         else:
             raise ValueError('Unknown format for export file {0}, contact the developer'.format(tmp_filename))
 
@@ -424,25 +435,6 @@ class Krang:
         self.command('solve', echo)
 
     @_invalidate_cache
-    def _declare_buscoords(self):
-        """Meant to be called just before solve, so that all buses are already mentioned"""
-        self.command('makebuslist')
-        for busname, coords in self._coords_linked.items():
-            if coords is not None:
-                try:
-                    self[busname].X(coords[0])
-                    self[busname].Y(coords[1])
-                except KeyError:
-                    continue  # we ignore buses present in coords linked, but not generated
-            else:
-                continue
-        self.flags['coords_preloaded'] = False
-
-    # -----------------------------------------------------------------------------------------------------------------
-    # COORDINATES-RELATED METHODS
-    # -----------------------------------------------------------------------------------------------------------------
-
-    @_invalidate_cache
     def _preload_buscoords(self, path):
         """Loads in a local dict the buscoords from path."""
         with open(path, 'r') as bc_file:
@@ -468,6 +460,25 @@ class Krang:
                 except StopIteration:
                     self.flags['coords_preloaded'] = True
                     return
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # COORDINATES-RELATED METHODS
+    # -----------------------------------------------------------------------------------------------------------------
+
+    @_invalidate_cache
+    def _declare_buscoords(self):
+        """Meant to be called just before solve, so that all buses are already mentioned"""
+        self.command('makebuslist')
+        for busname, coords in self._coords_linked.items():
+            if coords is not None:
+                try:
+                    self[busname].X(coords[0])
+                    self[busname].Y(coords[1])
+                except KeyError:
+                    continue  # we ignore buses present in coords linked, but not generated
+            else:
+                continue
+        self.flags['coords_preloaded'] = False
 
     @_invalidate_cache
     def link_coords(self, csv_path):

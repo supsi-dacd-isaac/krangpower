@@ -9,7 +9,7 @@ import canonicaljson
 import numpy as np
 
 
-def fingerprint(path):
+def fingerprint_file(path):
     with open(path, 'r') as file:
         md = json.load(file)
 
