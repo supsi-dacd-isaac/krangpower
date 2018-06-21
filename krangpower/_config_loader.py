@@ -47,6 +47,7 @@ DEFAULT_ENH_NAME = CONFIG.get('misc_settings', 'default_enhancer_name')
 GLOBAL_PRECISION = CONFIG.getint('precision', 'global_precision')
 LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
+BASE_FREQUENCY = CONFIG.getfloat('electrical', 'frequency_hz')
 
 
 # -------------------------------------------------------------
