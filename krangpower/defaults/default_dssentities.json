@@ -54,7 +54,7 @@
                     2.8
                 ]
             ],
-            "basefreq": 50.0,
+            "basefreq": 0.0,
             "normamps": 400.0,
             "emergamps": 600.0,
             "faultrate": 0.1,
@@ -96,7 +96,7 @@
             "x0": 0.4047,
             "c1": 3.4,
             "c0": 1.6,
-            "basefreq": 50.0,
+            "basefreq": 0.0,
             "normamps": 400.0,
             "emergamps": 600.0,
             "faultrate": 0.1,
@@ -174,7 +174,7 @@
                     2.8
                 ]
             ],
-            "basefreq": 50.0,
+            "basefreq": 0.0,
             "normamps": 400.0,
             "emergamps": 600.0,
             "faultrate": 0.1,
@@ -469,7 +469,7 @@
             "normamps": 400.0,
             "emergamps": 600.0,
             "phases": 3,
-            "basefreq": 50.0,
+            "basefreq": 0.0,
             "faultrate": 0.1,
             "%perm": 20.0,
             "repair": 3.0,
@@ -576,7 +576,7 @@
             "yearly": "",
             "daily": "",
             "spectrum": "defaultvsource",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "basekv": "kV",
@@ -672,7 +672,7 @@
             "faultrate": 0.007,
             "%perm": 100.0,
             "repair": 36.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kvs": "kV",
@@ -708,7 +708,7 @@
             "yearly": "",
             "daily": "",
             "spectrum": "default",
-            "basefreq": 50.0,
+            "basefreq": 0.0,
             "enabled": "true"
         },
 		"units": {
@@ -734,7 +734,7 @@
             "faultrate": 0.0,
             "%perm": 0.0,
             "repair": 0.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "r": "ohm",
@@ -775,7 +775,7 @@
             "faultrate": 0.0,
             "%perm": 100.0,
             "repair": 3.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kvar": "kVA",
@@ -833,7 +833,7 @@
             "faultrate": 0.0,
             "%perm": 100.0,
             "repair": 3.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kvar": "kVA",
@@ -895,7 +895,7 @@
             "balanced": "no",
             "xrdp": 20.0,
             "spectrum": "defaultgen",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kv": "kV",
@@ -948,7 +948,7 @@
             "balanced": "no",
             "xrdp": 20.0,
             "spectrum": "defaultgen",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kv": "kV",
@@ -1006,7 +1006,7 @@
             "userdata": "",
             "debugtrace": "no",
             "spectrum": "",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kv": "kV",
@@ -1058,7 +1058,7 @@
             "tflat": 2.0,
             "tdn": 0.25,
             "kwthreshold": 6000.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kwtarget": "kW",
@@ -1099,7 +1099,7 @@
             "usermodel": "",
             "userdata": "",
             "%minkvar": 50.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "type": "current",
@@ -1142,7 +1142,7 @@
             "eventlog": "yes",
             "remoteptratio": 60.0,
             "tapnum": 0.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "vreg": "V",
@@ -1267,7 +1267,7 @@
             "saidi": 0.0,
             "caidi": 0.0,
             "custinterrupts": 0.0,
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
 
@@ -1286,7 +1286,7 @@
             "residual": "no",
             "vipolar": "yes",
             "ppolar": "yes",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "basefreq": "Hz"
@@ -1345,7 +1345,7 @@
             "puxharm": 0.0,
             "xrharm": 6.0,
             "spectrum": "defaultload",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kv": "kV",
@@ -1414,7 +1414,7 @@
             "kvarlimit": 500.0,
             "dutystart": 0.0,
             "spectrum": "",
-            "basefreq": 50.0
+            "basefreq": 0.0
         },
 		"units": {
             "kv": "kV",

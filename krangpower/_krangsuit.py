@@ -24,7 +24,7 @@ from . import _components as co
 from . import enhancer
 from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
 from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
-    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS
+    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY
 from ._deptree import DepTree as _DepGraph
 from ._logging_init import clog, mlog
 from ._pbar import PBar as _PBar
@@ -176,6 +176,7 @@ class Krang(object):
         master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
         self.command(master_string)
         self.set(mode='duty')
+        self.set(basefreq=BASE_FREQUENCY * UM.Hz)
         self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
 
         # file output redirection to the temp folder

@@ -18,7 +18,7 @@
     "earthmodel": "deri",
     "emergvmaxpu": 1.08,
     "emergvminpu": 0.9,
-    "frequency": 50.0,
+    "frequency": 60.0,
     "genkw": 1000.0,
     "genmult": 1.0,
     "genpf": 1.0,
