@@ -6,7 +6,7 @@ from . import enhancer
 from ._components import *
 
 # selective imports
-from ._krangsuit import Krang, from_json, CACHE_ENABLED, open_ckt, clear
+from ._krangsuit import Krang, from_json, CACHE_ENABLED, open_ckt  # , clear
 from ._graphview import GraphView
 from ._logging_init import set_log_level, get_log_level
 from ._config_loader import UM, krang_directory, TMP_PATH

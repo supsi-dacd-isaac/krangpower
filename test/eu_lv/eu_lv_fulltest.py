@@ -13,7 +13,7 @@ def _main():
     import krangpower as kp
 
     um = kp.UM
-
+    kp.set_log_level(10)
     test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
 
     def download_extract_zip(url):
@@ -88,7 +88,6 @@ def _main():
                 ct = content.split('=')
                 skw[ct[0]] = um.parse_expression(ct[1].strip('/n'))
     skw['basekv'] = skw.pop('Voltage')
-
 
     # the transformer file is a nuisance
     print('Instantiating xformer...')
