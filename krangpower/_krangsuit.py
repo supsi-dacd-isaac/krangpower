@@ -170,7 +170,7 @@ class Krang(object):
         self.command(master_string)
         self.set(mode='duty')
         self.set(basefreq=BASE_FREQUENCY * UM.Hz)
-        self.set(defaultbasefreq=BASE_FREQUENCY * UM.Hz)
+        self.set(defaultbasefrequency=BASE_FREQUENCY * UM.Hz)
         self.set(frequency=BASE_FREQUENCY * UM.Hz)
         self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
 
