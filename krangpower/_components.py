@@ -2528,15 +2528,6 @@ class Regcontrol(_AboveCircuitElement):
     +----------------------+-------------+----------------------------+
     """
 
-    def fcs(self, **hookup):
-        transformer = hookup.get('trf')
-        winding = hookup.get('wdg')
-        s1 = ' transformer={0} winding={1}'.format(transformer, winding)
-
-        s3 = super().fcs()
-
-        return s3 + s1
-
 
 class Monitor(_AboveCircuitElement):
     """Monitor object. Several methods of odsswr.Circuit.py allow for exportation of the recordings of the monitors.
@@ -2558,46 +2549,6 @@ class Monitor(_AboveCircuitElement):
     +----------------------+-------------+----------------------------+
     """
     pass
-    # def fcs(self, **hookup):
-    #
-    #     # eltype = hookup.get('eltype')
-    #     # elname = hookup.get('elname')
-    #     # terminal = hookup.get('terminal')
-    #     # alias = hookup.get('alias')
-    #     #
-    #     # if alias is not None:
-    #     #     name = alias
-    #     # else:
-    #     #     name = 'mntr_' + eltype + '_' + elname
-    #
-    #     name = self.name
-    #
-    #     return 'New monitor.' + name + ' element=' + self['element'] + \
-    #            ' mode=' + str(self['mode']) + \
-    #            ' vipolar=no ppolar=no'
-    #
-    #          # ' terminal=' + str(terminal) +\
-
-
-# class BusVoltageMonitor(_AboveCircuitElement):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#         self['mode'] = 0
-#
-#     def fcs(self, **hookup):
-#
-#         busname = hookup['busname']
-#
-#         l = Load(None, kw=0.0, kvar=0.0, model='1')
-#         l.name = 'bvm_' + busname
-#
-#         loadstr = l.fcs(buses=(busname,))
-#         monstr = Monitor().fcs(eltype='load', elname='bvm_' + busname, terminal=1, alias='bvm_' + busname)
-#
-#         return '!FICTITIOUS 0-KW LOAD FOR VOLTAGE MONITORING\n' + \
-#                loadstr + '\n' + \
-#                monstr + '\n' + \
-#                '!END FICTITIOUS LOAD'
 
 
 class StorageController(_AboveCircuitElement):
@@ -2674,16 +2625,6 @@ class StorageController(_AboveCircuitElement):
     +----------------------+-------------+----------------------------+
     """
     pass
-    # def fcs(self, **hookup):
-    #
-    #     s1 = 'New storagecontroller.' + self.name
-    #
-    #     s2 = ''
-    #     for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
-    #         # readability of the returned string
-    #         s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
-    #
-    #     return s1 + s2
 
 
 def load_entities(path):

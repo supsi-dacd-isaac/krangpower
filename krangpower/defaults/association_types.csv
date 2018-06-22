@@ -38,3 +38,4 @@ storagecontroller,Capacitor,element,fullname
 storagecontroller,Reactor,element,fullname
 storagecontroller,Transformer,element,fullname
 storagecontroller,Generator,element,fullname
+regcontrol,Transformer,transformer,name

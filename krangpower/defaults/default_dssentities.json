@@ -1142,7 +1142,8 @@
             "eventlog": "yes",
             "remoteptratio": 60.0,
             "tapnum": 0.0,
-            "basefreq": 0.0
+            "basefreq": 0.0,
+            "winding": 1
         },
 		"units": {
             "vreg": "V",
@@ -1164,7 +1165,7 @@
             "eventlog": "yes",
             "basefreq": "Hz"
         },
-        "associated": {"element": ""}
+        "associated": {"transformer": ""}
     },
     "default_energymeter": {
         "type": "energymeter",
