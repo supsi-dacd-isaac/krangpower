@@ -10,7 +10,7 @@ import weakref
 import xml.etree.ElementTree as ElementTree
 import zipfile
 from csv import reader as csvreader
-from functools import singledispatch as _singledispatch
+from functools import wraps, singledispatch as _singledispatch
 from logging import INFO as LOGGING_INFO
 from tokenize import tokenize, untokenize
 
@@ -46,7 +46,7 @@ def _helpfun(config, section):
     console and returns nothing. """
 
     def _real_helpfun(f):
-
+        @wraps(f)
         def ghelp():
             print('\nPARAMETERS HELP FOR FUNCTION {0} ({1})\n'.format(f.__name__, section))
             print(get_help_out(config, section))
@@ -63,6 +63,7 @@ def _helpfun(config, section):
 def _invalidate_cache(f):
     # this decorator is meant to be used with those Krang methods that alter the circuit described by the Krang,
     # thus invalidating the method cache accumulated till that moment
+    @wraps(f)
     def cached_invalidator_f(self, *args, **kwargs):
         if hasattr(self, '_fncache'):
             self._fncache = {}
@@ -81,7 +82,7 @@ def _invalidate_cache_outside(oek):
     # the currently instantiated Krang, thus invalidating the method cache
 
     def _direct_invalidate_cache(f):
-
+        @wraps(f)
         def cached_invalidator_f(self, *args, **kwargs):
             if hasattr(oek, '_fncache'):
                 oek._fncache = {}
@@ -99,7 +100,7 @@ def _invalidate_cache_outside(oek):
 def _cache(f):
     # this decorator is meant to be used with expensive Krang methods that can be cached and don't change value
     # until the Krang is actively modified
-
+    @wraps(f)
     def cached_f(self, *args, **kwargs):
         if CACHE_ENABLED:
             try:
@@ -124,6 +125,8 @@ def _cache(f):
 # ----------------------------------------------------------------|___/--------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------
 class Krang(object):
+    """The krang is an object capable of creating, editing, solving and retrieving information about an electrical
+    distribution system."""
     def __new__(cls, *args, **kwargs):
 
         # For increased safety, we explicitly garbage-collect

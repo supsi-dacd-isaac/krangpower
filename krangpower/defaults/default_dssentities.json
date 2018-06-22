@@ -1442,11 +1442,13 @@
 		"units": {
         }
     },
-    "default_csvloadshape":{
+    "default_csvloadshape": {
         "type": "csvloadshape",
-        "properties":{
+        "properties": {
             "csvpath": "",
-            "columnscheme": {"mult": 0},
+            "columnscheme": {
+                "mult": 0
+            },
             "interval": 15.0,
             "use_actual": false,
             "npts": 0
@@ -1454,6 +1456,16 @@
         "units": {
             "interval": "min"
         }
-
+    },
+    "default_curve":{
+        "type": "curve",
+        "properties":{
+            "curve_type": "nocurve",
+            "interval": -1.0,
+            "data": [[0.0,0.0]]
+        },
+        "units": {
+            "interval": "s"
+        }
     }
 }

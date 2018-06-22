@@ -385,7 +385,6 @@ class _PackedOpendssElement:
 
         self._name = name
         # todo perform sanity checks on name
-        # todo distinct linecode_a, etc and make sure that _eltype is coherent with components
         self.eltype = eltype
 
         # dynamically add methods to expose
@@ -589,7 +588,7 @@ class _PackedOpendssElement:
         _this_module.utils.run_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
 
     def __str__(self):
-        return '<PackedOpendssElement: {0}>'.format(self._name)
+        return '<PackedOpendssElement({0})>'.format(self._name)
 
     def __repr__(self):
         return self.__str__()

@@ -171,7 +171,7 @@ def _termrep(terminals):
             for t in terminals:
                 s += str(t) + '.'
             return s[0:-1]  # shaves final dot
-        except TypeError:  # todo clean
+        except TypeError:
             return '.' + str(terminals)
 
 
@@ -268,11 +268,12 @@ def dejsonize(obj_repr: dict):
         if isinstance(obj_repr['properties'][prop], np.matrix):
             unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
             obj_repr['properties'][prop] = np.multiply(obj_repr['properties'][prop], unit_matrix)
+        elif obj_repr['properties'][prop] is None:
+            pass
         else:
             obj_repr['properties'][prop] *= _resolve_unit(value, propgetter)
 
     # add in the adjointed parameters
-    # todo refine: if the default doesn't have a depend section, jump
     obj_repr['properties'].update(obj_repr['depends'])
 
     # returns object
@@ -390,7 +391,6 @@ class _DSSentity(_FcsAble):
         self._default_units = None
         self._load_default_parameters()
 
-        # todo write automation of typization (don't force the user to use types such as np.matrix, etc)
         self._setparameters(**kwargs)
 
     @property
@@ -1218,7 +1218,7 @@ class Curve(_FcsAble):
                  'tshape': ('temp',)
     }
 
-    def __init__(self, curve_type, name, data, interval=None, interval_unit='m'):
+    def __init__(self, name, curve_type, data, interval=None):
         self.name = name
         if curve_type not in ['xycurve', 'tshape']:
             raise ImportError('Unrecognized curve type')
@@ -1227,13 +1227,6 @@ class Curve(_FcsAble):
         self._dict = OrderedDict({'x': None, 'y': None, 'z': None})
         self.array_names = self._datadict[curve_type]
 
-        assert interval_unit in ('h', 'm', 's')
-        if interval_unit == 'h':
-            string_interval_unit = ''
-        else:
-            string_interval_unit = interval_unit
-        self.interval_string = string_interval_unit + 'interval'
-
         if isinstance(data, str) and data.endswith('.mat') or isinstance(data, dict):
 
             if isinstance(data, str):
@@ -1241,6 +1234,8 @@ class Curve(_FcsAble):
                 mat = sio.loadmat(file_path, chars_as_strings=True)
             else:
                 mat = data
+
+            self._mat = mat
 
             if curve_type in ['tshape']:
                 assert self.interval is not None
@@ -1266,6 +1261,19 @@ class Curve(_FcsAble):
                 self._dict['z'] = None
 
             self.npts = len(self._dict['x'])
+
+        elif isinstance(data, np.matrix):  # a matrix in which each row is x,y,z
+            self._dict['x'] = np.asarray(data[0, :])
+
+            try:
+                self._dict['y'] = np.asarray(data[1, :])
+            except IndexError:
+                self._dict['y'] = None
+
+            try:
+                self._dict['z'] = np.asarray(data[2, :])
+            except IndexError:
+                self._dict['z'] = None
 
         elif isinstance(data, str) and data[-4:] == '.csv':
 
@@ -1295,11 +1303,29 @@ class Curve(_FcsAble):
     def isnamed():
         return True
 
+    def jsonize(self, all_params=False, flatten_mtx=True):
+
+        super_dikt = {'type': 'curve', 'name': self.name, 'depends': {}, 'properties': {}, 'units': {}}
+        super_dikt['properties']['curve_type'] = self.type
+        # super_dikt['properties']['name'] = self.name
+        try:
+            super_dikt['properties']['interval'] = self.interval.magnitude
+            super_dikt['units']['interval'] = str(self.interval.units)
+        except AttributeError:  # happens for None!
+            super_dikt['properties']['interval'] = self.interval
+
+        if flatten_mtx:
+            super_dikt['properties']['data'] = [self._dict[x].tolist()[0] for x in self._dict.keys() if self._dict[x] is not None]
+        else:
+            super_dikt['properties']['data'] = [self._dict[x] for x in self._dict.keys() if self._dict[x] is not None]
+
+        return super_dikt
+
     def fcs(self):
-        s = 'New ' + self.type + '.' + self.name + ' ' + 'npts=' + str(self.npts) + ' '
+        s = 'New ' + self.type + '.' + self.name + ' '
 
         if self.interval is not None:
-            s += self.interval_string + str(self.interval) + ' '
+            s += 'sinterval=' + str(self.interval.to('s').magnitude) + ' '
 
         for idx, array in enumerate([self.x, self.y, self.z]):
             if array is not None:
@@ -1573,28 +1599,6 @@ class Line(_CircuitElementNBus):
             del kwargs['data']
         return super().__call__(**kwargs)
 
-    # def fcs(self, **hookup):
-    #     # todo use associated
-    #     data_to_prop = {LineCode_A: 'linecode',
-    #                     LineCode_S: 'linecode',
-    #                     LineGeometry_T: 'geometry',
-    #                     LineGeometry_O: 'geometry',
-    #                     LineGeometry_C: 'geometry'}
-    #
-    #     #prop = data_to_prop[type(self.data)]
-    #     #propname = self.data.name
-    #
-    #     base_string = super().fcs(**hookup)
-    #     string = re.sub(' (?=bus1=)', ' ' + prop + '=' + propname + ' ', base_string, count=1)
-    #
-    #     return string
-
-    # def jsonize(self, all_params=False, flatten_mtx=True, using=None):
-    #     dk = super().jsonize(all_params, flatten_mtx, using)
-    #     dk['depends'] = self['linecode'] + self['geometry']  # one of the two is blank
-    #
-    #     return dk
-
     def _setparameters(self, **kwargs):
         if 'data' in kwargs.keys():
             if isinstance(kwargs['data'], (LineCode_S, LineCode_A, LineGeometry_T, LineGeometry_C, LineGeometry_O)):
@@ -1604,8 +1608,6 @@ class Line(_CircuitElementNBus):
         super()._setparameters(**kwargs)
 
     def __mul__(self, other):
-
-        # todo pull
 
         if isinstance(other, (LineCode_A, LineCode_S, _LineGeometry)):
             super().__mul__(other)

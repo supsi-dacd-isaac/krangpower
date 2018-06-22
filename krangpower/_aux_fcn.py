@@ -115,8 +115,6 @@ def load_dictionary_json(path):
             if isinstance(value, list):
                 dik[entity]['properties'][prop] = matrix_from_json(value)
 
-            # todo give it a unit measure
-
     return dik
 
 
