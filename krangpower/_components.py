@@ -426,7 +426,10 @@ class _DSSentity(_FcsAble):
     def __mul__(self, other):
         """Associates the multiplier with this object."""
         i1 = self.toe
-        i2 = other.eltype
+        try:
+            i2 = other.eltype
+        except AttributeError:
+            i2 = str(type(other))  # happens for lists of components
 
         prop_to_set = self._muldict[i1, i2]
         # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
@@ -2445,10 +2448,14 @@ class FourQ(Generator):
 
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
-class _AboveCircuitElement(_CircuitElement):
+class _AboveCircuitElement(_DSSentity):
     @classmethod
     def isabove(cls):
         return True
+
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
 
 
 class Capcontrol(_AboveCircuitElement):
@@ -2521,9 +2528,6 @@ class Regcontrol(_AboveCircuitElement):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def fcs(self, **hookup):
         transformer = hookup.get('trf')
         winding = hookup.get('wdg')
@@ -2553,10 +2557,7 @@ class Monitor(_AboveCircuitElement):
     | basefreq             | float       | 50.0                       |
     +----------------------+-------------+----------------------------+
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+    pass
     # def fcs(self, **hookup):
     #
     #     # eltype = hookup.get('eltype')
@@ -2672,31 +2673,17 @@ class StorageController(_AboveCircuitElement):
     | basefreq             | float       | 50.0                       |
     +----------------------+-------------+----------------------------+
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def fcs(self, **hookup):
-
-        eltype = hookup.get('eltype')
-        elname = hookup.get('elname')
-        terminal = hookup.get('terminal')
-        alias = hookup.get('alias')
-
-        if alias is not None:
-            name = alias
-        else:
-            name = 'sc_' + eltype + '_' + elname
-
-        s1 = 'New storagecontroller.' + name + ' element=' + eltype + '.' + elname + \
-             ' terminal=' + str(terminal)
-
-        s2 = ''
-        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
-            # readability of the returned string
-            s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
-
-        return s1 + s2
+    pass
+    # def fcs(self, **hookup):
+    #
+    #     s1 = 'New storagecontroller.' + self.name
+    #
+    #     s2 = ''
+    #     for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
+    #         # readability of the returned string
+    #         s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
+    #
+    #     return s1 + s2
 
 
 def load_entities(path):

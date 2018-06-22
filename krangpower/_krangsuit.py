@@ -10,7 +10,7 @@ import weakref
 import xml.etree.ElementTree as ElementTree
 import zipfile
 from csv import reader as csvreader
-from functools import wraps, singledispatch as _singledispatch
+from functools import wraps, singledispatch
 from logging import INFO as LOGGING_INFO
 from tokenize import tokenize, untokenize
 
@@ -346,6 +346,10 @@ class Krang(object):
          options."""
         self.command('show ' + object_descriptor)
 
+    # -----------------------------------------------------------------------------------------------------------------
+    # SOLUTION METHODS
+    # -----------------------------------------------------------------------------------------------------------------
+
     def drag_solve(self):
         """This command solves one step at a time and saves node currents
         and voltages in the two DataFrames returned."""
@@ -370,10 +374,6 @@ class Krang(object):
         self.brain.Solution.Number(nmbr)
 
         return v, i
-
-    # -----------------------------------------------------------------------------------------------------------------
-    # SOLUTION METHODS
-    # -----------------------------------------------------------------------------------------------------------------
 
     def snap(self):
         """Solves a circuit snapshot."""
@@ -682,7 +682,7 @@ class Krang(object):
 # Single-dispatched __getitem__
 # -------------------------------------------------------------
 
-@_singledispatch
+@singledispatch
 def _oe_getitem():
     # no default implementation
     raise TypeError('Invalid identificator passed. You can specify fully qualified element names as str, or bus/'

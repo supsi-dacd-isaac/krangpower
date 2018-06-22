@@ -29,7 +29,7 @@ monitor,Reactor,element,fullname
 monitor,Transformer,element,fullname
 monitor,Generator,element,fullname
 monitor,Storage,element,fullname
-storagecontroller,list,elementlist,fullname
+storagecontroller,<class 'list'>,elementlist,name
 storagecontroller,Line,element,fullname
 storagecontroller,Load,element,fullname
 storagecontroller,Vsource,element,fullname
