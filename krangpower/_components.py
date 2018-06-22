@@ -423,25 +423,49 @@ class _DSSentity(_FcsAble):
         print(_get_help(DSSHELP, self))
         return None
 
+    def aka(self, name):
+        """Aliases the object."""
+        # try:
+        #     assert self.name == ''
+        # except AssertionError:
+        #     raise AssertionError(r'Cannot alias a component with name != ""')
+        cpy = self()
+        cpy.name = name
+        return cpy
+
     def __mul__(self, other):
-        """Associates the multiplier with this object."""
+        """Associates the multiplier with this object according to the built-in association rules."""
         i1 = self.toe
         try:
             i2 = other.eltype
         except AttributeError:
             i2 = str(type(other))  # happens for lists of components
 
-        prop_to_set = self._muldict[i1, i2]
-        # this assertion should never trigger, because it's about the coincidence between muldict and _associated, so it
-        # does not depend on input
-        assert prop_to_set in self._associated.keys()
+        try:
+            prop_to_set = self._muldict[i1, i2]
+            prop_fmt = self._fmtdict[i1, i2]
+        except KeyError:
+            try:
+                oname = other.name
+            except AttributeError:
+                oname = ''
+            raise KeyError('krangpower does not know how to associate a {0}({1}) to a {2}({3})'.
+                           format(i2, oname, self.eltype, self.name))
 
-        prop_fmt = self._fmtdict[i1, i2]
+        # support for setting ATTRIBUTES of the object, beginning with '.'
+        if prop_to_set.startswith('.'):
+            attr_to_set = prop_to_set[1:]
+            if prop_fmt == 'self':  # this means that the value to be set is the object itself
+                setattr(self, attr_to_set, other)
+            else:
+                setattr(self, attr_to_set, getattr(other, prop_fmt))
 
-        if isinstance(other, list):
-            self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
+        # support for setting PROPERTIES of the object
         else:
-            self[prop_to_set] = getattr(other, prop_fmt)
+            if isinstance(other, list):
+                self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
+            else:
+                self[prop_to_set] = getattr(other, prop_fmt)
 
         return self
 
@@ -689,7 +713,8 @@ class _NamedDSSentity(_DSSentity):
     def isnamed(cls):
         return True
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name='', **kwargs):
+        # can be instantiated with a blank name, but you won't be able to add it to a krang without aka-ing it!
         super().__init__(**kwargs)
         self.name = name
 
@@ -721,6 +746,8 @@ class CsvLoadshape(_FcsAble):
     :type npts: int
 
     """
+
+    eltype = 'CsvLoadshape'
 
     def __init__(self, name='', csv_path=None, column_scheme=None, interval=None, use_actual=True, npts=None):
 
@@ -1354,16 +1381,6 @@ class _CircuitElement(_DSSentity):
         super().__init__(**kwargs)
         # after loading from xml the line if appropriate, I go on with the kwargs in order to allow further on-the-fly
         # editing
-
-    def aka(self, name):
-        """Aliases the object."""
-        try:
-            assert self.name == ''
-        except AssertionError:
-            raise AssertionError(r'Cannot alias a component with name != ""')
-        cpy = self()
-        cpy.name = name
-        return cpy
 
 
 class _CircuitElementNBus(_CircuitElement):
@@ -2126,13 +2143,6 @@ class Load(_CircuitElementNBus):
     """
     pass
 
-    def __mul__(self, other):
-        if isinstance(other, CsvLoadshape):
-            self['duty'] = other.name
-            return self
-        else:
-            raise ValueError('Object {0} is not addable to a Load'.format(str(other)))
-
 
 class PvSystem(_CircuitElementNBus):
 
@@ -2361,6 +2371,8 @@ class Switch(_CircuitElementNBus):
 
 # 4 quadrant, update capable component
 class DecisionModel:
+    eltype = 'decisionmodel'
+
     @abstractmethod
     def decide_pq(self, oek, mynode):
         """Takes a graph and the node where the decision model has to interpret. Returns P(active power) and Q
@@ -2434,16 +2446,17 @@ class FourQ(Generator):
         assert isinstance(dm, DecisionModel)
         self._dm = dm
 
-    def __mul__(self, other):
-        try:
-            super().__mul__(other)
-        except:
-            try:
-                self.define_dm(other)
-            except AssertionError:  # raised by the fact that it's not a DecisionModel
-                raise
-
-        return self
+    # def __mul__(self, other):
+    #     # mul is overridden in order to manage DecisionModels independently
+    #     try:
+    #         super().__mul__(other)
+    #     except:
+    #         try:
+    #             self.define_dm(other)
+    #         except AssertionError:  # raised by the fact that it's not a DecisionModel
+    #             raise
+    #
+    #     return self
 
 
 # ANCILLARY CLASSES
@@ -2453,7 +2466,8 @@ class _AboveCircuitElement(_DSSentity):
     def isabove(cls):
         return True
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name = '', **kwargs):
+        # can be instantiated with a blank name, but you won't be able to add it to a krang without aka-ing it!
         super().__init__(**kwargs)
         self.name = name
 

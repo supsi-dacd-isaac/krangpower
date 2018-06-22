@@ -1,9 +1,9 @@
-generator,CsvLoadsape,duty,fullname
-load,CsvLoadsape,duty,fullname
-vsource,CsvLoadsape,duty,fullname
-isource,CsvLoadsape,duty,fullname
-fourq,CsvLoadsape,duty,fullname
-fourq,DecisionModel,_dm,fullname
+generator,CsvLoadshape,duty,name
+load,CsvLoadshape,duty,name
+vsource,CsvLoadshape,duty,name
+isource,CsvLoadshape,duty,name
+fourq,CsvLoadshape,duty,name
+fourq,DecisionModel,._dm,self
 linegeometry_o,WireData,wire,fullname
 linegeometry_o,list,wire,fullname
 linegeometry_c,CNData,cncable,fullname
@@ -17,7 +17,7 @@ line,LineGeometry_T,geometry,name
 line,linecode,linecode,name
 line,LineCode_A,linecode,name
 line,LineCode_A,linecode,name
-pvsystem,CsvLoadsape,duty,fullname
+pvsystem,CsvLoadshape,duty,name
 pvsystem,PtCurve,p-tcurve,fullname
 pvsystem,EffCurve,effcurve,fullname
 monitor,Line,element,fullname
@@ -38,4 +38,12 @@ storagecontroller,Capacitor,element,fullname
 storagecontroller,Reactor,element,fullname
 storagecontroller,Transformer,element,fullname
 storagecontroller,Generator,element,fullname
+capcontrol,Capacitor,capacitor,name
+capcontrol,Line,element,fullname
+capcontrol,Load,element,fullname
+capcontrol,Vsource,element,fullname
+capcontrol,Isource,element,fullname
+capcontrol,Reactor,element,fullname
+capcontrol,Transformer,element,fullname
+capcontrol,Generator,element,fullname
 regcontrol,Transformer,transformer,name

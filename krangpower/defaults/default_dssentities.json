@@ -1111,7 +1111,8 @@
             "deadtime": "s",
             "basefreq": "Hz"
         },
-        "associated": {"element": ""}
+        "associated": {"element": "",
+                       "capacitor": ""}
     },
     "default_regcontrol": {
         "type": "regcontrol",
