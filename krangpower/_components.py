@@ -1,10 +1,8 @@
 import copy
 import csv
 import hashlib
-import io
 import json
 import os.path
-import pickle
 import re
 import sys
 import textwrap
@@ -14,10 +12,9 @@ from functools import lru_cache
 
 import numpy as np
 import scipy.io as sio
-from dateutil.parser import parse as dateparse
 from pandas import read_csv
 
-from ._aux_fcn import matrix_from_json
+from ._aux_fcn import termrep, is_numeric_data, is_timestamp, matrix_from_json
 from ._config_loader import PINT_QTY_TYPE, DEFAULT_ENTITIES_PATH, ASSOCIATION_TYPES_PATH, \
     UM, DEFAULT_COMP, DSSHELP, GLOBAL_PRECISION, TMP_PATH, MANDATORY_UNITS
 from ._logging_init import mlog
@@ -29,8 +26,13 @@ from ._nxtable import NxTable
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
            'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities',
-           'Isource', 'DecisionModel', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'FourQ']
+           'Isource', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
+           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator']
+
+_muldict = NxTable()
+_fmtdict = NxTable()
+_muldict.from_csv(ASSOCIATION_TYPES_PATH, ccol=3)
+_fmtdict.from_csv(ASSOCIATION_TYPES_PATH, ccol=4)
 
 
 def get_classmap():
@@ -149,42 +151,6 @@ def _odssrep(data_raw):
 
     else:
         raise TypeError
-
-
-def _termrep(terminals):
-    """
-    This function takes a terminal collection (represented by a tuple of ints) and returns a representation that can be
-    cat to a bus name in order to form a full bus-terminal qualification according to the odsswr syntax.
-
-    >>> _termrep(1,3,2)
-    '.1.3.2'
-
-    :param terminals: tuple of ints
-    :type terminals: tuple
-    :rtype: string
-    """
-    if terminals is None:
-        return ''
-    else:
-        s = '.'
-        try:
-            for t in terminals:
-                s += str(t) + '.'
-            return s[0:-1]  # shaves final dot
-        except TypeError:
-            return '.' + str(terminals)
-
-
-def _is_timestamp(item):
-    try:
-        dateparse(item)
-    except ValueError:
-        return False
-    return True
-
-
-def _is_numeric_data(item):
-    return re.fullmatch('([0-9]|\,|\.| )*', item) is not None
 
 
 # </editor-fold>
@@ -376,11 +342,6 @@ class _FcsAble:
 
 class _DSSentity(_FcsAble):
 
-    _muldict = NxTable()
-    _fmtdict = NxTable()
-    _muldict.from_csv(ASSOCIATION_TYPES_PATH, ccol=3)
-    _fmtdict.from_csv(ASSOCIATION_TYPES_PATH, ccol=4)
-
     def __init__(self, **kwargs):
         self.term_perm = None
         self.name = ''
@@ -392,6 +353,9 @@ class _DSSentity(_FcsAble):
         self._load_default_parameters()
 
         self._setparameters(**kwargs)
+
+    def __repr__(self):
+        return '<krangpower.' + self.__class__.__name__ + '(' + self.name + ')(@' + str(hex(id(self))) + ')>'
 
     @property
     def eltype(self):
@@ -442,8 +406,8 @@ class _DSSentity(_FcsAble):
             i2 = str(type(other))  # happens for lists of components
 
         try:
-            prop_to_set = self._muldict[i1, i2]
-            prop_fmt = self._fmtdict[i1, i2]
+            prop_to_set = _muldict[i1, i2]
+            prop_fmt = _fmtdict[i1, i2]
         except KeyError:
             try:
                 oname = other.name
@@ -797,7 +761,7 @@ class CsvLoadshape(_FcsAble):
 
         # auto-header recognition
         head = next(csv.reader(open(self.csv_path)))
-        if all([_is_numeric_data(hitem) or _is_timestamp(hitem) for hitem in head]):
+        if all([is_numeric_data(hitem) or is_timestamp(hitem) for hitem in head]):
             self.header_string = 'No'
             self.shift = 0
         else:
@@ -1118,12 +1082,16 @@ class _LineGeometry(_NamedDSSentity):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.wiretype = None
-        self.specialparams = (self.wiretype, 'x', 'h', 'units')
+        # self.specialparams
         # for p in self.specialparams:
         #     if isinstance(self._params[p], np.matrix):
         #         assert self._params[p].size == ncond
         #     else:
         #         assert len(self._params[p]) == ncond
+
+    @property
+    def specialparams(self):
+        return self.wiretype, 'x', 'h', 'units'
 
     def fcs(self, **hookup):
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
@@ -1421,12 +1389,12 @@ class _CircuitElementNBus(_CircuitElement):
         for busno in range(1, self.nbuses + 1):
             if term_perm is not None:
                 if isinstance(term_perm[(buses[busno - 1])], (tuple, int)):
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
+                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(
                         term_perm[(buses[busno - 1])]) + ' '
                 elif isinstance(term_perm[(buses[busno - 1])], list):
                     # this happens when you specify more than one set of terminal connections at one bus
                     nthterminal = term_perm[(buses[busno - 1])][idox]
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
+                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(nthterminal) + ' '
                     idox += 1
                 elif term_perm[(buses[busno - 1])] is None:
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
@@ -1558,7 +1526,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['windings']):
-            s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], _termrep(termdic[buses[ind]])) + ' '
+            s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], termrep(termdic[buses[ind]])) + ' '
             for parameter in self.specialparams:
                 if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
@@ -1629,12 +1597,9 @@ class Line(_CircuitElementNBus):
 
     def __mul__(self, other):
 
-        if isinstance(other, (LineCode_A, LineCode_S, _LineGeometry)):
-            super().__mul__(other)
-            self['phases'] = other['nphases']
-            return self
-        else:
-            raise KeyError
+        bsmul = super().__mul__(other)  # first, so it throws errors if necessary
+        self['phases'] = other['nphases']
+        return bsmul
 
 
 class Vsource(_CircuitElementNBus):
@@ -2227,98 +2192,6 @@ class PvSystem(_CircuitElementNBus):
     pass
 
 
-# class Dload(_DSSentity):
-#     """Distributed Load object. This is an original odsswr object, created from other base components of OPENDSS.
-#
-#     +----------------------+-------------+----------------------------+
-#     | Property name        | type        | Default value              |
-#     +======================+=============+============================+
-#     | phases               | int         | 3                          |
-#     +----------------------+-------------+----------------------------+
-#     | mode                 | string      | lumped                     |
-#     +----------------------+-------------+----------------------------+
-#     | nsections            | int         | 12                         |
-#     +----------------------+-------------+----------------------------+
-#     """
-#
-#
-#     def __init__(self, line=Line(), loads=None, **kwargs):
-#         assert isinstance(line, Line)
-#         if loads is not None:
-#             for ld in loads.values():
-#                 assert isinstance(ld, Load)
-#         super().__init__(**kwargs)
-#         self.line = line
-#         self.loads = loads
-#
-#     def fcs(self, **hookup):
-#
-#         cname = self.name
-#         buses = hookup['buses']
-#         terminals = hookup.get('terminals', None)
-#         # remember that loads is always a dictionary: {(term1,term2..) : Load}
-#         totlength = self.line['length']
-#
-#         if self['mode'] == 'vdrop':
-#             length_proportions = (1 / 2, 1 / 2)
-#             load_proportions = (0, 1, 0)
-#             modelization_type = 'VDROP EQUIVALENT'
-#
-#         elif self['mode'] == 'ploss':
-#             length_proportions = (1 / 3, 2 / 3)
-#             load_proportions = (0, 1, 0)
-#             modelization_type = 'POWER LOSS EQUIVALENT'
-#
-#         elif self['mode'] == 'integral':
-#             try:
-#                 assert self['nsections'] is not None
-#             except AssertionError:
-#                 self.logger.error('distributed load %s was declared as integral but does not have nsections', cname)
-#             ns = self['nsections']
-#             length_proportions = [1 / ns] * ns
-#             load_proportions = [0, *[1 / ns] * ns, 0]
-#             modelization_type = 'INTEGRAL DISCRETIZED'
-#
-#         else:  # DEFAULTS TO LUMPED EXACT EQUIVALENT
-#             if self['mode', 'none'] != 'lumped':  # so that if you explicit lumped mode, no info log is passed
-#                 self.logger.info('distributed load %s defaulted to lumped exact equivalent mode')
-#             length_proportions = (1 / 4, 3 / 4)
-#             load_proportions = (0, 2 / 3, 1 / 3)
-#             modelization_type = 'LUMPED EXACT EQUIVALENT'
-#
-#         n_segm = len(length_proportions)
-#         midbuses = ['_DL_{0}#'.format(cname) + str(x) + '#' for x in range(1, n_segm)]
-#         bus_sequence = [buses[0], *midbuses, buses[1]]
-#
-#         def get_terms(bus):
-#             if terminals is not None:
-#                 termd = {buses[1]: terminals[buses[1]]}
-#                 return termd.get(bus, terminals[buses[0]])
-#             else:
-#                 return None
-#
-#         s = '! DISTRIBUTED LOAD (NAME:{0}) - {1}\n'.format(cname, modelization_type)
-#
-#         for ns in range(0, n_segm):
-#             s += self.line(length=totlength * length_proportions[ns]).fcs([bus_sequence[ns], bus_sequence[ns + 1]],
-#                                                                            '_L{0}_{1}'.format(ns + 1, cname),
-#                                                                            {bus_sequence[ns]: get_terms(
-#                                                                                bus_sequence[ns]),
-#                                                                                bus_sequence[ns + 1]: get_terms(
-#                                                                                    bus_sequence[ns + 1])}) + '\n'
-#         for idxbus, bus in enumerate(bus_sequence):
-#             if load_proportions[idxbus] != 0:
-#                 for idxphase, (tm, ld) in enumerate(self.loads.items()):
-#                     power = ld._params['kw']
-#                     rpower = ld._params['kvar']
-#                     s += ld(kw=power * load_proportions[idxbus], kvar=rpower * load_proportions[idxbus]).fcs(
-#                         (bus,), '_V{0}({2})_{1}'.format(bus, cname, idxphase + 1), {bus: tm}) + '\n'
-#
-#         s += '! END DISTRIBUTED LOAD (NAME:{0})\n'.format(cname)
-#
-#         return s
-
-
 class Switch(_CircuitElementNBus):
     """Switch object. The underlying model, if the switch is closed, behaves as a short, extremely conductive
     like trunk..
@@ -2347,11 +2220,11 @@ class Switch(_CircuitElementNBus):
         for busno in range(1, self.nbuses + 1):
             if self.term_perm is not None:  # todo refactor with the new _termrep
                 if isinstance(self.term_perm[(buses[busno - 1])], (tuple, int)):
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
+                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(
                         self.term_perm[(buses[busno - 1])]) + ' '
                 elif isinstance(self.term_perm[(buses[busno - 1])], list):
                     nthterminal = self.term_perm[(buses[busno - 1])][idox]
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
+                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(nthterminal) + ' '
                     idox += 1
             else:
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
@@ -2369,96 +2242,6 @@ class Switch(_CircuitElementNBus):
         self.disablestring = ''
 
 
-# 4 quadrant, update capable component
-class DecisionModel:
-    eltype = 'decisionmodel'
-
-    @abstractmethod
-    def decide_pq(self, oek, mynode):
-        """Takes a graph and the node where the decision model has to interpret. Returns P(active power) and Q
-        (reactive power), in that order, as a tuple. P and Q are not constrained in any way one to the other."""
-        pass
-
-
-class FourQ(Generator):
-
-    @classmethod
-    def isai(cls):
-        return True
-
-    def __init__(self, **kwargs):
-        self._dm = None
-        super().__init__(**kwargs)
-
-    def update_pq(self, oek, mybus):
-        assert self._dm is not None
-        p, q = self._dm.decide_pq(oek, mybus)
-        return p, q
-
-    def fcs(self, **hookup):
-
-        buses = hookup['buses']
-        cname = self.name
-        terminals = self.term_perm
-
-        s1 = 'New ' + 'generator' + '.' + cname  # _ splitting to allow name personalization outside dss
-        s3 = ' '
-        idox = 0
-        for busno in range(1, self.nbuses + 1):
-            if terminals is not None:
-                if isinstance(terminals[(buses[busno - 1])], (tuple, int)):
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(
-                        terminals[(buses[busno - 1])]) + ' '
-                elif isinstance(terminals[(buses[busno - 1])], list):
-                    # this happens when you specify more than one set of terminal connections at one bus
-                    nthterminal = terminals[(buses[busno - 1])][idox]
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + _termrep(nthterminal) + ' '
-                    idox += 1
-                elif terminals[(buses[busno - 1])] is None:
-                    s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
-            else:
-                s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
-
-        s2 = ''
-        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
-            # readability of the returned string
-            s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
-        return s1 + s3 + s2
-
-    def fus(self, oek, myname):
-        mybus = oek[myname].topological[0]
-        p, q = self.update_pq(oek, mybus)
-        s = 'edit generator.' + myname + ' kw=' + str(p.to(UM.kW).magnitude) + ' kvar=' + str(q.to(UM.kVA).magnitude)
-        return s
-
-    def _calchash(self):
-        hash_bio = io.BytesIO()
-        pickle.dump(self._dm, hash_bio, protocol=pickle.HIGHEST_PROTOCOL)
-        return hashlib.md5(hash_bio.getvalue()).hexdigest()
-
-    def jsonize(self, all_params=False, flatten_mtx=True):
-        md = super().jsonize(all_params, flatten_mtx)
-        md['hash'] = self._calchash()
-
-        return md
-
-    def define_dm(self, dm):
-        assert isinstance(dm, DecisionModel)
-        self._dm = dm
-
-    # def __mul__(self, other):
-    #     # mul is overridden in order to manage DecisionModels independently
-    #     try:
-    #         super().__mul__(other)
-    #     except:
-    #         try:
-    #             self.define_dm(other)
-    #         except AssertionError:  # raised by the fact that it's not a DecisionModel
-    #             raise
-    #
-    #     return self
-
-
 # ANCILLARY CLASSES
 # -------------------------------------------------------------
 class _AboveCircuitElement(_DSSentity):
@@ -2466,7 +2249,7 @@ class _AboveCircuitElement(_DSSentity):
     def isabove(cls):
         return True
 
-    def __init__(self, name = '', **kwargs):
+    def __init__(self, name='', **kwargs):
         # can be instantiated with a blank name, but you won't be able to add it to a krang without aka-ing it!
         super().__init__(**kwargs)
         self.name = name

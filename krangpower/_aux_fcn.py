@@ -1,5 +1,6 @@
 import difflib
 import io
+import re
 import textwrap
 from sys import modules
 from functools import lru_cache
@@ -7,6 +8,7 @@ import json
 import hashlib
 import canonicaljson
 import numpy as np
+from dateutil.parser import parse as dateparse
 
 
 def fingerprint_file(path):
@@ -133,3 +135,39 @@ def bus_resolve(bus_descriptor: str):
     terminals = tuple(int(x) for x in tkns[1:])
 
     return bus, terminals
+
+
+def is_timestamp(item):
+    try:
+        dateparse(item)
+    except ValueError:
+        return False
+    return True
+
+
+def termrep(terminals):
+    """
+    This function takes a terminal collection (represented by a tuple of ints) and returns a representation that can be
+    cat to a bus name in order to form a full bus-terminal qualification according to the odsswr syntax.
+
+    >>> termrep(1,3,2)
+    '.1.3.2'
+
+    :param terminals: tuple of ints
+    :type terminals: tuple
+    :rtype: string
+    """
+    if terminals is None:
+        return ''
+    else:
+        s = '.'
+        try:
+            for t in terminals:
+                s += str(t) + '.'
+            return s[0:-1]  # shaves final dot
+        except TypeError:
+            return '.' + str(terminals)
+
+
+def is_numeric_data(item):
+    return re.fullmatch('([0-9]|\,|\.| )*', item) is not None

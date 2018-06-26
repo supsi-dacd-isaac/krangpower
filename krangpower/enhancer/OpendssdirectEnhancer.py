@@ -508,7 +508,7 @@ class _PackedOpendssElement:
 
         # the raw property is returned in string form from Opendssdirect's text interface with the ? operator
         try:
-            rslt = _this_module.utils.run_command('? {0}.{1}'.format(self.fullname, item))
+            rslt = txt_command('? {0}.{1}'.format(self.fullname, item))
         except KeyError:
             # the rudimental Keyerror retrieved by _validate... is further explained
             raise KeyError('Invalid property {1} requested for {0}'.format(self.fullname, item))

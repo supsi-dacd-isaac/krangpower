@@ -1,3 +1,4 @@
+import krangpower as kp
 
 def main():
 

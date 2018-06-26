@@ -858,27 +858,9 @@ def from_json(path):
         mlog.debug('option {0}={1} was DECLARED'.format(on, d_ov))
 
     # reconstruction of dependency graph and declarations
-    dep_graph = _DepGraph()
-    for jobj in master_dict['elements'].values():
-        vname = jobj['type'].split('_')[0] + '.' + jobj['name']
-        # if the element has no dependencies, we just add a node with iths name
-        if jobj['depends'] == {} or all([d == '' for d in jobj['depends'].values()]):
-            dep_graph.add_node(vname)
-        else:
-            # if an element parameter depends on another name, or a list of other names, we create all the edges
-            # necessary
-            for dvalue in jobj['depends'].values():
-                if isinstance(dvalue, list):
-                    for dv in dvalue:
-                        if dv != '':
-                            dep_graph.add_edge(vname, dv)
-                else:
-                    if dvalue != '':
-                        dep_graph.add_edge(vname, dvalue)
-
-    # we cyclically consider all "leaves", add the objects at the leaves, then trim the leaves and go on with
-    # the new leaves.
-    # In this way we are sure that, whenever a name is mentioned in a fcs, its entity was already declared.
+    dep_graph = construct_deptree(master_dict['elements'])
+    l_ckt = declare_deptree(l_ckt, dep_graph, master_dict['elements'], logger=mlog)
+    
     for trimmed_leaves in dep_graph.recursive_prune():
         for nm in trimmed_leaves:
             try:
@@ -907,6 +889,67 @@ def from_json(path):
     # patch for curing the stepsize bug
 
     return l_ckt
+
+
+def construct_deptree(element_dict: dict):
+    dep_graph = _DepGraph()
+    for jobj in element_dict.values():
+        vname = jobj['type'].split('_')[0] + '.' + jobj['name']
+        # if the element has no dependencies, we just add a node with iths name
+        if jobj['depends'] == {} or all([d == '' for d in jobj['depends'].values()]):
+            dep_graph.add_node(vname)
+        else:
+            # if an element parameter depends on another name, or a list of other names, we create all the edges
+            # necessary
+            for dvalue in jobj['depends'].values():
+                if isinstance(dvalue, list):
+                    for dv in dvalue:
+                        if dv != '':
+                            dep_graph.add_edge(vname, dv)
+                else:
+                    if dvalue != '':
+                        dep_graph.add_edge(vname, dvalue)
+    
+    return dep_graph
+
+
+def declare_deptree(krg: Krang, dep_tree: _DepGraph, element_dict: dict, logger=None):
+    # we cyclically consider all "leaves", add the objects at the leaves, then trim the leaves and go on with
+    # the new leaves.
+    # In this way we are sure that, whenever a name is mentioned in a fcs, its entity was already declared.
+
+    class __logger_mocker:
+        def debug(self, *args, **kwargs):
+            pass
+
+    if logger is None:
+        mlog = __logger_mocker()
+    else:
+        mlog = logger
+
+    for trimmed_leaves in dep_tree.recursive_prune():
+        for nm in trimmed_leaves:
+            try:
+                jobj = copy.deepcopy(element_dict[nm.lower()])
+            except KeyError:
+                mdmod = {k.split('.')[1]: v for k, v in element_dict.items()}
+                try:
+                    jobj = copy.deepcopy(mdmod[nm.lower()])
+                except KeyError:
+                    jobj = copy.deepcopy(mdmod[nm.split('.')[1].lower()])
+            dssobj = co.dejsonize(jobj)
+            if dssobj.isnamed():
+                krg << dssobj
+                mlog.debug('element {0} was added as named'.format(nm))
+            elif dssobj.isabove():
+                krg << dssobj.aka(jobj['name'])
+                mlog.debug('element {0} was added as above'.format(nm))
+            else:
+                krg[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
+                mlog.debug('element {0} was added as regular'.format(nm))
+                # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
+        
+    return krg
 
 
 def open_ckt(path):
