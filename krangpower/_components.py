@@ -2432,7 +2432,13 @@ def load_entities(path):
     dicky = {}
 
     for entity_name in dik:
-        dicky[entity_name] = dejsonize(dik[entity_name])
+
+        eltype, elname = entity_name.split('.')
+        if '_' in eltype:
+            dep_name = ''.join(eltype.split('_')[:-1]) + '.' + elname
+        else:
+            dep_name = entity_name
+        dicky[dep_name] = dejsonize(dik[entity_name])
 
     return dicky
 

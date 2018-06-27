@@ -5,7 +5,7 @@ from abc import abstractmethod
 
 from ._config_loader import UM
 from ._components import Generator, _odssrep
-from krangpower._aux_fcn import termrep
+from ._aux_fcn import termrep
 
 __all__ = ['DecisionModel', 'FourQ']
 

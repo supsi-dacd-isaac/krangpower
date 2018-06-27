@@ -16,7 +16,7 @@ import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
 from .._aux_fcn import lower as _lower
-from krangpower._components import get_classmap as _get_classmap
+from .._components import get_classmap as _get_classmap
 from .._aux_fcn import pairwise as _pairwise
 from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, \
