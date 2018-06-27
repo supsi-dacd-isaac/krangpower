@@ -860,29 +860,10 @@ def from_json(path):
     # reconstruction of dependency graph and declarations
     dep_graph = construct_deptree(master_dict['elements'])
     l_ckt = declare_deptree(l_ckt, dep_graph, master_dict['elements'], logger=mlog)
-    
-    for trimmed_leaves in dep_graph.recursive_prune():
-        for nm in trimmed_leaves:
-            try:
-                jobj = copy.deepcopy(master_dict['elements'][nm.lower()])
-            except KeyError:
-                mdmod = {k.split('.')[1]: v for k, v in master_dict['elements'].items()}
-                jobj = copy.deepcopy(mdmod[nm.lower()])
-            dssobj = co.dejsonize(jobj)
-            if dssobj.isnamed():
-                l_ckt << dssobj
-                mlog.debug('element {0} was added as named'.format(nm))
-            elif dssobj.isabove():
-                l_ckt << dssobj.aka(jobj['name'])
-                mlog.debug('element {0} was added as abova'.format(nm))
-            else:
-                l_ckt[tuple(jobj['topological'])] << dssobj.aka(jobj['name'])
-                mlog.debug('element {0} was added as regular'.format(nm))
-                # l_ckt.command(dssobj.aka(jobj['name']).fcs(buses=jobj['topological']))
 
     l_ckt._coords_linked = master_dict['buscoords']
     l_ckt._declare_buscoords()
-    mlog.debug('coordinates just declared, exiting'.format(nm))
+    mlog.debug('coordinates just declared, exiting')
 
     # patch for curing the stepsize bug
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
