@@ -686,3 +686,14 @@ def log_line(line: str, lvl=_DBG_LVL):
     """Logs a line in the command log."""
     clog.log(lvl, '(id:{0})-'.format(_ID) + line)
 # </editor-fold>
+
+
+# <editor-fold desc="Rolling over the logs">
+for lh in mlog.handlers:
+    if hasattr(lh, 'doRollover'):
+        lh.doRollover()
+
+for lh in clog.handlers:
+    if hasattr(lh, 'doRollover'):
+        lh.doRollover()
+# </editor-fold>

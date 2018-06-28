@@ -1,7 +1,9 @@
 Logging
 =======
 
-krangpower mantains two different logs that can be useful for debugging purposes.
+krangpower mantains two different logs that can be useful for debugging purposes. The log files are rolled over every
+time the `enhancer submodule`_ is loaded, and a number of historical version is mantained, up to a total configurable in the
+`configuration file`_.
 
 By default, in Windows, they can be found under:
 
@@ -65,3 +67,4 @@ here every call to the OpenDSSDirect.py attributes and reports on the choices ma
 
 
 .. _`configuration file`: config.html
+.. _`enhancer submodule`: oenh_ref.html

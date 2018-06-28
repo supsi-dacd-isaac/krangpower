@@ -23,10 +23,10 @@ from . import _busquery as bq
 from . import _components as co
 from . import enhancer
 from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
-from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, CMD_LOG_NEWLINE_LEN, UM, DSSHELP, \
+from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, \
     TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY
 from ._deptree import DepTree as _DepGraph
-from ._logging_init import clog, mlog
+from ._logging_init import mlog
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
 
@@ -167,7 +167,6 @@ class Krang(object):
         self._coords_linked = {}
 
         # OpenDSS initialization commands
-        clog.debug('\n' + '$%&' * CMD_LOG_NEWLINE_LEN)
         self.command('clear')
         master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
         self.command(master_string)
