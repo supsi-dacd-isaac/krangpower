@@ -187,7 +187,10 @@ def _cast_dumbstring(string: str, data_type):
     if data_type == str:
         return string
     if data_type in (int, float):
-        return data_type(string)
+        if string == '----':  # this happens, f.e., if you define a line by rmatrix, xmatrix and then ask for r0, x0...
+            return np.NaN
+        else:
+            return data_type(string)
     elif data_type == _np.matrix:
         return SnpMatrix(string
                          .replace(' |', ';')
