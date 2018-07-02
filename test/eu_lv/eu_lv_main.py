@@ -210,5 +210,6 @@ print(m23_out)
 print(m53_out)
 print(mtr_out)
 
-eulv.pack_ckt(r'/home/queen/Documents/nemogrid-simulations/krangpower/test/eu_lv/eu_lv.zip')
+this_dir = os.path.dirname(os.path.realpath(__file__))
+eulv.pack_ckt(os.path.join(this_dir, 'eu_lv.zip'))
 # eulv.save_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')
