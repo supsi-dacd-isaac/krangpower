@@ -1,7 +1,7 @@
 Krang.graph
 ===========
 
-:code:`Krang` has a graph attributes that returns a networkx_ :code:`Graph`. The nodes of this graph are constituted by the buses; the
+:code:`Krang` has a graph attribute that returns a networkx_ :code:`Graph`. The nodes of this graph are constituted by the buses; the
 edges are the elements that connect these buses, such as :code:`Line`, :code:`Transformer`, :code:`Reactor`...
 
 The nodes have:

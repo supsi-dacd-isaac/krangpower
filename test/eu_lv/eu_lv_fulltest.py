@@ -10,7 +10,7 @@ def _main():
     import requests
 
     sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..\\..\\..\\krangpower'))
-    import krangpower.krangpower as kp
+    import krangpower as kp
 
     um = kp.UM
     kp.set_log_level(10)
