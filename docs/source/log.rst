@@ -35,7 +35,7 @@ The default/starting value of the logging level, when using :code:`krangpower` o
     The commands.log and krangpower.log files are only written **if the log level is <= logging.DEBUG** (10).
 
 .. warning::
-    The log files are quite verbose and writing them often causes a *major* execution time overhead, so
+    The log files are quite verbose and writing them often causes an appreciable execution time overhead, so
     they should be left unactive if not needed.
 
 .. tip::
