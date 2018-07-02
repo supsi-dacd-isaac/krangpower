@@ -3,11 +3,11 @@ import os
 import requests
 import io
 import zipfile
-import krangpower as kp
+import krangpower.krangpower as kp
 
 um = kp.UM
 
-test_dir = os.path.join(os.getenv("AppData"), 'krangpower//test')
+test_dir = kp.TMP_PATH
 
 
 def download_extract_zip(url):
@@ -210,5 +210,5 @@ print(m23_out)
 print(m53_out)
 print(mtr_out)
 
-eulv.pack_ckt(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.zip')
-eulv.save_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')
+eulv.pack_ckt(r'/home/queen/Documents/nemogrid-simulations/krangpower/test/eu_lv/eu_lv.zip')
+# eulv.save_json(r'D:/GDrive/Pycharm/krangpower/test/eu_lv/eu_lv.json')
