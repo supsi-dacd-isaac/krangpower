@@ -29,6 +29,7 @@ from ._deptree import DepTree as _DepGraph
 from ._logging_init import mlog
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
+from ._exceptions import KrangInstancingError, KrangObjAdditionError
 
 # __all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
@@ -134,9 +135,7 @@ class Krang(object):
 
         # Krang is a singleton; attempting to create a second one will raise an error
         if globals()['_INSTANCE'] is not None:
-            raise ValueError('Cannot create a new Krang - A Krang ({0}) already exists.'
-                             'Delete every reference to it if you want to instantiate another.'
-                             .format(globals()['_INSTANCE']))
+            raise KrangInstancingError(globals()['_INSTANCE'])
 
         return super().__new__(cls)
 
@@ -240,12 +239,13 @@ class Krang(object):
             try:
                 assert other.isabove()
             except AssertionError:
-                raise TypeError('The object could not be directly added to the Krang. Is it a bus object?')
+                raise KrangObjAdditionError(other, msg='The object {} could not be directly added to the Krang.'
+                                                       ' Is it a bus-bound object?'.format(str(other)))
 
         try:
             assert other.name != ''
         except AssertionError:
-            raise ValueError('Tried to add an object with a blank name')
+            raise KrangObjAdditionError(other, msg='Tried to add an object ({}) with a blank name'.format(str(other)))
 
         self.command(other.fcs())
         self.brain._names_up2date = False
@@ -729,11 +729,17 @@ class _BusView:
     @_invalidate_cache
     def __lshift__(self, other):
         """Adds a component to the BusView, binding the component added to the buses referenced by the BusView."""
-        assert not other.isnamed()
+        try:
+            assert not other.isnamed()
+        except (AssertionError, AttributeError):
+            raise KrangObjAdditionError(other, msg='Tried to add an incompatible object.')
+
         try:
             assert other.name != ''
         except AssertionError:
-            raise ValueError('Did you name the element before adding it?')
+            raise KrangObjAdditionError(other, 'Could not add object {}. Did you name the element before adding it?'
+                                        .format(other))
+
         self.oek.command(other.fcs(**self.fcs_kwargs))
 
         # remember ai elements

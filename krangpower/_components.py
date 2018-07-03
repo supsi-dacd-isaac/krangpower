@@ -19,6 +19,7 @@ from ._config_loader import PINT_QTY_TYPE, DEFAULT_ENTITIES_PATH, ASSOCIATION_TY
     UM, DEFAULT_COMP, DSSHELP, GLOBAL_PRECISION, TMP_PATH, MANDATORY_UNITS
 from ._logging_init import mlog
 from ._nxtable import NxTable
+from ._exceptions import AssociationError, TypeUnrecoverableError, RecoveryTargetError, TypeRecoveryError
 
 # COMPONENTS FOR KRANGSUIT - WRITTEN BY FEDERICO ROSATO
 # -------------------------------------------------------------
@@ -259,12 +260,10 @@ def _type_recovery(value, target_type):
             assert target_type == np.matrix
             recovered_value = np.matrix(value)
         else:
-            raise AssertionError
+            raise TypeUnrecoverableError(type(value))
     except AssertionError:
-        raise TypeError('Unrecoverable type {0}-->{1}'
-                        .format(
-                                type(value),
-                                target_type))
+        raise RecoveryTargetError(type(value), target_type)
+
     return recovered_value
 
 
@@ -354,8 +353,11 @@ class _DSSentity(_FcsAble):
 
         self._setparameters(**kwargs)
 
+    def __str__(self):
+        return '<krangpower.' + self.__class__.__name__ + '(' + self.name + ')'
+
     def __repr__(self):
-        return '<krangpower.' + self.__class__.__name__ + '(' + self.name + ')(@' + str(hex(id(self))) + ')>'
+        return self.__str__() + '(@' + str(hex(id(self))) + ')>'
 
     @property
     def eltype(self):
@@ -413,8 +415,7 @@ class _DSSentity(_FcsAble):
                 oname = other.name
             except AttributeError:
                 oname = ''
-            raise KeyError('krangpower does not know how to associate a {0}({1}) to a {2}({3})'.
-                           format(i2, oname, self.eltype, self.name))
+            raise AssociationError(i2, oname, self.eltype, self.name)
 
         # support for setting ATTRIBUTES of the object, beginning with '.'
         if prop_to_set.startswith('.'):
@@ -517,11 +518,13 @@ class _DSSentity(_FcsAble):
                     value = _type_recovery(value, target_type)
 
                 # if the value couldn't be salvaged, raise
-                except TypeError:
-                    raise TypeError('parameter "{0}" is of type {1} instead of {2} and could not be converted'
-                                    .format(parameter.lower(),
-                                            type(value),
-                                            target_type))
+                except TypeRecoveryError:
+                    raise RecoveryTargetError(type(value),
+                                              target_type,
+                                              msg='parameter "{0}" is of type {1} instead of {2}'
+                                                  ' and could not be converted'.format(parameter.lower(),
+                                                                                type(value),
+                                                                                target_type))
 
             if isinstance(value, np.matrix):
                 test = np.array_equal(value, DEFAULT_COMP['default_' + self.toe][default_dict][parameter])
@@ -1545,7 +1548,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
         try:
             assert self.name == ''
         except AssertionError:
-            raise AssertionError(r'Cannot alias a component with name != ""')
+            raise ValueError(r'Cannot alias a component with name != ""')
         cpy = self()
         cpy.name = name
         return cpy
