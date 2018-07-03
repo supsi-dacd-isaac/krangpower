@@ -1,5 +1,8 @@
-Krang.graph
-===========
+Circuit Graph and Views
+=======================
+
+krang.graph
+...........
 
 :code:`Krang` has a graph attribute that returns a networkx_ :code:`Graph`. The nodes of this graph are constituted by the buses; the
 edges are the elements that connect these buses, such as :code:`Line`, :code:`Transformer`, :code:`Reactor`...
@@ -15,6 +18,9 @@ The edges have:
 
 Since it contains a plethora of :code:`PackedOpendssElement`, the graph has the potentiality for retrieving all sorts of useful
 information and is amenable to data query and reorganization with :code:`networkx`.
+
+GraphView
+.........
 
 To aid in working with the graph, krangpower exposes the template class :code:`GraphView`. The :code:`GraphView` is initialized with a
 :code:`Krang` instance and two arguments, :code:`busfun` and :code:`edgefun`, that are functions meant to be applied to every :code:`'el'[0]` of the

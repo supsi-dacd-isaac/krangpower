@@ -11,7 +11,7 @@ facilities needed to integrate a fully custom and separate control logic into a 
 
 FourQ
 '''''
-.. autoclass:: krangpower.components.FourQ
+.. autoclass:: krangpower._smart_components.FourQ
    :members:
    :undoc-members:
    :inherited-members:

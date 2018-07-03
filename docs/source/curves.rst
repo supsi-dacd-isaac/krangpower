@@ -7,14 +7,14 @@ histories, memorized in loadshapes.
 
 CsvLoadshape
 ''''''''''''
-.. autoclass:: krangpower.components.CsvLoadshape
+.. autoclass:: krangpower._components.CsvLoadshape
    :members:
    :undoc-members:
    :inherited-members:
 
 XYCurve
 ''''''''''''
-.. autoclass:: krangpower.components.Curve
+.. autoclass:: krangpower._components.Curve
    :members:
    :undoc-members:
    :inherited-members:

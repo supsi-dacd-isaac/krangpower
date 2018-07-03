@@ -699,6 +699,8 @@ class CsvLoadshape(_FcsAble):
     The name of the loadshape will be the same as the file basename.
     Automatically recognizes if header is present or not.
 
+    :param name: the loadshape name.
+    :type name: str
     :param csv_path: the csv file path.
     :type csv_path: str
     :param column_scheme: A dictionary of one or more int:<'hour'|'mult'|'qmult'> couples that associate the column with
@@ -711,11 +713,10 @@ class CsvLoadshape(_FcsAble):
      base value of the DSS object, rather than using the values directly.
     :type use_actual: bool
     :param npts: the number of points to load from the csv. If None, all the lines in the csv will be loaded in the
-    loadshape. If greater than the number of lines in the csv, the lines will be tiled from the beginning. Please note
-    that, since the automatic determination of the number of datapoints requires opening the csv and counting the rows,
-    specifying this parameter, when possible, will grant a speed-up, especially for big files and/or multiple imports.
+     loadshape. If greater than the number of lines in the csv, the lines will be tiled from the beginning. Please note
+     that, since the automatic determination of the number of datapoints requires opening the csv and counting the rows,
+     specifying this parameter, when possible, will grant a speed-up, especially for big files and/or multiple imports.
     :type npts: int
-
     """
 
     eltype = 'CsvLoadshape'

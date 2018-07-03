@@ -1,11 +1,11 @@
-Electrical elements (bus-based)
+wElectrical elements (bus-based)
 ---------------------------------
 These are electrical components that can be added to compose the grid topology.
 
 
 Transformer
 '''''''''''
-.. autoclass:: krangpower.components.Transformer
+.. autoclass:: krangpower._components.Transformer
    :members:
    :special-members: __getitem__
    :undoc-members:
@@ -13,56 +13,56 @@ Transformer
    
 Line
 ''''
-.. autoclass:: krangpower.components.Line
+.. autoclass:: krangpower._components.Line
    :members:
    :undoc-members:
    :inherited-members:   
    
 Vsource
 '''''''   
-.. autoclass:: krangpower.components.Vsource
+.. autoclass:: krangpower._components.Vsource
    :members:
    :undoc-members:
    :inherited-members:
    
 Isource
 '''''''
-.. autoclass:: krangpower.components.Isource
+.. autoclass:: krangpower._components.Isource
    :members:
    :undoc-members:
    :inherited-members:
    
 Capacitor
 '''''''''
-.. autoclass:: krangpower.components.Capacitor
+.. autoclass:: krangpower._components.Capacitor
    :members:
    :undoc-members:
    :inherited-members:
    
 Reactor
 '''''''
-.. autoclass:: krangpower.components.Reactor
+.. autoclass:: krangpower._components.Reactor
    :members:
    :undoc-members:
    :inherited-members:
    
 Generator
 '''''''''
-.. autoclass:: krangpower.components.Generator
+.. autoclass:: krangpower._components.Generator
    :members:
    :undoc-members:
    :inherited-members:
 
 Storage
 '''''''
-.. autoclass:: krangpower.components.Storage
+.. autoclass:: krangpower._components.Storage
    :members:
    :undoc-members:
    :inherited-members:
    
 PvSystem
 ''''''''
-.. autoclass:: krangpower.components.PvSystem
+.. autoclass:: krangpower._components.PvSystem
    :members:
    :undoc-members:
    :inherited-members:

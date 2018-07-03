@@ -4,21 +4,21 @@ These components provide control and monitoring function. They are not directly 
 
 Regcontrol
 ''''''''''
-.. autoclass:: krangpower.components.Regcontrol
+.. autoclass:: krangpower._components.Regcontrol
    :members:
    :undoc-members:
    :inherited-members:
 
 Monitor
 '''''''
-.. autoclass:: krangpower.components.Monitor
+.. autoclass:: krangpower._components.Monitor
    :members:
    :undoc-members:
    :inherited-members:
 
 StorageController
 '''''''''''''''''
-.. autoclass:: krangpower.components.StorageController
+.. autoclass:: krangpower._components.StorageController
    :members:
    :undoc-members:
    :inherited-members:

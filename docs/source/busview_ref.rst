@@ -11,7 +11,7 @@ is available in the property content.
 Class reference
 ...............
 
-.. autoclass:: krangpower.krangsuit._BusView
+.. autoclass:: krangpower._krangsuit._BusView
    :members:
    :special-members:
    :exclude-members: __weakref__
