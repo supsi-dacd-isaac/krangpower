@@ -1,3 +1,11 @@
+# ,---------------------------------------------------------------------------,
+# |  This module is part of the krangpower electrical distribution simulation |
+# |  suit by Federico Rosato <federico.rosato@supsi.ch> et al.                |
+# |  Please refer to the license file published together with this code.      |
+# |  All rights not explicitly granted by the license are reserved.           |
+# '---------------------------------------------------------------------------'
+
+
 class AssociationError(Exception):
     def __init__(self, 
                  association_target_type, 

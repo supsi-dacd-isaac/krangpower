@@ -1,3 +1,10 @@
+# ,---------------------------------------------------------------------------,
+# |  This module is part of the krangpower electrical distribution simulation |
+# |  suit by Federico Rosato <federico.rosato@supsi.ch> et al.                |
+# |  Please refer to the license file published together with this code.      |
+# |  All rights not explicitly granted by the license are reserved.           |
+# '---------------------------------------------------------------------------'
+
 import logging
 import os
 from logging.handlers import RotatingFileHandler

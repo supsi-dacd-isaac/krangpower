@@ -1,3 +1,10 @@
+# ,---------------------------------------------------------------------------,
+# |  This module is part of the krangpower electrical distribution simulation |
+# |  suit by Federico Rosato <federico.rosato@supsi.ch> et al.                |
+# |  Please refer to the license file published together with this code.      |
+# |  All rights not explicitly granted by the license are reserved.           |
+# '---------------------------------------------------------------------------'
+
 import copy
 import csv
 import hashlib
@@ -17,12 +24,9 @@ from pandas import read_csv
 from ._aux_fcn import termrep, is_numeric_data, is_timestamp, matrix_from_json
 from ._config_loader import PINT_QTY_TYPE, DEFAULT_ENTITIES_PATH, ASSOCIATION_TYPES_PATH, \
     UM, DEFAULT_COMP, DSSHELP, GLOBAL_PRECISION, TMP_PATH, MANDATORY_UNITS
+from ._exceptions import AssociationError, TypeUnrecoverableError, RecoveryTargetError, TypeRecoveryError
 from ._logging_init import mlog
 from ._nxtable import NxTable
-from ._exceptions import AssociationError, TypeUnrecoverableError, RecoveryTargetError, TypeRecoveryError
-
-# COMPONENTS FOR KRANGSUIT - WRITTEN BY FEDERICO ROSATO
-# -------------------------------------------------------------
 
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
