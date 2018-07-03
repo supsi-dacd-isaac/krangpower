@@ -1,10 +1,17 @@
+# ,---------------------------------------------------------------------------,
+# |  This module is part of the krangpower electrical distribution simulation |
+# |  suit by Federico Rosato <federico.rosato@supsi.ch> et al.                |
+# |  Please refer to the license file published together with this code.      |
+# |  All rights not explicitly granted by the license are reserved.           |
+# '---------------------------------------------------------------------------'
+
 import numpy as np
 
 from .._graphview import GraphView
 from .._krangsuit import Krang
 
 
-__all__ = ['BusVoltageView', 'VoltageView', 'CurrentView']
+__all__ = ['BusVoltageView', 'VoltageView', 'CurrentView', 'BaseVoltageView']
 
 
 class VoltageView(GraphView):
@@ -42,3 +49,15 @@ class CurrentView(GraphView):
             return edg['el'][0].Currents()
 
         super().__init__(None, edgeI, ckgr)
+
+
+class BaseVoltageView(GraphView):
+    def __init__(self, ckgr: Krang, voltage_bases):
+
+        ckgr.set(voltagebases=voltage_bases)
+        ckgr.command('calcvoltagebases')
+
+        def basebuskV(bus):
+            return bus['bus'].kVBase()
+
+        super().__init__(basebuskV, None, ckgr)

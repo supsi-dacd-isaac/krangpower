@@ -1,9 +1,7 @@
-import krangpower as kp
-
 def main():
 
     from numpy import round
-    from numpy.random import random
+    from numpy.random import random, seed
     import csv
     import os.path
     import sys
@@ -14,7 +12,7 @@ def main():
     kp.set_log_level(10)
 
     um = kp.UM
-    src = kp.Vsource(basekv=10.0 * um.kV)
+    src = kp.Vsource(basekv=10.0 * um.kV, pu=1.0)
     twc = kp.Krang('twc', src)
     twc['sourcebus', 'a'] << kp.Line(length=20.0 * um.m).aka('l1')
 
@@ -49,22 +47,32 @@ def main():
     # a simple fourq
     class MyDM(kp.DecisionModel):
         def decide_pq(self, oek, mynode):
-            return round(5.0 * random(), decimals=3) * um.kW,\
-                   round(1.0 * random(), decimals=3) * um.kW
+            # our "smart" load
+            seed(945021)  # for repeatability
+            return -round(80.0 * random(), decimals=3) * um.kW,\
+                   -round(10.0 * random(), decimals=3) * um.kW
 
     fq = kp.FourQ(kv=2.0 * um.kV)
     twc['bb', ] << fq.aka('myfq') * MyDM()
 
     twc.set(number=6, stepsize=2 * um.min)
+
     twc.drag_solve()
 
     # -------------------------------------------------------
     # GraphView demonstration
-    bvo = kp.gv.BusVoltageView(twc)
-    bvo = kp.gv.CurrentView(twc)
-    bvo = kp.gv.VoltageView(twc)
-    print(round(bvo['bb'], 2))
-    print(round(bvo['b', 'bb'], 2))
+
+    # these views report the voltages of the last solution and the base voltages
+    bus_volts = kp.gv.BusVoltageView(twc)
+    bus_base_volts = kp.gv.BaseVoltageView(twc, [2.0, 3.0, 10.0] * um.kV)
+
+    # what are the buses whose voltage is < 0.98 of their nominal one?
+    v_limit = 0.98
+    violated_bus = {x: (bus_volts[x] / bus_base_volts[x]).to_base_units()
+                    for x in bus_volts.nodes
+                    if bus_volts[x] / bus_base_volts[x] < v_limit}
+
+    print(violated_bus)
 
     kp.set_log_level(30)
 
