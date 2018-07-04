@@ -247,6 +247,11 @@ class Krang(object):
         except AssertionError:
             raise KrangObjAdditionError(other, msg='Tried to add an object ({}) with a blank name'.format(str(other)))
 
+        # we direct-declare possibly undeclared objects that were associated with other
+        for ass_obj in other._multiplied_objs:
+            if ass_obj.fullname not in self.oek.brain.get_all_names():
+                self.oek << ass_obj
+
         self.command(other.fcs())
         self.brain._names_up2date = False
         return self
@@ -682,7 +687,7 @@ class Krang(object):
 # -------------------------------------------------------------
 
 @singledispatch
-def _oe_getitem():
+def _oe_getitem(item, krg):
     # no default implementation
     raise TypeError('Invalid identificator passed. You can specify fully qualified element names as str, or bus/'
                     'couples of buses as tuples of str.')
@@ -739,6 +744,11 @@ class _BusView:
         except AssertionError:
             raise KrangObjAdditionError(other, 'Could not add object {}. Did you name the element before adding it?'
                                         .format(other))
+
+        # we declare possibly undeclared objects that were associated with other (loadshapes...)
+        for ass_obj in other._multiplied_objs:
+            if ass_obj.fullname not in self.oek.brain.get_all_names():
+                self.oek << ass_obj
 
         self.oek.command(other.fcs(**self.fcs_kwargs))
 

@@ -338,24 +338,27 @@ def _get_help(config, cmp):
 # GENERIC DSSENTITY AND ITS NAMED VERSION
 # -------------------------------------------------------------
 class _FcsAble:
+    def __init__(self):
+        self._multiplied_objs = []
+
     @abstractmethod
     def fcs(self, **hookup):
         pass
 
 
 class _DSSentity(_FcsAble):
-
-    def __init__(self, **kwargs):
+    def __init__(self, **parameters):
+        super().__init__()
         self.term_perm = None
         self.name = ''
-
         self.toe = self.__class__.__name__.lower()
         self._params = None
         self._editedParams = None
         self._default_units = None
+
         self._load_default_parameters()
 
-        self._setparameters(**kwargs)
+        self._setparameters(**parameters)
 
     def __str__(self):
         return '<krangpower.' + self.__class__.__name__ + '(' + self.name + ')'
@@ -435,6 +438,10 @@ class _DSSentity(_FcsAble):
                 self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
             else:
                 self[prop_to_set] = getattr(other, prop_fmt)
+
+            # if we set a property, we also memorize object in this list, so, when declaring the object, we can
+            # also automatically declare objects that were multiplied. this is not needed for attributes!
+            self._multiplied_objs.append(other)
 
         return self
 
@@ -684,9 +691,9 @@ class _NamedDSSentity(_DSSentity):
     def isnamed(cls):
         return True
 
-    def __init__(self, name='', **kwargs):
+    def __init__(self, name='', **parameters):
         # can be instantiated with a blank name, but you won't be able to add it to a krang without aka-ing it!
-        super().__init__(**kwargs)
+        super().__init__(**parameters)
         self.name = name
 
 
@@ -722,7 +729,7 @@ class CsvLoadshape(_FcsAble):
     eltype = 'CsvLoadshape'
 
     def __init__(self, name='', csv_path=None, column_scheme=None, interval=None, use_actual=True, npts=None):
-
+        super().__init__()
         if column_scheme == {}:
             raise ValueError('Empty column scheme')
 
@@ -1089,8 +1096,8 @@ class TSData(_NamedDSSentity):
 
 
 class _LineGeometry(_NamedDSSentity):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, **parameters):
+        super().__init__(name, **parameters)
         self.wiretype = None
         # self.specialparams
         # for p in self.specialparams:
@@ -1154,8 +1161,8 @@ class LineGeometry_O(_LineGeometry):
     +----------------------+-------------+----------------+
     """
 
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, **parameters):
+        super().__init__(name, **parameters)
         self.wiretype = 'wire'
 
 
@@ -1183,8 +1190,8 @@ class LineGeometry_T(_LineGeometry):
     +----------------------+-------------+----------------------------+
     """
 
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, **parameters):
+        super().__init__(name, **parameters)
         self.wiretype = 'tscable'
 
 
@@ -1212,8 +1219,8 @@ class LineGeometry_C(_LineGeometry):
     +----------------------+-------------+----------------+
     """
 
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
+    def __init__(self, name, **parameters):
+        super().__init__(name, **parameters)
         self.wiretype = 'cncable'
 
 
@@ -1355,8 +1362,8 @@ class EffCurve(Curve):
 # -------------------------------------------------------------
 class _CircuitElement(_DSSentity):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, **parameters):
+        super().__init__(**parameters)
         # after loading from xml the line if appropriate, I go on with the kwargs in order to allow further on-the-fly
         # editing
 
@@ -1378,8 +1385,8 @@ class _CircuitElementNBus(_CircuitElement):
     # Format:
     # New elem.name bus1='a' bus2='b' ...busx='z' prop1=val1 prop2=val2....
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, **parameters):
+        super().__init__(**parameters)
         self.nbuses = self._nbusesdict[self.toe]
 
     def fcs(self, **hookup):
@@ -1519,9 +1526,9 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **parameters):
         self.toe = 'transformer'
-        super().__init__(**kwargs)
+        super().__init__(**parameters)
         self.specialparams = ('conns', 'kvs', 'kvas', 'taps', '%rs')
 
     def fcs(self, **hookup):
@@ -1586,9 +1593,9 @@ class Line(_CircuitElementNBus):
     | emergamps            | float       | 600.0                      |
     +----------------------+-------------+----------------------------+
     """
-    def __init__(self, **kwargs):
+    def __init__(self, **parameters):
         # assert isinstance(data, (LineCode_A, LineCode_S, LineGeometry_C, LineGeometry_O, LineGeometry_T))
-        super().__init__(**kwargs)
+        super().__init__(**parameters)
 
     def __call__(self, **kwargs):
         if 'data' in kwargs.keys():
@@ -2259,9 +2266,9 @@ class _AboveCircuitElement(_DSSentity):
     def isabove(cls):
         return True
 
-    def __init__(self, name='', **kwargs):
+    def __init__(self, name='', **parameters):
         # can be instantiated with a blank name, but you won't be able to add it to a krang without aka-ing it!
-        super().__init__(**kwargs)
+        super().__init__(**parameters)
         self.name = name
 
 

@@ -669,7 +669,7 @@ def get_all_names():
         _this_module.names_up2date = True
         _this_module._cached_allnames = anl
 
-        return anl
+        return [x.lower() for x in anl]
 
 
 def txt_command(cmd_str: str, echo=True):

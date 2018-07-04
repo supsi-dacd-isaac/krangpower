@@ -33,9 +33,9 @@ class FourQ(Generator):
     def isai(cls):
         return True
 
-    def __init__(self, **kwargs):
+    def __init__(self, **parameters):
         self._dm = None
-        super().__init__(**kwargs)
+        super().__init__(**parameters)
 
     def update_pq(self, oek, mybus):
         assert self._dm is not None

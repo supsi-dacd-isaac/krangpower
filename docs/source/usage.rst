@@ -33,6 +33,10 @@ More irons in the fire.
 
 - **@5** We instantiate a :code:`LineCode_S`. The syntax is the same as the :code:`Vsource`, except that we must specify a name as first parameter. Because they're not made of iron & copper but of information, LineCodes have a name of their own and do not have to be aliased every time they're used (see line 9).
 - **@6** Linecodes are meant to be associated to Lines. To make use of :code:`lc`, we first have to inform :code:`myKrang` of its existence. A Linecode is not bound to a bus or couple of buses; so we add it directly. In krangpower, the operator that adds a component to a :code:`Krang` is **left shift**, :code:`<<`.
+
+.. note::
+   Since version 0.2.1, it's optional to explicitly declare abstract entities before declaring objects to which they are associated. Krangpower automatically declares associated entities that were not previously declared.
+
 - **@7** This line demonstrates `bracket indexing Krang with a tuple`_. The object returned is a :code:`BusView`. You can add object that require topological collocation to :code:`BusView`, in the same way of :code:`Krang` themselves.
 - **@9** This line has a lot going on.
    - We are instantiating a :code:`Line` specifying its length in feet - we can use any length unit, krangpower will take care of the conversion. In order to be added to the circuit, the line has to be *aliased* with the method :code:`aka`; in this way, it will have a name inside the circuit.

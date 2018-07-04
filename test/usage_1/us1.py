@@ -40,7 +40,6 @@ def main():
         lshwriter.writerow(['1.8'])
 
     ls = kp.CsvLoadshape('simple_lsh', 'ls.csv', interval=2 * um.min)
-    twc << ls
     twc['cc', ] << kp.Load(kv=3.0 * um.kV, kw=35.0 * um.kW).aka('loadhi') * ls
 
     # -------------------------------------------------------
