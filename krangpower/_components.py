@@ -736,6 +736,8 @@ class CsvLoadshape(_FcsAble):
         self._data = None
         self.column_scheme = column_scheme
 
+        # if csv_path is a fully qualified path, we load it; if it's just the name, we look for the file
+        # inside TMP_PATH (where csvs are unpacked, for instance, by open_ckt); if nothing works, we raise
         if os.path.isfile(os.path.abspath(csv_path)):
             self.csv_path = os.path.abspath(csv_path)
         elif os.path.isfile(os.path.join(TMP_PATH, name + '.csv')):

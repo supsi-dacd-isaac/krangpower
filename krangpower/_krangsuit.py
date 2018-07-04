@@ -947,27 +947,29 @@ def open_ckt(path):
             lsh_data = io.BytesIO(lsh_file.read())
             zipfile.ZipFile(lsh_data).extractall(TMP_PATH)
 
-        # as of 0.1.12, only one json, the main one, is to be found in the pack. we get it and load it.
+        # as of 0.2.0, only one json, the main one, is to be found in the pack. we get it and load it.
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
         jso = zf.open(fls[0])
         krg = from_json(jso)
 
         # If any AI are present, they are loaded from their pickle file and put inside _ai_list.
-        with zf.open(_FQ_DM_NAME) as fq_file:
-            krg._ai_list = pickle.load(fq_file)
+        if _FQ_DM_NAME in zf.namelist():
+            with zf.open(_FQ_DM_NAME) as fq_file:
+                krg._ai_list = pickle.load(fq_file)
 
-        # We load the md5 checksum that was packed with the zip file when it was created.
-        with zf.open('krang_hash.md5', 'r') as md5_file:
-            kranghash = md5_file.read().decode('utf-8')
+        # If present, we load the md5 checksum that was packed with the zip file when it was created.
+        if 'krang_hash.md5' in zf.namelist():
+            with zf.open('krang_hash.md5', 'r') as md5_file:
+                kranghash = md5_file.read().decode('utf-8')
 
-        # We check that the hashes match.
-        if krg.fingerprint() != kranghash:
-            # If not, we throw an IOError with a nice diff display of the jsons differences.
-            raw_dict = json.load(zf.open(fls[0]))
-            err = diff_dicts(raw_dict,
-                             krg.make_json_dict())
-            raise IOError('JSONs not corresponding - see below:\n\n' + err)
+            # We check that the hashes match.
+            if krg.fingerprint() != kranghash:
+                # If not, we throw an IOError with a nice diff display of the jsons differences.
+                raw_dict = json.load(zf.open(fls[0]))
+                err = diff_dicts(raw_dict,
+                                 krg.make_json_dict())
+                raise IOError('JSONs not corresponding - see below:\n\n' + err)
 
     return krg
 
