@@ -10,7 +10,7 @@ from ._smart_components import *
 from ._krangsuit import Krang, from_json, CACHE_ENABLED, open_ckt, construct_deptree, declare_deptree  # , clear
 from ._graphview import GraphView
 from ._logging_init import set_log_level, get_log_level
-from ._config_loader import UM, krang_directory, TMP_PATH
+from ._config_loader import UM, krang_directory, TMP_PATH, BASE_FREQUENCY
 from ._aux_fcn import fingerprint_file
 from ._edge_tests import do_edge_tests
 from ._splash import splash  # ishtar egg
