@@ -249,8 +249,8 @@ class Krang(object):
 
         # we direct-declare possibly undeclared objects that were associated with other
         for ass_obj in other._multiplied_objs:
-            if ass_obj.fullname not in self.oek.brain.get_all_names():
-                self.oek << ass_obj
+            if ass_obj.fullname not in self.brain.get_all_names():
+                self << ass_obj
 
         self.command(other.fcs())
         self.brain._names_up2date = False
