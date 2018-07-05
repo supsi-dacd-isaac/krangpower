@@ -250,6 +250,9 @@ class Krang(object):
         # we direct-declare possibly undeclared objects that were associated with other
         for ass_obj in other._multiplied_objs:
             if ass_obj.fullname not in self.brain.get_all_names():
+                # notice that we can also associate _packedopendsselements, that would fail as arguments to <<
+                # because they don't have an isnamed attribute, etc; but _packedopendsselements should already be
+                # in brain.get_all_names!!!!!
                 self << ass_obj
 
         self.command(other.fcs())

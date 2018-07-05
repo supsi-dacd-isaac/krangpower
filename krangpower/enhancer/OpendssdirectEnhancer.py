@@ -666,10 +666,12 @@ def get_all_names():
         anl.extend(map(lambda ln: 'loadshape.' + ln, _odr.LoadShape.AllNames()))
         anl.extend(map(lambda ln: 'xycurve.' + ln, _xycurve_names()))
 
+        anl = [x.lower() for x in anl]
+
         _this_module.names_up2date = True
         _this_module._cached_allnames = anl
 
-        return [x.lower() for x in anl]
+        return anl
 
 
 def txt_command(cmd_str: str, echo=True):

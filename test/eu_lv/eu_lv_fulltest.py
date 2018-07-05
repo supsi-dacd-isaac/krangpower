@@ -35,7 +35,8 @@ def _main():
 
     print('Downloading and extracting data from sites.ieee.org.....')
     data_url = 'http://sites.ieee.org/pes-testfeeders/files/2017/08/European_LV_Test_Feeder_v2.zip'
-    eulv_root = os.path.join(download_extract_zip(data_url), 'European_LV_CSV')
+    basepath = download_extract_zip(data_url)
+    eulv_root = os.path.join(basepath, 'European_LV_CSV')
     print('Finished')
 
     print('Extracting load profiles...')
