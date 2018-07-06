@@ -17,3 +17,7 @@ from ._splash import splash  # ishtar egg
 
 # the enhancer utility functions are double-exposed in krangpower's main namespace
 from .enhancer import get_all_names, txt_command, pack, log_line
+
+# exceptions
+from .enhancer import OpenDSSTextError
+from ._exceptions import *

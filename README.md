@@ -19,5 +19,9 @@ Distribution System Simulator based on [OpenDSS](https://sourceforge.net/project
 # Documentation
 The documentation for krangpower is available [here](https://krangpower.readthedocs.io).
 
+# Python version
+Krangpower is a python 3.x package; currently, compatibility with python 2.x is not sought after.
+
 # Acknowledgements
 The authors would like to thank the Swiss Federal Office of Energy (SFOE) and the Swiss Competence Center for Energy Research - Future Swiss Electrical Infrastructure (SCCER-FURIES), for their financial and technical support to this research work.
+

@@ -464,8 +464,9 @@ class Krang(object):
                 try:
                     row = next(bcr)
                 except StopIteration:
-                    self.flags['coords_preloaded'] = True
-                    return
+                    break
+        self.flags['coords_preloaded'] = True
+        return
 
     # -----------------------------------------------------------------------------------------------------------------
     # COORDINATES-RELATED METHODS
@@ -654,7 +655,7 @@ class Krang(object):
         for name in ns:
             try:
                 buses = self[name].BusNames()
-            except TypeError:
+            except (TypeError, AttributeError):
                 continue
 
             # todo encode term perms in the graph
