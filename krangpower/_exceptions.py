@@ -65,3 +65,10 @@ class KrangObjAdditionError(Exception):
             msg = 'There was a problem in adding object {} to Krang'.format(str(object))
         super().__init__(msg)
 
+
+class ClearingAttemptError(Exception):
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = 'A "clear" command was passed to the text command interface.' \
+                  'If you wish a new circuit, delete the existing Krang.'
+        super().__init__(msg)

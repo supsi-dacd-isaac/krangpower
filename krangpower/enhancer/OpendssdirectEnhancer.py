@@ -31,6 +31,7 @@ from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
 from .._logging_init import clog, mlog, get_log_level
 
+assert _odr.Basic.Start()
 
 # <editor-fold desc="Auxiliary functions">
 
@@ -178,7 +179,7 @@ def _validate_text_interface_result(result_string: str):
     """This function is passed the raw, direct output opendss text interface and performs checks on the results to see
     if the string returned is valid (and not, for example, a warning). This function either returns nothing or
     raises an error."""
-    if result_string.lower().startswith(('warning', 'error', 'unknown', 'illegal')):
+    if result_string.lower().startswith(('warning', 'error', 'unknown', 'illegal', 'you must')):
         raise OpenDSSTextError(result_string)
 
     if result_string.lower().find('not found') != -1:
@@ -652,9 +653,7 @@ def pack(item):
 
 
 def get_all_names():
-    """Gets the fully qualified names of the elements, plus buses, loadshapes and xycurves.
-    It's worth noting that object such as LineCodes, WireCodes, etc are not as of today retrievable, because their
-    names are not accessible in a direct way."""
+    """Gets the fully qualified names of the elements, plus buses, loadshapes and xycurves."""
     _odr.utils.run_command('makebuslist')
     if _this_module.names_up2date:
         return _this_module._cached_allnames

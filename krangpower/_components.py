@@ -263,9 +263,13 @@ def _type_recovery(value, target_type):
         elif isinstance(value, (list, np.ndarray)):
             assert target_type == np.matrix
             recovered_value = np.matrix(value)
+        elif isinstance(value, str):
+            recovered_value = target_type(value)
         else:
             raise TypeUnrecoverableError(type(value))
     except AssertionError:
+        raise RecoveryTargetError(type(value), target_type)
+    except ValueError:
         raise RecoveryTargetError(type(value), target_type)
 
     return recovered_value
@@ -473,6 +477,9 @@ class _DSSentity(_FcsAble):
         def unitsfirst(dicky):
             for k, v in dicky.items():
                 if k in ('units', 'runits', 'gmrunits'):
+                    # after unit dereferencing, this should only fire when loading from dss and in general when
+                    # passing raw input
+                    mlog.debug('The unitsfirst parameter setting routine detected an unit setting with {}={}.'.format(k, str(v)))
                     yield k, v
                 else:
                     continue
@@ -487,7 +494,7 @@ class _DSSentity(_FcsAble):
 
             # check against direct setting of secured parameters
             if parameter_raw.lower() in self._ignored_params:
-                raise ValueError('You cannot directly set property {0} for an object of type {1}. This property has'
+                raise ValueError('You cannot directly set property {0} for an object of type {1}. This property has '
                                  'to be set by associating an entity of the correct type.'
                                  .format(parameter_raw, self.toe))
 
@@ -514,13 +521,13 @@ class _DSSentity(_FcsAble):
             if hasattr(value_raw, 'magnitude'):  # isinstance pint does not work
                 unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                 if unt == UM.none:
-                    raise ValueError('Theres no unit for {0}. This should not happen, contact the dev.'
+                    raise ValueError('There is no unit for {0}. This should not happen, contact the dev.'
                                      .format(self.toe))
                 value = value_raw.to(unt).magnitude
             else:
                 value = value_raw
 
-            # type-correctness check of the raw value
+            # type-correctness check and, if failed, recovery attempt, of the raw value
             try:
                 assert isinstance(value, (self.params_types_raw[parameter.lower()], type(None)))
             except AssertionError:

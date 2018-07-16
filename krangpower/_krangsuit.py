@@ -26,7 +26,7 @@ from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
 from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, \
     TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY
 from ._deptree import DepTree as _DepGraph
-from ._exceptions import KrangInstancingError, KrangObjAdditionError
+from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
 from ._logging_init import mlog
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
@@ -36,6 +36,32 @@ _FQ_DM_NAME = 'dm.pkl'
 
 CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
+
+_CIRCUIT_INIT_RE = re.compile('(new *(object *=)? *circuit\.)'
+                              '([^(\n| )]+)'
+                              '( *)'
+                              '(\n *[~|more] *)?'
+                              '([^(\n)]+)?',
+                              re.IGNORECASE)
+
+_CLEAR_RE = re.compile('^ *clear', re.IGNORECASE)
+
+
+# -----------------------------------------------------------------------------------------------------------------
+# CONTEXT MANAGER FOR TEMPORARY VARIATION OF CWD
+# -----------------------------------------------------------------------------------------------------------------
+class _KrangCwdRedirector:
+    # context manager for safe variation of krang cwd
+    def __init__(self, target_krang, target_cwd: str):
+        self.kr = target_krang
+        self.t_cwd = target_cwd
+
+    def __enter__(self):
+        self.kr.brain.Basic.DataPath(self.t_cwd)
+        return self.kr
+
+    def __exit__(self, *args):
+        self.kr.brain.Basic.DataPath(TMP_PATH)
 
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -142,7 +168,8 @@ class Krang(object):
     def __init__(self,
                  name=DEFAULT_KRANG_NAME,
                  voltage_source=co.Vsource(),
-                 source_bus_name='sourcebus'):
+                 source_bus_name='sourcebus',
+                 working_frequency=BASE_FREQUENCY):
 
         # first of all, we double-check that we arrived at initialization with _INSTANCE == None
         assert globals()['_INSTANCE'] is None
@@ -165,18 +192,20 @@ class Krang(object):
         self._fncache = {}
         self._coords_linked = {}
 
+        # file output redirection to the temp folder
+        self.brain.Basic.DataPath(TMP_PATH)
+
         # OpenDSS initialization commands
         self.command('clear')
         master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
         self.command(master_string)
         self.set(mode='duty')
-        self.set(basefreq=BASE_FREQUENCY * UM.Hz)
-        self.set(defaultbasefrequency=BASE_FREQUENCY * UM.Hz)
-        self.set(frequency=BASE_FREQUENCY * UM.Hz)
-        self.command('makebuslist')  # in order to make 'sourcebus' recognizable since the beginning
+        self.set(basefreq=working_frequency * UM.Hz)
+        self.set(defaultbasefrequency=working_frequency * UM.Hz)
+        self.set(frequency=working_frequency * UM.Hz)
 
-        # file output redirection to the temp folder
-        self.brain.Basic.DataPath(TMP_PATH)
+        # in order to make 'sourcebus' recognizable since the beginning
+        self.command('makebuslist')
 
     # -----------------------------------------------------------------------------------------------------------------
     # DUNDERS AND PRIMITIVE FUNCTIONALITY
@@ -267,6 +296,12 @@ class Krang(object):
     @_invalidate_cache
     def command(self, cmd_str: str, echo=True):
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
+
+        # checks that you're not trying to clear after a circuit is brought into existence,
+        # because that would wreak havoc with the existing krang.
+        if self.brain.Basic.NumCircuits() != 0:
+            if _CLEAR_RE.search(cmd_str):
+                raise ClearingAttemptError
 
         rslt = self.brain.txt_command(cmd_str, echo)
         if echo:
@@ -440,6 +475,10 @@ class Krang(object):
             self._declare_buscoords()
         self.command('solve', echo)
 
+    # -----------------------------------------------------------------------------------------------------------------
+    # COORDINATES-RELATED METHODS
+    # -----------------------------------------------------------------------------------------------------------------
+
     @_invalidate_cache
     def _preload_buscoords(self, path):
         """Loads in a local dict the buscoords from path."""
@@ -467,10 +506,6 @@ class Krang(object):
                     break
         self.flags['coords_preloaded'] = True
         return
-
-    # -----------------------------------------------------------------------------------------------------------------
-    # COORDINATES-RELATED METHODS
-    # -----------------------------------------------------------------------------------------------------------------
 
     @_invalidate_cache
     def _declare_buscoords(self):
@@ -986,6 +1021,59 @@ def open_ckt(path):
                 raise IOError('JSONs not corresponding - see below:\n\n' + err)
 
     return krg
+
+
+def from_dss(file_path, target_krang=None, frequency=BASE_FREQUENCY):
+    """from_dss(file_path, target_krang, frequency) allows to create a krang from an existing dss script or to pass
+    commands to a krang from an existing dss script. USE AT YOUR OWN RISK.
+
+    :param file_path: The path of the dss file to utilize
+    :param target_krang:
+
+     - If None, a new krang will be created and initialized with the information from the file (must
+       contain a 'new circuit' command).
+     - If a Krang is passed, the commands in the script will be passed to that Krang.
+
+    :param frequency: the general frequency to use for the krang, if a new one is created.
+    """
+
+    with open(file_path, 'r') as dss_file:
+        dss_script_content = dss_file.read()
+
+    if target_krang is None:
+        # we extract the initialization parameters from here
+        spawn = _CIRCUIT_INIT_RE.search(dss_script_content)
+        extr_name = spawn.group(3)
+        extr_vsource_params = {k: v for k, v in [x.split('=') for x in spawn.group(6).split(' ')]}
+
+        if 'bus1' in extr_vsource_params.keys():
+            extr_basebus_name = extr_vsource_params['bus1']
+            del extr_vsource_params['bus1']
+        else:
+            extr_basebus_name = 'sourcebus'
+        if 'bus2' in extr_vsource_params.keys():
+            raise ValueError('Direct specification of the slack vsource bus2 is bad practice and is not allowed.'
+                             'Please check the script.')
+
+        target_krang = Krang(extr_name,
+                             co.Vsource(**extr_vsource_params),
+                             extr_basebus_name,
+                             frequency)
+
+        # cutting off the header
+        refined_commands = _CLEAR_RE.sub('', dss_script_content)  # matches only the first clear
+        refined_commands = _CIRCUIT_INIT_RE.sub('', refined_commands)
+
+    else:
+        refined_commands = dss_script_content
+
+    base_dir = os.path.dirname(file_path)
+
+    with _KrangCwdRedirector(target_krang, base_dir) as diverted_krang:
+        for line in refined_commands.splitlines():
+            diverted_krang.command(line)
+
+    return target_krang
 
 
 def _main():

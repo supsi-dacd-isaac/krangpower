@@ -39,9 +39,14 @@ Saving
 Loading
 .......
 
-.. autofunction:: krangpower.from_json
+A function :code:`from_dss` is exposed at the module level. It was written with the **ONLY** scope of allowing direct use of existing dss scripts without having to
+translate them to krangpower instructions; in all other cases, writing a krangpower script is to be always preferred.
 
-A function :code:`from_json(path)` is exposed directly by krangpower. It returns a :code:`Krang` in the state syntesised by the JSON.
+.. autofunction:: krangpower.from_dss
+
+A function :code:`from_json(path)` is exposed at the module level. It returns a :code:`Krang` in the state syntesised by the JSON.
+
+.. autofunction:: krangpower.from_json
 
 .. note::
 
