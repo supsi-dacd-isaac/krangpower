@@ -599,7 +599,7 @@
         "associated": {"duty": ""},
         "topological": {"bus1": "",
                         "bus2": ""},
-        "ignored":[]
+        "ignored":["z0", "z1", "z2", "puz0", "puz1", "puz2", "x1r1", "x0r0", "mvasc1", "mvasc3", "r1", "x1", "r0", "x0"]
     },
     "default_transformer": {
         "type": "transformer",

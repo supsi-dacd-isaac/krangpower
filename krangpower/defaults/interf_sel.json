@@ -17,7 +17,8 @@
     "transformer": ["Transformers", "CktElement", "PDElements"],
     "storage": ["CktElement"],
     "loadshape": ["LoadShape"],
-    "reactor": ["PDElements"]
+    "reactor": ["PDElements"],
+    "linecode": ["Element"]
   },
 
   "selectors":  {
@@ -38,5 +39,6 @@
      "transformer": ["Transformers.Name", "Circuit.SetActiveElement"],
      "storage": ["Circuit.SetActiveElement"],
      "loadshape": ["LoadShape.Name"],
-     "reactor": ["PDElements.Name"]}
+     "reactor": ["PDElements.Name"],
+     "linecode": ["_named_selector"]}
 }

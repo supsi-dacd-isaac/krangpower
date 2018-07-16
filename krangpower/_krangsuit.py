@@ -212,6 +212,7 @@ class Krang(object):
     # -----------------------------------------------------------------------------------------------------------------
 
     def __del__(self):
+        self.brain.Basic.ClearAll()
         globals()['_INSTANCE'] = None
 
     @property

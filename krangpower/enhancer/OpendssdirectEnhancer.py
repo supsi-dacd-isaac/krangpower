@@ -379,6 +379,13 @@ for _i1 in _inspect_getmembers(_odr.dss):
 # </editor-fold>
 
 
+def _named_selector(fullname):
+    nm = fullname.lower().split('.')
+    _this_module.Circuit.SetActiveClass(nm[0])
+    _this_module.ActiveClass.Name(nm[1])
+    assert _this_module.Element.Name().lower() == fullname.lower()
+
+
 class _PackedOpendssElement:
 
     def __init__(self, eltype, name):
@@ -409,7 +416,10 @@ class _PackedOpendssElement:
     def topological(self):
         """Returns those properties that are marked as 'topological' in the configuration files and identify the wiring
         location of the element. (Typically, bus1 and, if it exists, bus2.)"""
-        top_par_names = _DEFAULT_COMP['default_' + self.eltype]['topological']
+        try:
+            top_par_names = _DEFAULT_COMP['default_' + self.eltype]['topological']
+        except KeyError:
+            return None
 
         rt = [self[t] for t in top_par_names.keys()]
         if len(rt) == 1 and isinstance(rt[0], list):
@@ -666,6 +676,8 @@ def get_all_names():
         anl.extend(map(lambda ln: 'xycurve.' + ln, _xycurve_names()))
 
         anl = [x.lower() for x in anl]
+
+        anl.append('linecode.4c_06')
 
         _this_module.names_up2date = True
         _this_module._cached_allnames = anl
