@@ -8,6 +8,7 @@
 # OpendssdirectEnhancer by Federico Rosato
 # a wrapper for opendssdirect.py by Dheepak Krishnamurthy and Maximilian J. Zangs
 
+import logging
 import types
 from copy import deepcopy as _deepcopy
 from functools import reduce as _reduce, partial as _partial
@@ -24,9 +25,10 @@ import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
 from .._aux_fcn import lower as _lower
-from .._components import get_classmap as _get_classmap
 from .._aux_fcn import pairwise as _pairwise
 from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
+from .._components import get_classmap as _get_classmap
+from .._components import LineGeometry
 from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, \
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
 from .._logging_init import clog, mlog, get_log_level
@@ -173,6 +175,16 @@ with open(INTERF_SELECTORS_PATH, 'r') as _ifile:
 class OpenDSSTextError(Exception):
     """Meant to be thrown when the string returned by opendss text interface represents an error."""
     pass
+
+
+# this ctxman is necessary for suppressing the rogue warnings from OpenDSSDirect.py
+# when the situation is under control and they are unnecessary
+class _LogKiller:
+    def __enter__(self):
+        logging.disable(logging.CRITICAL)
+
+    def __exit__(self, a, b, c):
+        logging.disable(logging.NOTSET)
 
 
 def _validate_text_interface_result(result_string: str):
@@ -492,6 +504,11 @@ class _PackedOpendssElement:
         """Returns a _DssEntity (or a descendant) corresponding to _PackedOpendssElement."""
 
         # identify the corresponding class in the components file
+
+        # the linegeometry internal structure is peculiar and has to be treated differently
+        if self.eltype == 'linegeometry':
+            return _unpack_linegeom(self)
+
         myclass = _classmap[self.eltype]
 
         # properties are dumped
@@ -596,7 +613,7 @@ class _PackedOpendssElement:
         dimensionality, it will be assumed that you are using the default units."""
 
         # it is checked whether you passed a _pint_qty_type as value or not. Throughout the function, errors will be
-        # trhown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
+        # thrown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
         # the content of the _pint_qty_type is not the right data type (such as a matrix instead of an int).
         if isinstance(value, PINT_QTY_TYPE):
             unt = self._get_builtin_units(key)
@@ -612,7 +629,7 @@ class _PackedOpendssElement:
             ref_value = _type_recovery(ref_value, target_type)
 
         # the edit is performed through the text interface with the 'edit' command
-        _this_module.utils.run_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
+        txt_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
 
     def __str__(self):
         return '<PackedOpendssElement({0})>'.format(self.fullname)
@@ -652,6 +669,43 @@ class _CallFinalizer:
         return self._super_interface_name
 
 
+def _unpack_linegeom(pckob):
+    nc = pckob['nconds']
+
+    nmc = {cc.split('.', 1)[1]: cc.split('.', 1)[0] for cc in get_all_names()}
+
+    x = []
+    h = []
+    wrcn = []
+
+    for cd in range(nc):
+        pckob['cond'] = cd + 1
+        cabtype = nmc[pckob['wire']]
+        wrcn.append(pckob['wire'])
+        x.append(pckob['x'].to('m').magnitude[0, 0])
+        h.append(pckob['h'].to('m').magnitude[0, 0])
+
+    naive_props = pckob.dump()
+    del naive_props['x']
+    del naive_props['h']
+    del naive_props['wire']
+    del naive_props['wires']
+    del naive_props['cncable']
+    del naive_props['cncables']
+    del naive_props['tscable']
+    del naive_props['tscables']
+    del naive_props['units']
+    del naive_props['normamps']
+    del naive_props['emergamps']
+    del naive_props['like']
+
+    naive_props['x'] = _np.asmatrix(x)
+    naive_props['h'] = _np.asmatrix(h)
+    naive_props[cabtype] = wrcn
+
+    return LineGeometry(pckob.name, **naive_props)
+
+
 # <editor-fold desc="Exposed functions">
 def pack(item):
     """Returns a PackedOpendssElement corresponding to item."""
@@ -684,9 +738,14 @@ def get_all_names():
         anl.extend(map(lambda ln: 'loadshape.' + ln, _odr.LoadShape.AllNames()))
         anl.extend(map(lambda ln: 'xycurve.' + ln, _xycurve_names()))
 
-        anl = [x.lower() for x in anl]
+        # we access here all the elements that are interfaced through ActiveClass
+        plus_classes = ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')
+        with _LogKiller():  # opendssdirect.py sends rogue warnings when an empty array is selected
+            for pc in plus_classes:
+                _this_module.Circuit.SetActiveClass(pc)
+                anl.extend([pc + '.' + x for x in _this_module.ActiveClass.AllNames()])
 
-        anl.append('linecode.4c_06')
+        anl = [x.lower() for x in anl]
 
         _this_module.names_up2date = True
         _this_module._cached_allnames = anl

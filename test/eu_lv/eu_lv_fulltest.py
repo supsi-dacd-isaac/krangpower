@@ -161,7 +161,7 @@ def _main():
     print('Adding linecodes...')
     lc_el = {}
     for lcname, lcdata in lc_dict.items():
-        lc_el[lcname] = kp.LineCode_S(lcname, **lcdata)
+        lc_el[lcname] = kp.LineCode(lcname, **lcdata)
         eulv << lc_el[lcname]
 
     print('Adding loadprofiles...')

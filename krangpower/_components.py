@@ -30,7 +30,7 @@ from ._nxtable import NxTable
 
 __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
-           'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities',
+           'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities', 'LineCode', 'LineGeometry',
            'Isource', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
            'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator']
 
@@ -412,11 +412,14 @@ class _DSSentity(_FcsAble):
 
     def __mul__(self, other):
         """Associates the multiplier with this object according to the built-in association rules."""
-        i1 = self.toe
+        
+        belf = copy.deepcopy(self)
+        
+        i1 = belf.toe
         try:
             i2 = other.eltype
         except AttributeError:
-            i2 = str(type(other))  # happens for lists of components
+            i2 = other[0].eltype  # happens for lists of components
 
         try:
             prop_to_set = _muldict[i1, i2]
@@ -426,28 +429,30 @@ class _DSSentity(_FcsAble):
                 oname = other.name
             except AttributeError:
                 oname = ''
-            raise AssociationError(i2, oname, self.eltype, self.name)
+            raise AssociationError(i2, oname, belf.eltype, belf.name)
 
         # support for setting ATTRIBUTES of the object, beginning with '.'
         if prop_to_set.startswith('.'):
             attr_to_set = prop_to_set[1:]
-            if prop_fmt == 'self':  # this means that the value to be set is the object itself
-                setattr(self, attr_to_set, other)
+            if prop_fmt == 'self':  # this means that the value to be set is the object itbelf
+                setattr(belf, attr_to_set, other)
             else:
-                setattr(self, attr_to_set, getattr(other, prop_fmt))
+                setattr(belf, attr_to_set, getattr(other, prop_fmt))
 
         # support for setting PROPERTIES of the object
         else:
             if isinstance(other, list):
-                self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
+                belf[prop_to_set] = [getattr(o, prop_fmt) for o in other]
+                belf._multiplied_objs.extend(other)
             else:
-                self[prop_to_set] = getattr(other, prop_fmt)
+                belf[prop_to_set] = getattr(other, prop_fmt)
+                belf._multiplied_objs.append(other)
 
             # if we set a property, we also memorize object in this list, so, when declaring the object, we can
             # also automatically declare objects that were multiplied. this is not needed for attributes!
-            self._multiplied_objs.append(other)
+            # belf._multiplied_objs.extend(other)
 
-        return self
+        return belf
 
     def __call__(self, **kwargs):
         # a call returns a copy of the object edited on the fly with the kwargs passed
@@ -897,6 +902,26 @@ class CsvLoadshape(_FcsAble):
 # note: these classes, along with the Line class, implement only an appropriate part of the underlying OpenDSS
 # class properties, removing overlap between them.
 
+class LineCode(_NamedDSSentity):
+
+    def jsonize(self, all_params=False, flatten_mtx=True):
+        sudict = super().jsonize(all_params, flatten_mtx)
+        if not np.any(np.isnan(sudict['properties']['r0'])):
+            for prop in ('rmatrix', 'xmatrix', 'cmatrix'):
+                try:
+                    del sudict['properties'][prop]
+                except KeyError:
+                    continue
+        else:
+            for prop in ('r0', 'x0', 'c0', 'r1', 'x1', 'c1'):
+                try:
+                    del sudict['properties'][prop]
+                except KeyError:
+                    continue
+
+        return sudict
+
+
 class LineCode_S(_NamedDSSentity):
     """Contains a linecode defined with symmetrical components R0,R1,C0,C1,X0,X1.
 
@@ -1101,7 +1126,7 @@ class TSData(_NamedDSSentity):
 # is then overridden in order to produce the declarations in opendss format.
 
 
-class _LineGeometry(_NamedDSSentity):
+class LineGeometry(_NamedDSSentity):
     def __init__(self, name, **parameters):
         super().__init__(name, **parameters)
         self.wiretype = None
@@ -1114,9 +1139,13 @@ class _LineGeometry(_NamedDSSentity):
 
     @property
     def specialparams(self):
-        return self.wiretype, 'x', 'h', 'units'
+        return self.wiretype, 'x', 'h'
 
     def fcs(self, **hookup):
+
+        if self.wiretype is None:
+            raise ValueError('No wire was specified for {}'.format(self.fullname))
+
         s1 = 'New ' + self.toe.split('_')[0] + '.' + self.name
 
         s2 = ''
@@ -1124,7 +1153,7 @@ class _LineGeometry(_NamedDSSentity):
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['nconds']):
-            s2 += '\n~ cond={0} '.format(ind + 1)
+            s2 += '\n~ cond={0} units=m '.format(ind + 1)
             for parameter in self.specialparams:
                 if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
@@ -1142,8 +1171,23 @@ class _LineGeometry(_NamedDSSentity):
                 s2 += str(parameter) + '=' + str(true_param[idx]) + ' '
         return s1 + s2
 
+    def _setparameters(self, **kwargs):
+        pts = set(kwargs.keys())
+        ccs = {'wire', 'cncable', 'tscable'}
+        wire_set = pts.intersection(ccs)
+        if len(wire_set) == 0:
+            pass
+        elif len(wire_set) == 1:
+            if self.wiretype is not None:
+                raise ValueError('The cable type for linegeometry.{} is already set!'.format(self.name))
+            self.wiretype = list(wire_set)[0]
+        else:
+            raise ValueError('Tried to set more than one cabletype')
 
-class LineGeometry_O(_LineGeometry):
+        super()._setparameters(**kwargs)
+
+
+class LineGeometry_O(LineGeometry):
     """Line Geometry OVERHEAD
 
     +----------------------+-------------+----------------+
@@ -1172,7 +1216,7 @@ class LineGeometry_O(_LineGeometry):
         self.wiretype = 'wire'
 
 
-class LineGeometry_T(_LineGeometry):
+class LineGeometry_T(LineGeometry):
     """Line Geometry WITH TAPE SHIELDED CABLE
 
     +----------------------+-------------+----------------------------+
@@ -1201,7 +1245,7 @@ class LineGeometry_T(_LineGeometry):
         self.wiretype = 'tscable'
 
 
-class LineGeometry_C(_LineGeometry):
+class LineGeometry_C(LineGeometry):
     """Line Geometry WITH CONCENTRIC NEUTRAL CABLE
 
     +----------------------+-------------+----------------+
@@ -1412,15 +1456,15 @@ class _CircuitElementNBus(_CircuitElement):
         idox = 0
         for busno in range(1, self.nbuses + 1):
             if term_perm is not None:
-                if isinstance(term_perm[(buses[busno - 1])], (tuple, int)):
+                if isinstance(term_perm[busno - 1], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(
-                        term_perm[(buses[busno - 1])]) + ' '
-                elif isinstance(term_perm[(buses[busno - 1])], list):
+                        term_perm[busno - 1]) + ' '
+                elif isinstance(term_perm[busno - 1], list):
                     # this happens when you specify more than one set of terminal connections at one bus
-                    nthterminal = term_perm[(buses[busno - 1])][idox]
+                    nthterminal = term_perm[busno - 1][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(nthterminal) + ' '
                     idox += 1
-                elif term_perm[(buses[busno - 1])] is None:
+                elif term_perm[busno - 1] is None:
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
             else:
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
@@ -1550,7 +1594,7 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['windings']):
-            s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], termrep(termdic[buses[ind]])) + ' '
+            s2 += '\n~ wdg={0} bus={1}{2}'.format(ind + 1, buses[ind], termrep(termdic[ind])) + ' '
             for parameter in self.specialparams:
                 if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
@@ -2243,11 +2287,11 @@ class Switch(_CircuitElementNBus):
         idox = 0
         for busno in range(1, self.nbuses + 1):
             if self.term_perm is not None:  # todo refactor with the new _termrep
-                if isinstance(self.term_perm[(buses[busno - 1])], (tuple, int)):
+                if isinstance(self.term_perm[busno - 1], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(
-                        self.term_perm[(buses[busno - 1])]) + ' '
-                elif isinstance(self.term_perm[(buses[busno - 1])], list):
-                    nthterminal = self.term_perm[(buses[busno - 1])][idox]
+                        self.term_perm[busno - 1]) + ' '
+                elif isinstance(self.term_perm[busno - 1], list):
+                    nthterminal = self.term_perm[busno - 1][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(nthterminal) + ' '
                     idox += 1
             else:

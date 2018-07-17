@@ -16,9 +16,13 @@
     "xycurve": ["XYCurves"],
     "transformer": ["Transformers", "CktElement", "PDElements"],
     "storage": ["CktElement"],
-    "loadshape": ["LoadShape"],
+    "loadshape": ["LoadShape", "Element"],
     "reactor": ["PDElements"],
-    "linecode": ["Element"]
+    "linecode": ["Element"],
+    "linegeometry": ["Element"],
+    "wiredata": ["Element"],
+    "tsdata": ["Element"],
+    "cndata": ["Element"]
   },
 
   "selectors":  {
@@ -38,7 +42,11 @@
      "xycurve": ["XYCurves.Name"],
      "transformer": ["Transformers.Name", "Circuit.SetActiveElement"],
      "storage": ["Circuit.SetActiveElement"],
-     "loadshape": ["LoadShape.Name"],
+     "loadshape": ["LoadShape.Name", "_named_selector"],
      "reactor": ["PDElements.Name"],
-     "linecode": ["_named_selector"]}
+     "linecode": ["_named_selector"],
+     "linegeometry": ["_named_selector"],
+     "wiredata": ["_named_selector"],
+     "tsdata": ["_named_selector"],
+     "cndata": ["_named_selector"]}
 }

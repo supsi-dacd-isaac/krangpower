@@ -290,6 +290,7 @@
         "type": "linegeometry",
         "properties": {
             "nconds": 1,
+            "cond": 0,
             "nphases": 1,
             "cncable": [
                 "",

@@ -187,7 +187,7 @@ class Krang(object):
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
 
         # private attributes
-        self._named_entities = []
+        self._csvloadshapes = []
         self._ai_list = []
         self._fncache = {}
         self._coords_linked = {}
@@ -224,6 +224,11 @@ class Krang(object):
     def get_unit_registry():
         """Retrieves krangpower's UnitRegistry."""
         return UM
+
+    @property
+    def _named_entities(self):
+        nms = [x for x in self.brain.get_all_names() if x.split('.', 1)[0] in ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')]
+        return [self[n].unpack() for n in nms] + self._csvloadshapes
 
     @staticmethod
     def _form_newcircuit_string(name, vsource, source_bus_name):
@@ -264,7 +269,8 @@ class Krang(object):
         The names of these elements must not be blank when they are added."""
         try:
             assert other.isnamed()
-            self._named_entities.append(other)
+            if isinstance(other, co.CsvLoadshape):
+                self._csvloadshapes.append(other)
         except AssertionError:
             try:
                 assert other.isabove()
@@ -556,7 +562,7 @@ class Krang(object):
     def _zip_csv(self):
         csvflo = io.BytesIO()
         with zipfile.ZipFile(csvflo, mode='w', compression=zipfile.ZIP_DEFLATED) as csvzip:
-            for csvlsh in [x for x in self._named_entities if isinstance(x, co.CsvLoadshape)]:
+            for csvlsh in [x for x in self._csvloadshapes]:
                 with open(csvlsh.csv_path, 'br') as cfile:
                     csvzip.writestr(os.path.basename(csvlsh.csv_path),
                                     cfile.read())
@@ -760,8 +766,8 @@ def _(item, krg):
 class _BusView:
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
-        self.tp = dict(bustermtuples)
-        self.buses = tuple(self.tp.keys())
+        self.tp = [b[1] for b in bustermtuples]
+        self.buses = [b[0] for b in bustermtuples]
         self.nb = len(self.buses)
         self.oek = weakref.proxy(oek)
         self._content = None

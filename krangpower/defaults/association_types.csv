@@ -4,12 +4,12 @@ vsource,CsvLoadshape,duty,name
 isource,CsvLoadshape,duty,name
 fourq,CsvLoadshape,duty,name
 fourq,DecisionModel,._dm,self
+linegeometry,WireData,wire,name
+linegeometry,CNData,cncable,name
+linegeometry,TSData,tscable,name
 linegeometry_o,WireData,wire,fullname
-linegeometry_o,list,wire,fullname
 linegeometry_c,CNData,cncable,fullname
-linegeometry_c,list,cncable,fullname
 linegeometry_t,TSData,tscable,fullname
-linegeometry_t,list,tscable,fullname
 line,linegeometry,geometry,name
 line,LineGeometry_C,geometry,name
 line,LineGeometry_O,geometry,name
@@ -29,7 +29,7 @@ monitor,Reactor,element,fullname
 monitor,Transformer,element,fullname
 monitor,Generator,element,fullname
 monitor,Storage,element,fullname
-storagecontroller,<class 'list'>,elementlist,name
+storagecontroller,Storage,elementlist,name
 storagecontroller,Line,element,fullname
 storagecontroller,Load,element,fullname
 storagecontroller,Vsource,element,fullname
