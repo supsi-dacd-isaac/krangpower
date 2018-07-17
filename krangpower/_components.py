@@ -479,7 +479,8 @@ class _DSSentity(_FcsAble):
                 if k in ('units', 'runits', 'gmrunits'):
                     # after unit dereferencing, this should only fire when loading from dss and in general when
                     # passing raw input
-                    mlog.debug('The unitsfirst parameter setting routine detected an unit setting with {}={}.'.format(k, str(v)))
+                    mlog.debug('The unitsfirst parameter setting routine detected an unit setting with {0}={1}.'
+                               .format(k, str(v)))
                     yield k, v
                 else:
                     continue
@@ -514,8 +515,6 @@ class _DSSentity(_FcsAble):
 
             else:
                 raise AttributeError('Tried to set unknown parameter {0}.'.format(parameter))
-                # self.logger.warning('Tried to set unknown parameter %s. Blatantly ignored.', parameter)
-                # should this raise an exception instead?
 
             # pint quantity check and conversion
             if hasattr(value_raw, 'magnitude'):  # isinstance pint does not work
@@ -1241,6 +1240,7 @@ class Curve(_FcsAble):
     }
 
     def __init__(self, name, curve_type, data, interval=None):
+        super().__init__()
         self.name = name
         if curve_type not in ['xycurve', 'tshape']:
             raise ImportError('Unrecognized curve type')

@@ -845,7 +845,7 @@ class _BusView:
 
 
 # -----------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------___-----_---------------------------------------------
+# -----------------------------------------------------___-----_-----------------_---------------------------
 #                               ___  __ ___   _____   ( _ )   | | ___   __ _  __| |
 #                              / __|/ _` \ \ / / _ \  / _ \/\ | |/ _ \ / _` |/ _` |
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
@@ -920,7 +920,7 @@ def from_json(path):
     l_ckt._declare_buscoords()
     mlog.debug('coordinates just declared, exiting')
 
-    # patch for curing the stepsize bug
+    # patch for curing the stepsize bug; this is probably due to stepsize overwriting by other settings
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
 
@@ -1009,6 +1009,7 @@ def open_ckt(path):
                 krg._ai_list = pickle.load(fq_file)
 
         # If present, we load the md5 checksum that was packed with the zip file when it was created.
+        # If not (for example, in manually edited packs), we jump
         if 'krang_hash.md5' in zf.namelist():
             with zf.open('krang_hash.md5', 'r') as md5_file:
                 kranghash = md5_file.read().decode('utf-8')

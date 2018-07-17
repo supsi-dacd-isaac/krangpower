@@ -16,7 +16,7 @@ line,LineGeometry_O,geometry,name
 line,LineGeometry_T,geometry,name
 line,linecode,linecode,name
 line,LineCode_A,linecode,name
-line,LineCode_A,linecode,name
+line,LineCode_S,linecode,name
 pvsystem,CsvLoadshape,duty,name
 pvsystem,PtCurve,p-tcurve,fullname
 pvsystem,EffCurve,effcurve,fullname

@@ -379,11 +379,12 @@ for _i1 in _inspect_getmembers(_odr.dss):
 # </editor-fold>
 
 
-def _named_selector(fullname):
-    nm = fullname.lower().split('.')
+# mocks a standard selector, but for named entities
+def _named_selector(name, eltype):
+    nm = (eltype.lower(), name.lower())
     _this_module.Circuit.SetActiveClass(nm[0])
     _this_module.ActiveClass.Name(nm[1])
-    assert _this_module.Element.Name().lower() == fullname.lower()
+    assert _this_module.Element.Name().lower() == '.'.join(nm)
 
 
 class _PackedOpendssElement:
@@ -463,7 +464,7 @@ class _PackedOpendssElement:
         For example, If the object is a Isource, AngleDeg will be a valid item."""
         for itf in self._available_interfaces:
             if hasattr(itf, item):
-                return _CallFinalizer(getattr(itf, item), self._selectors, self._name, str(itf))
+                return _CallFinalizer(getattr(itf, item), self._selectors, self.fullname, str(itf))
                 # break unnecessary
             else:
                 continue
@@ -477,7 +478,10 @@ class _PackedOpendssElement:
         by calls to __getitem__."""
         try:
             for sel in self._selectors:
-                sel(self.fullname)
+                try:
+                    sel(self.fullname)
+                except TypeError:
+                    sel(self.name, self.eltype)  # named selector
             props = _this_module.Element.AllPropertyNames()
         except AttributeError:
             raise ValueError('{0}-type objects are not dumpable.'.format(self.eltype.upper()))
@@ -499,8 +503,9 @@ class _PackedOpendssElement:
         valid_props.update(_DEFAULT_COMP['default_' + self.eltype].get('associated', {}))
 
         ignored_props = _DEFAULT_COMP['default_' + self.eltype].get('ignored', [])
+        redundant_props = _DEFAULT_COMP['default_' + self.eltype].get('redundant', [])
 
-        valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props}
+        valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props + redundant_props}
 
         # either those properties dumped that are valid, or those that are valid AND different from the default values,
         # are stored in dep_prop
@@ -610,7 +615,7 @@ class _PackedOpendssElement:
         _this_module.utils.run_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
 
     def __str__(self):
-        return '<PackedOpendssElement({0})>'.format(self._name)
+        return '<PackedOpendssElement({0})>'.format(self.fullname)
 
     def __repr__(self):
         return self.__str__()
@@ -622,7 +627,8 @@ class _CallFinalizer:
         self._super_interface_name = s_interface_name
         self._interface = interface
         self._selectors = selector_fns
-        self._name_to_select = name
+        self._name_to_select = name.split('.', 1)[1]
+        self._eltype = name.split('.', 1)[0]  # it only is useful for the named_selector
 
     def __getattr__(self, item):
         return _CallFinalizer(getattr(self._interface, item), self._selectors, self._name_to_select,
@@ -633,7 +639,10 @@ class _CallFinalizer:
         # this is the key bit: the PackedOpendssElement that instances this class is capable of retaining its name and
         # auto select itself before calling the underlying odr.
         for sel in self._selectors:
-            sel(self._name_to_select)
+            try:
+                sel(self._name_to_select)
+            except TypeError:
+                sel(self._name_to_select, self._eltype)
 
         mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
