@@ -410,10 +410,27 @@ class _DSSentity(_FcsAble):
         cpy.name = name
         return cpy
 
+    def __deepcopy__(self, memodict={}):
+        raise NotImplementedError('DssEntities cannot be deepcopied in a standard way due to the possible internal '
+                                  ' reference to module objects. Use the "sf_deepcopy" module instead.')
+
+    def sf_deepcopy(self):
+        """Returns a deep copy of the object. This method is to be used in place of the standard copy.deepcopy, that
+        will raise an exception."""
+        # the problems are caused by what is possibly inside _multiplied_objs, so we work around the issue by copying
+        # the object without it and then reassigning the content.
+        memo = self._multiplied_objs
+        self._multiplied_objs = []
+        cpy = copy.deepcopy(self)
+        cpy._multiplied_objs = memo
+        self._multiplied_objs = memo
+
+        return cpy
+
     def __mul__(self, other):
         """Associates the multiplier with this object according to the built-in association rules."""
         
-        belf = copy.deepcopy(self)
+        belf = self.sf_deepcopy()
         
         i1 = belf.toe
         try:
