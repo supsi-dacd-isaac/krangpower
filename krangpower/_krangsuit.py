@@ -227,8 +227,9 @@ class Krang(object):
 
     @property
     def _named_entities(self):
-        nms = [x for x in self.brain.get_all_names() if x.split('.', 1)[0] in ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')]
-        return [self[n].unpack() for n in nms] + self._csvloadshapes
+        nms = [x for x in self.brain.get_all_names()
+               if x.split('.', 1)[0] in ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')]
+        return [self[n].unpack() for n in nms]
 
     @staticmethod
     def _form_newcircuit_string(name, vsource, source_bus_name):
@@ -543,7 +544,7 @@ class Krang(object):
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
             if self['bus.' + bn].Coorddefined():
-                bp[bn] = (self[bn].X(), self[bn].Y())
+                bp[bn] = (self['bus.' + bn].X(), self['bus.' + bn].Y())
             else:
                 bp[bn] = None
         return bp
@@ -586,8 +587,13 @@ class Krang(object):
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
-        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing entities...'):
+        # named entities
+        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
+
+        # loadshapes
+        for ls in _PBar(self._csvloadshapes, level=LOGGING_INFO, desc='jsonizing loadshapes...'):
+            master_dict['elements'][ls.fullname] = ls.jsonize()
 
         # options
         dumpable_settings = set(DEFAULT_SETTINGS['values'].keys()) - set(DEFAULT_SETTINGS['contingent'])
@@ -659,7 +665,7 @@ class Krang(object):
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
         echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
-        IMPORTANT NOTE: modifications operated through other means that the text interfa won't be included!
+        IMPORTANT NOTE: modifications operated through other means that the text interface won't be included!
         """
         with open(path, 'w') as ofile:
             ofile.write('\n'.join(self.com))

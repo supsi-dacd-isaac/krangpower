@@ -1,0 +1,4 @@
+{
+  "beginning": ["warning", "error", "unknown", "illegal", "you must"],
+  "middle":["not found", "does not exist"]
+}

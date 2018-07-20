@@ -29,7 +29,7 @@ from .._aux_fcn import pairwise as _pairwise
 from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from .._components import get_classmap as _get_classmap
 from .._components import LineGeometry
-from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, \
+from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, \
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
 from .._logging_init import clog, mlog, get_log_level
 
@@ -191,11 +191,15 @@ def _validate_text_interface_result(result_string: str):
     """This function is passed the raw, direct output opendss text interface and performs checks on the results to see
     if the string returned is valid (and not, for example, a warning). This function either returns nothing or
     raises an error."""
-    if result_string.lower().startswith(('warning', 'error', 'unknown', 'illegal', 'you must')):
+
+    error_strings_begin = tuple(ERROR_STRINGS['beginning'])
+    if result_string.lower().startswith(error_strings_begin):
         raise OpenDSSTextError(result_string)
 
-    if result_string.lower().find('not found') != -1:
-        raise OpenDSSTextError(result_string)
+    error_strings_middle = tuple(ERROR_STRINGS['middle'])
+    for inner_message in error_strings_middle:
+        if result_string.lower().find(inner_message) != -1:
+            raise OpenDSSTextError(result_string)
 
     # this is what odr returns, instead of raising, if you request invalid props with ?
     if result_string == 'Property Unknown':

@@ -365,10 +365,10 @@ class _DSSentity(_FcsAble):
         self._setparameters(**parameters)
 
     def __str__(self):
-        return '<krangpower.' + self.__class__.__name__ + '(' + self.name + ')'
+        return 'krangpower.' + self.__class__.__name__ + '(' + self.name + ')'
 
     def __repr__(self):
-        return self.__str__() + '(@' + str(hex(id(self))) + ')>'
+        return '<' + self.__str__() + '(@' + str(hex(id(self))) + ')>'
 
     @property
     def eltype(self):
@@ -1128,8 +1128,9 @@ class TSData(_NamedDSSentity):
 
 class LineGeometry(_NamedDSSentity):
     def __init__(self, name, **parameters):
-        super().__init__(name, **parameters)
         self.wiretype = None
+        super().__init__(name, **parameters)
+
         # self.specialparams
         # for p in self.specialparams:
         #     if isinstance(self._params[p], np.matrix):
