@@ -621,19 +621,19 @@ class Krang(object):
 
         return master_dict
 
-    def save_json(self, path=None):
+    def save_json(self, path=None, indent=2):
         """Saves a complete JSON description of the circuit and its objects. If a valid path string is passed,
         a file will be created, and None will be returned; if None is passed as path, a Text buffered  Stream
         (io.StringIO) with the exact same information as the file will be returned instead."""
 
         if path is None:
             vfile = io.StringIO()
-            json.dump(self.make_json_dict(), vfile, indent=2)
+            json.dump(self.make_json_dict(), vfile, indent=indent)
             return vfile
 
         else:
             with open(path, 'w') as ofile:
-                json.dump(self.make_json_dict(), ofile, indent=2)
+                json.dump(self.make_json_dict(), ofile, indent=indent)
             return None
 
     def pack_ckt(self, path=None):

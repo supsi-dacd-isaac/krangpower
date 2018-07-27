@@ -410,10 +410,6 @@ class _DSSentity(_FcsAble):
         cpy.name = name
         return cpy
 
-    def __deepcopy__(self, memodict={}):
-        raise NotImplementedError('DssEntities cannot be deepcopied in a standard way due to the possible internal '
-                                  ' reference to module objects. Use the "sf_deepcopy" module instead.')
-
     def sf_deepcopy(self):
         """Returns a deep copy of the object. This method is to be used in place of the standard copy.deepcopy, that
         will raise an exception."""
@@ -728,6 +724,10 @@ class _NamedDSSentity(_DSSentity):
 # -------------------------------------------------------------
 # LOADSHAPE CLASS
 # -------------------------------------------------------------
+class Loadshape(_DSSentity):
+    pass
+
+
 class CsvLoadshape(_FcsAble):
     """
     Allows to specify a Loadshape that refers to a CSV file. Requires a path.

@@ -1154,7 +1154,6 @@
             "r": "V",
             "x": "V",
             "delay": "s",
-            "reversible": "no",
             "revvreg": "V",
             "revband": "V",
             "revr": "V",
@@ -1163,8 +1162,6 @@
             "vlimit": "V",
             "revthreshold": "kW",
             "revdelay": "s",
-            "revneutral": "no",
-            "eventlog": "yes",
             "basefreq": "Hz"
         },
         "associated": {"transformer": ""}
