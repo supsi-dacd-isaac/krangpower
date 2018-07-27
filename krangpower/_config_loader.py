@@ -44,6 +44,7 @@ INTERF_SELECTORS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'interfa
 DEFAULT_SETTINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default_settings'))
 DEFAULT_ENTITIES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default_entities'))
 ASSOCIATION_TYPES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'association_types'))
+ERROR_STRINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'error_strings'))
 
 GLOBAL_LOG_LEVEL = getattr(logging, CONFIG.get('log_settings', 'default_logging_level'))
 MAX_LOG_SIZE_MB = CONFIG.getfloat('log_settings', 'max_log_size_mb')
@@ -125,6 +126,12 @@ UM.define('none = [generic_length] = unitlength')  # when lengths are set as non
 UM.define('mt = meter')
 PINT_QTY_TYPE = type(1 * UM.m)
 
+
+# -------------------------------------------------------------
+#  DICTIONARY OF ERROR MESSAGE SUBSTRINGS
+# -------------------------------------------------------------
+with open(ERROR_STRINGS_PATH, 'r') as ef:
+    ERROR_STRINGS = json.load(ef)
 
 # -------------------------------------------------------------
 #  DICTIONARY OF MANDATORY UNITS

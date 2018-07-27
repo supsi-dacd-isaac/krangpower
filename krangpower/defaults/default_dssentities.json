@@ -79,8 +79,8 @@
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
-            "faultrate": "h",
-            "repair": "h",
+            "faultrate": "hr",
+            "repair": "hr",
             "rg": "ohm",
             "xg": "ohm",
             "rho": "ohm"
@@ -118,8 +118,8 @@
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
-            "faultrate": "h",
-            "repair": "h",
+            "faultrate": "hr",
+            "repair": "hr",
             "rg": "ohm",
             "xg": "ohm",
             "rho": "ohm"
@@ -193,8 +193,8 @@
             "basefreq": "Hz",
             "normamps": "A",
             "emergamps": "A",
-            "faultrate": "h",
-            "repair": "h",
+            "faultrate": "hr",
+            "repair": "hr",
             "rg": "ohm / m",
             "xg": "ohm / m",
             "rho": "ohm"
@@ -290,6 +290,7 @@
         "type": "linegeometry",
         "properties": {
             "nconds": 1,
+            "cond": 0,
             "nphases": 1,
             "cncable": [
                 "",
@@ -372,7 +373,7 @@
             "x": ["m"],
             "h": ["m"]
         },
-        "associated": {"cndata": [""]}
+        "associated": {"cncable": [""]}
     },
     "default_linegeometry_t": {
         "type": "linegeometry_t",
@@ -495,8 +496,8 @@
             "normamps": "A",
             "emergamps": "A",
             "basefreq": "Hz",
-            "faultrate": "h",
-            "repair": "h"
+            "faultrate": "hr",
+            "repair": "hr"
         },
         "associated": {
             "linecode": "",
@@ -599,7 +600,7 @@
         "associated": {"duty": ""},
         "topological": {"bus1": "",
                         "bus2": ""},
-        "ignored":["z0", "z1", "z2", "puz0", "puz1", "puz2", "x1r1", "x0r0", "mvasc1", "mvasc3", "r1", "x1", "r0", "x0"]
+        "redundant":["z0", "z1", "z2", "puz0", "puz1", "puz2", "x1r1", "x0r0", "mvasc1", "mvasc3", "r1", "x1", "r0", "x0"]
     },
     "default_transformer": {
         "type": "transformer",
@@ -679,14 +680,14 @@
             "kvas": "kW",
             "normmaxhkva": "kW",
             "emergmaxhkva": "kW",
-            "thermal": "h",
+            "thermal": "hr",
             "flrise": "delta_degC",
             "hsrise": "delta_degC",
             "normhkva": "kW",
             "emerghkva": "kW",
             "normamps": "A",
             "emergamps": "A",
-            "repair": "h",
+            "repair": "hr",
             "basefreq": "Hz"
         },
         "associated": {"xfmrdata": ""},
@@ -741,7 +742,7 @@
             "minamps": "A",
             "normamps": "A",
             "emergamps": "A",
-            "repair": "h",
+            "repair": "hr",
             "basefreq": "Hz"
         }
     },
@@ -785,7 +786,7 @@
             "xl": "ohm",
             "normamps": "A",
             "emergamps": "A",
-            "repair": "h",
+            "repair": "hr",
             "basefreq": "Hz"
         },
         "topological": {"bus1": ""}
@@ -848,7 +849,7 @@
             "lmh": "mH",
             "normamps": "A",
             "emergamps": "A",
-            "repair": "h",
+            "repair": "hr",
             "basefreq": "Hz"
         },
         "topological": {"bus1": "",
@@ -1068,10 +1069,10 @@
             "kwhactual": "kW",
             "kwactual": "kW",
             "kwneed": "kW",
-            "inhibittime": "h",
-            "tup": "h",
-            "tflat": "h",
-            "tdn": "h",
+            "inhibittime": "hr",
+            "tup": "hr",
+            "tflat": "hr",
+            "tdn": "hr",
             "kwthreshold": "kW",
             "basefreq": "Hz"
         },
@@ -1153,7 +1154,6 @@
             "r": "V",
             "x": "V",
             "delay": "s",
-            "reversible": "no",
             "revvreg": "V",
             "revband": "V",
             "revr": "V",
@@ -1162,8 +1162,6 @@
             "vlimit": "V",
             "revthreshold": "kW",
             "revdelay": "s",
-            "revneutral": "no",
-            "eventlog": "yes",
             "basefreq": "Hz"
         },
         "associated": {"transformer": ""}
@@ -1276,7 +1274,7 @@
             "kvanormal": "kVA",
             "kvaemerg": "kVA",
             "peakcurrent": "A",
-            "int_duration": "h",
+            "int_duration": "hr",
             "basefreq": "Hz"
         }
     },
@@ -1426,7 +1424,7 @@
             "kvar": "kVA",
             "kva": "kVA",
             "kvarlimit": "kVA",
-            "dutystart": "h",
+            "dutystart": "hr",
             "basefreq": "Hz"
         },
         "topological": {"bus1": ""},

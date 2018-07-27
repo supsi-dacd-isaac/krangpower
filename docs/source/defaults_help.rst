@@ -117,6 +117,23 @@ specified does can be found directly in :code:`krangpower.enhancer` code.
 .. _`JSON i/o files`: io.html
 
 
+error_strings.json
+..................
+This file contains those substrings that characterise messages of error coming from the OpenDSS text interface. Since
+in these cases OpenDSS does not raise any exception on its own, it's necessary to check the returned strings to see if
+they signal an error so that :code:`krangpower.enhancer` can raise an :code:`OpenDSSTextError`, thus avoiding dangerous
+and difficult-to-debug silent errors.
+
+.. important::
+
+    If you know of error strings returned by the text interface that are not caught in the cases listed in the file,
+    please drop a couple of lines to the developers!
+
+error_strings.json contains two lists:
+
+   - **beginning** is the list of substrings that are found at the beginning of the error message;
+   - **middle** is the list of substrings that are found somewhere in the middle of the error message.
+
 mandatory_unit_dec.json
 .......................
 

@@ -8,6 +8,7 @@
 # OpendssdirectEnhancer by Federico Rosato
 # a wrapper for opendssdirect.py by Dheepak Krishnamurthy and Maximilian J. Zangs
 
+import logging
 import types
 from copy import deepcopy as _deepcopy
 from functools import reduce as _reduce, partial as _partial
@@ -24,10 +25,11 @@ import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
 from .._aux_fcn import lower as _lower
-from .._components import get_classmap as _get_classmap
 from .._aux_fcn import pairwise as _pairwise
 from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
-from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, \
+from .._components import get_classmap as _get_classmap
+from .._components import LineGeometry
+from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, \
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
 from .._logging_init import clog, mlog, get_log_level
 
@@ -175,15 +177,29 @@ class OpenDSSTextError(Exception):
     pass
 
 
+# this ctxman is necessary for suppressing the rogue warnings from OpenDSSDirect.py
+# when the situation is under control and they are unnecessary
+class _LogKiller:
+    def __enter__(self):
+        logging.disable(logging.CRITICAL)
+
+    def __exit__(self, a, b, c):
+        logging.disable(logging.NOTSET)
+
+
 def _validate_text_interface_result(result_string: str):
     """This function is passed the raw, direct output opendss text interface and performs checks on the results to see
     if the string returned is valid (and not, for example, a warning). This function either returns nothing or
     raises an error."""
-    if result_string.lower().startswith(('warning', 'error', 'unknown', 'illegal', 'you must')):
+
+    error_strings_begin = tuple(ERROR_STRINGS['beginning'])
+    if result_string.lower().startswith(error_strings_begin):
         raise OpenDSSTextError(result_string)
 
-    if result_string.lower().find('not found') != -1:
-        raise OpenDSSTextError(result_string)
+    error_strings_middle = tuple(ERROR_STRINGS['middle'])
+    for inner_message in error_strings_middle:
+        if result_string.lower().find(inner_message) != -1:
+            raise OpenDSSTextError(result_string)
 
     # this is what odr returns, instead of raising, if you request invalid props with ?
     if result_string == 'Property Unknown':
@@ -379,6 +395,14 @@ for _i1 in _inspect_getmembers(_odr.dss):
 # </editor-fold>
 
 
+# mocks a standard selector, but for named entities
+def _named_selector(name, eltype):
+    nm = (eltype.lower(), name.lower())
+    _this_module.Circuit.SetActiveClass(nm[0])
+    _this_module.ActiveClass.Name(nm[1])
+    assert _this_module.Element.Name().lower() == '.'.join(nm)
+
+
 class _PackedOpendssElement:
 
     def __init__(self, eltype, name):
@@ -409,7 +433,10 @@ class _PackedOpendssElement:
     def topological(self):
         """Returns those properties that are marked as 'topological' in the configuration files and identify the wiring
         location of the element. (Typically, bus1 and, if it exists, bus2.)"""
-        top_par_names = _DEFAULT_COMP['default_' + self.eltype]['topological']
+        try:
+            top_par_names = _DEFAULT_COMP['default_' + self.eltype]['topological']
+        except KeyError:
+            return None
 
         rt = [self[t] for t in top_par_names.keys()]
         if len(rt) == 1 and isinstance(rt[0], list):
@@ -453,7 +480,7 @@ class _PackedOpendssElement:
         For example, If the object is a Isource, AngleDeg will be a valid item."""
         for itf in self._available_interfaces:
             if hasattr(itf, item):
-                return _CallFinalizer(getattr(itf, item), self._selectors, self._name, str(itf))
+                return _CallFinalizer(getattr(itf, item), self._selectors, self.fullname, str(itf))
                 # break unnecessary
             else:
                 continue
@@ -467,7 +494,10 @@ class _PackedOpendssElement:
         by calls to __getitem__."""
         try:
             for sel in self._selectors:
-                sel(self.fullname)
+                try:
+                    sel(self.fullname)
+                except TypeError:
+                    sel(self.name, self.eltype)  # named selector
             props = _this_module.Element.AllPropertyNames()
         except AttributeError:
             raise ValueError('{0}-type objects are not dumpable.'.format(self.eltype.upper()))
@@ -478,6 +508,11 @@ class _PackedOpendssElement:
         """Returns a _DssEntity (or a descendant) corresponding to _PackedOpendssElement."""
 
         # identify the corresponding class in the components file
+
+        # the linegeometry internal structure is peculiar and has to be treated differently
+        if self.eltype == 'linegeometry':
+            return _unpack_linegeom(self)
+
         myclass = _classmap[self.eltype]
 
         # properties are dumped
@@ -489,8 +524,9 @@ class _PackedOpendssElement:
         valid_props.update(_DEFAULT_COMP['default_' + self.eltype].get('associated', {}))
 
         ignored_props = _DEFAULT_COMP['default_' + self.eltype].get('ignored', [])
+        redundant_props = _DEFAULT_COMP['default_' + self.eltype].get('redundant', [])
 
-        valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props}
+        valid_props = {k: v for k, v in valid_props.items() if k not in ignored_props + redundant_props}
 
         # either those properties dumped that are valid, or those that are valid AND different from the default values,
         # are stored in dep_prop
@@ -581,7 +617,7 @@ class _PackedOpendssElement:
         dimensionality, it will be assumed that you are using the default units."""
 
         # it is checked whether you passed a _pint_qty_type as value or not. Throughout the function, errors will be
-        # trhown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
+        # thrown if: _pint_qty_type is passed for a property without unit, _pint_qty_type has the wrong dimensionality,
         # the content of the _pint_qty_type is not the right data type (such as a matrix instead of an int).
         if isinstance(value, PINT_QTY_TYPE):
             unt = self._get_builtin_units(key)
@@ -597,10 +633,10 @@ class _PackedOpendssElement:
             ref_value = _type_recovery(ref_value, target_type)
 
         # the edit is performed through the text interface with the 'edit' command
-        _this_module.utils.run_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
+        txt_command('edit ' + self.fullname + ' ' + key + '=' + _odssrep(ref_value))
 
     def __str__(self):
-        return '<PackedOpendssElement({0})>'.format(self._name)
+        return '<PackedOpendssElement({0})>'.format(self.fullname)
 
     def __repr__(self):
         return self.__str__()
@@ -612,7 +648,8 @@ class _CallFinalizer:
         self._super_interface_name = s_interface_name
         self._interface = interface
         self._selectors = selector_fns
-        self._name_to_select = name
+        self._name_to_select = name.split('.', 1)[1]
+        self._eltype = name.split('.', 1)[0]  # it only is useful for the named_selector
 
     def __getattr__(self, item):
         return _CallFinalizer(getattr(self._interface, item), self._selectors, self._name_to_select,
@@ -623,7 +660,10 @@ class _CallFinalizer:
         # this is the key bit: the PackedOpendssElement that instances this class is capable of retaining its name and
         # auto select itself before calling the underlying odr.
         for sel in self._selectors:
-            sel(self._name_to_select)
+            try:
+                sel(self._name_to_select)
+            except TypeError:
+                sel(self._name_to_select, self._eltype)
 
         mlog.debug('Calling {0} with arguments {1}'.format(str(self._interface), str(args)))
         return self._interface(*args)
@@ -631,6 +671,43 @@ class _CallFinalizer:
     @property
     def super_interface(self):
         return self._super_interface_name
+
+
+def _unpack_linegeom(pckob):
+    nc = pckob['nconds']
+
+    nmc = {cc.split('.', 1)[1]: cc.split('.', 1)[0] for cc in get_all_names()}
+
+    x = []
+    h = []
+    wrcn = []
+
+    for cd in range(nc):
+        pckob['cond'] = cd + 1
+        cabtype = nmc[pckob['wire']]
+        wrcn.append(pckob['wire'])
+        x.append(pckob['x'].to('m').magnitude[0, 0])
+        h.append(pckob['h'].to('m').magnitude[0, 0])
+
+    naive_props = pckob.dump()
+    del naive_props['x']
+    del naive_props['h']
+    del naive_props['wire']
+    del naive_props['wires']
+    del naive_props['cncable']
+    del naive_props['cncables']
+    del naive_props['tscable']
+    del naive_props['tscables']
+    del naive_props['units']
+    del naive_props['normamps']
+    del naive_props['emergamps']
+    del naive_props['like']
+
+    naive_props['x'] = _np.asmatrix(x)
+    naive_props['h'] = _np.asmatrix(h)
+    naive_props[cabtype] = wrcn
+
+    return LineGeometry(pckob.name, **naive_props)
 
 
 # <editor-fold desc="Exposed functions">
@@ -664,6 +741,13 @@ def get_all_names():
         anl.extend(_odr.Circuit.AllElementNames())
         anl.extend(map(lambda ln: 'loadshape.' + ln, _odr.LoadShape.AllNames()))
         anl.extend(map(lambda ln: 'xycurve.' + ln, _xycurve_names()))
+
+        # we access here all the elements that are interfaced through ActiveClass
+        plus_classes = ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')
+        with _LogKiller():  # opendssdirect.py sends rogue warnings when an empty array is selected
+            for pc in plus_classes:
+                _this_module.Circuit.SetActiveClass(pc)
+                anl.extend([pc + '.' + x for x in _this_module.ActiveClass.AllNames()])
 
         anl = [x.lower() for x in anl]
 

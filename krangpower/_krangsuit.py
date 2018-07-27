@@ -187,7 +187,7 @@ class Krang(object):
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
 
         # private attributes
-        self._named_entities = []
+        self._csvloadshapes = []
         self._ai_list = []
         self._fncache = {}
         self._coords_linked = {}
@@ -224,6 +224,12 @@ class Krang(object):
     def get_unit_registry():
         """Retrieves krangpower's UnitRegistry."""
         return UM
+
+    @property
+    def _named_entities(self):
+        nms = [x for x in self.brain.get_all_names()
+               if x.split('.', 1)[0] in ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')]
+        return [self[n].unpack() for n in nms]
 
     @staticmethod
     def _form_newcircuit_string(name, vsource, source_bus_name):
@@ -264,7 +270,8 @@ class Krang(object):
         The names of these elements must not be blank when they are added."""
         try:
             assert other.isnamed()
-            self._named_entities.append(other)
+            if isinstance(other, co.CsvLoadshape):
+                self._csvloadshapes.append(other)
         except AssertionError:
             try:
                 assert other.isabove()
@@ -537,7 +544,7 @@ class Krang(object):
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
             if self['bus.' + bn].Coorddefined():
-                bp[bn] = (self[bn].X(), self[bn].Y())
+                bp[bn] = (self['bus.' + bn].X(), self['bus.' + bn].Y())
             else:
                 bp[bn] = None
         return bp
@@ -556,7 +563,7 @@ class Krang(object):
     def _zip_csv(self):
         csvflo = io.BytesIO()
         with zipfile.ZipFile(csvflo, mode='w', compression=zipfile.ZIP_DEFLATED) as csvzip:
-            for csvlsh in [x for x in self._named_entities if isinstance(x, co.CsvLoadshape)]:
+            for csvlsh in [x for x in self._csvloadshapes]:
                 with open(csvlsh.csv_path, 'br') as cfile:
                     csvzip.writestr(os.path.basename(csvlsh.csv_path),
                                     cfile.read())
@@ -580,8 +587,13 @@ class Krang(object):
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
-        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing entities...'):
+        # named entities
+        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
+
+        # loadshapes
+        for ls in _PBar(self._csvloadshapes, level=LOGGING_INFO, desc='jsonizing loadshapes...'):
+            master_dict['elements'][ls.fullname] = ls.jsonize()
 
         # options
         dumpable_settings = set(DEFAULT_SETTINGS['values'].keys()) - set(DEFAULT_SETTINGS['contingent'])
@@ -609,19 +621,19 @@ class Krang(object):
 
         return master_dict
 
-    def save_json(self, path=None):
+    def save_json(self, path=None, indent=2):
         """Saves a complete JSON description of the circuit and its objects. If a valid path string is passed,
         a file will be created, and None will be returned; if None is passed as path, a Text buffered  Stream
         (io.StringIO) with the exact same information as the file will be returned instead."""
 
         if path is None:
             vfile = io.StringIO()
-            json.dump(self.make_json_dict(), vfile, indent=2)
+            json.dump(self.make_json_dict(), vfile, indent=indent)
             return vfile
 
         else:
             with open(path, 'w') as ofile:
-                json.dump(self.make_json_dict(), ofile, indent=2)
+                json.dump(self.make_json_dict(), ofile, indent=indent)
             return None
 
     def pack_ckt(self, path=None):
@@ -653,7 +665,7 @@ class Krang(object):
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
         echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
-        IMPORTANT NOTE: modifications operated through other means that the text interfa won't be included!
+        IMPORTANT NOTE: modifications operated through other means that the text interface won't be included!
         """
         with open(path, 'w') as ofile:
             ofile.write('\n'.join(self.com))
@@ -760,8 +772,8 @@ def _(item, krg):
 class _BusView:
     def __init__(self, oek: Krang, bustermtuples):
         self.btt = bustermtuples
-        self.tp = dict(bustermtuples)
-        self.buses = tuple(self.tp.keys())
+        self.tp = [b[1] for b in bustermtuples]
+        self.buses = [b[0] for b in bustermtuples]
         self.nb = len(self.buses)
         self.oek = weakref.proxy(oek)
         self._content = None
@@ -845,7 +857,7 @@ class _BusView:
 
 
 # -----------------------------------------------------------------------------------------------------------
-# -----------------------------------------------------___-----_---------------------------------------------
+# -----------------------------------------------------___-----_-----------------_---------------------------
 #                               ___  __ ___   _____   ( _ )   | | ___   __ _  __| |
 #                              / __|/ _` \ \ / / _ \  / _ \/\ | |/ _ \ / _` |/ _` |
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
@@ -920,7 +932,7 @@ def from_json(path):
     l_ckt._declare_buscoords()
     mlog.debug('coordinates just declared, exiting')
 
-    # patch for curing the stepsize bug
+    # patch for curing the stepsize bug; this is probably due to stepsize overwriting by other settings
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
 
@@ -1009,6 +1021,7 @@ def open_ckt(path):
                 krg._ai_list = pickle.load(fq_file)
 
         # If present, we load the md5 checksum that was packed with the zip file when it was created.
+        # If not (for example, in manually edited packs), we jump
         if 'krang_hash.md5' in zf.namelist():
             with zf.open('krang_hash.md5', 'r') as md5_file:
                 kranghash = md5_file.read().decode('utf-8')
