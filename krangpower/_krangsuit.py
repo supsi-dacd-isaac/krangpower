@@ -23,11 +23,11 @@ from . import _busquery as bq
 from . import _components as co
 from . import enhancer
 from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
-from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, \
+from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, COMMAND_LOGPATH, MAIN_LOGPATH, \
     TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY
 from ._deptree import DepTree as _DepGraph
 from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
-from ._logging_init import mlog
+from ._logging_init import mlog, clog, add_filehandler, remove_filehandlers
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
 
@@ -195,6 +195,10 @@ class Krang(object):
         # file output redirection to the temp folder
         self.brain.Basic.DataPath(TMP_PATH)
 
+        # binding the file formatters to the module-wide loggers
+        add_filehandler(mlog, MAIN_LOGPATH)
+        add_filehandler(clog, COMMAND_LOGPATH)
+
         # OpenDSS initialization commands
         self.command('clear')
         master_string = self._form_newcircuit_string(name, voltage_source, source_bus_name)
@@ -212,7 +216,12 @@ class Krang(object):
     # -----------------------------------------------------------------------------------------------------------------
 
     def __del__(self):
+        # clearing the circuit from the underlying OpenDSS
         self.brain.Basic.ClearAll()
+        # removing the filehandlers from the module-wide loggers
+        remove_filehandlers(mlog)
+        remove_filehandlers(clog)
+        # resetting the global singleton-controlling variable
         globals()['_INSTANCE'] = None
 
     @property
