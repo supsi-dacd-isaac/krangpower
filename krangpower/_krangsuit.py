@@ -442,7 +442,7 @@ class Krang(object):
         self.set(mode='duty')
         self.set(**n)  # a snap solve internally sets number to 1, so we have to reset it
 
-    def custom_drag_solve(self, *qties):
+    def custom_drag_solve(self, *qties, as_dict=False):
         """This command solves one step at a time and returns a list of values (of length equal to the number of steps
         solved) for each of the quantities indicated, as strings, in the arguments.
         For example:
@@ -454,6 +454,7 @@ class Krang(object):
 
         # we tokenize qties in order to replace the name with self
         r_qties = []
+        linq = {}
         for q in qties:
             rslt = []
             tkn = tokenize(io.BytesIO(q.encode('utf-8')).readline)
@@ -462,12 +463,14 @@ class Krang(object):
                     rslt.append((toknum, 'self'))
                 else:  # everything else is left untouched
                     rslt.append((toknum, tokval))
-
-            r_qties.append(untokenize(rslt).decode('utf-8'))
+            r_qty = untokenize(rslt).decode('utf-8').replace(' ', '')
+            if r_qty not in r_qties:
+                r_qties.append(r_qty)
+                linq[r_qty] = q
 
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(1)
-        rslt = {q: [] for q in r_qties}
+        rslt = {linq[q]: None for q in r_qties}
 
         for n in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
@@ -481,10 +484,14 @@ class Krang(object):
                     self.command(ai_el.fus(self, ai_el.name))
             self.solve()
             for q in r_qties:
-                rslt[q].append(eval(q))
+                rslt[linq[q]] = eval(q)
 
         self.brain.Solution.Number(nmbr)
-        return (v for q, v in rslt.items())
+
+        if as_dict:
+            return rslt
+        else:
+            return (v for q, v in rslt.items())
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
