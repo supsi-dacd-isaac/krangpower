@@ -538,8 +538,8 @@ class Krang(object):
         for busname, coords in self._coords_linked.items():
             if coords is not None:
                 try:
-                    self[busname].X(coords[0])
-                    self[busname].Y(coords[1])
+                    self['bus.' + busname].X(coords[0])
+                    self['bus.' + busname].Y(coords[1])
                 except KeyError:
                     continue  # we ignore buses present in coords linked, but not generated
             else:
@@ -965,14 +965,17 @@ def construct_deptree(element_dict: dict):
         else:
             # if an element parameter depends on another name, or a list of other names, we create all the edges
             # necessary
+            types_dict = {d['name'].lower(): d['type'].lower() for d in element_dict.values()}
             for dvalue in jobj['depends'].values():
                 if isinstance(dvalue, list):
                     for dv in dvalue:
                         if dv != '':
-                            dep_graph.add_edge(vname, dv)
+                            lower_name = dv.lower().split('.', 1)[-1]
+                            dep_graph.add_edge(vname, types_dict[lower_name] + '.' + lower_name)
                 else:
                     if dvalue != '':
-                        dep_graph.add_edge(vname, dvalue)
+                        lower_name = dvalue.lower().split('.', 1)[-1]
+                        dep_graph.add_edge(vname, types_dict[lower_name] + '.' + lower_name)
     
     return dep_graph
 
