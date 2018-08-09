@@ -697,9 +697,16 @@ class _DSSentity(_FcsAble):
             for muname, muvalue in MANDATORY_UNITS[self.toe].items():
                 s2 = s2 + ' ' + muname + '=' + muvalue
 
-        for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
-            # readability of the returned string
+        # we now declare the different-from-default parameters only for better readability of the returned string
+
+        # we first declare the associated parameters, because (for opendss buggish behavior) they are required
+        # at the beginning even if declared with their keyword
+        for parameter in [p for p in self._editedParams if p in self._associated.keys()]:
             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
+
+        for parameter in [p for p in self._editedParams if p not in self._associated.keys()]:
+            s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
+
         return s1 + s2
 
 
