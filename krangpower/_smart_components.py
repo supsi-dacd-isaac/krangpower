@@ -46,22 +46,22 @@ class FourQ(Generator):
 
         buses = hookup['buses']
         cname = self.name
-        terminals = self.term_perm
+        term_perm = hookup.get('terminals', None)
 
         s1 = 'New ' + 'generator' + '.' + cname  # _ splitting to allow name personalization outside dss
         s3 = ' '
         idox = 0
         for busno in range(1, self.nbuses + 1):
-            if terminals is not None:
-                if isinstance(terminals[(buses[busno - 1])], (tuple, int)):
+            if term_perm is not None:
+                if isinstance(term_perm[busno - 1], (tuple, int)):
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(
-                        terminals[(buses[busno - 1])]) + ' '
-                elif isinstance(terminals[(buses[busno - 1])], list):
+                        term_perm[busno - 1]) + ' '
+                elif isinstance(term_perm[busno - 1], list):
                     # this happens when you specify more than one set of terminal connections at one bus
-                    nthterminal = terminals[(buses[busno - 1])][idox]
+                    nthterminal = term_perm[busno - 1][idox]
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + termrep(nthterminal) + ' '
                     idox += 1
-                elif terminals[(buses[busno - 1])] is None:
+                elif term_perm[busno - 1] is None:
                     s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
             else:
                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
