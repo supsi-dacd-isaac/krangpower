@@ -61,6 +61,18 @@ class GraphView(nx.Graph):
         else:
             return _lean_getitem(item, self)
 
+    def get_edge_dict(self, convert_to_unit=None):
+        if convert_to_unit is None:
+            return {e: self[e] for e in self.edges}
+        else:
+            return {e: self[e].to(convert_to_unit).magnitude for e in self.edges}
+
+    def get_node_dict(self, convert_to_unit=None):
+        if convert_to_unit is None:
+            return {n: self[n] for n in self.nodes}
+        else:
+            return {n: self[n].to(convert_to_unit).magnitude for n in self.nodes}
+
 
 @singledispatch
 def _lean_getitem(item, gr: GraphView):
