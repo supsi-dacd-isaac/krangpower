@@ -35,9 +35,10 @@ from .._logging_init import clog, mlog, get_log_level
 
 
 try:
-    assert _odr.Basic.Start()
-except TypeError:
     assert _odr.Basic.Start(0)
+except TypeError:
+    # retrocompatibility with OpenDSSDirect.py <0.3
+    assert _odr.Basic.Start()
 
 # <editor-fold desc="Auxiliary functions">
 
