@@ -33,7 +33,11 @@ from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
 from .._logging_init import clog, mlog, get_log_level
 
-assert _odr.Basic.Start()
+
+try:
+    assert _odr.Basic.Start()
+except TypeError:
+    assert _odr.Basic.Start(0)
 
 # <editor-fold desc="Auxiliary functions">
 
