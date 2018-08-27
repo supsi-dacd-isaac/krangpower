@@ -523,7 +523,7 @@
             "basekv": 115.0,
             "pu": 1.0,
             "angle": 0.0,
-            "frequency": 60.0,
+            "frequency": 0.0,
             "phases": 3,
             "mvasc3": 2000.0,
             "mvasc1": 2100.0,
@@ -702,7 +702,7 @@
                 ]
             ],
             "angle": 0.0,
-            "frequency": 60.0,
+            "frequency": 0.0,
             "phases": 3,
             "scantype": "pos",
             "sequence": "pos",

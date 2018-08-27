@@ -35,19 +35,16 @@ Saving
 
 :code:`Krang` can output such a json file through the :code:`Krang.save_json()` method.
 
+.. automethod:: krangpower.Krang.save_json
+   :noindex:
 
 Loading
 .......
 
-A function :code:`from_dss` is exposed at the module level. It was written with the **ONLY** scope of allowing direct use of existing dss scripts without having to
-translate them to krangpower instructions; in all other cases, writing a krangpower script is to be always preferred.
+:code:`Krang` exposes a :code:`Krang.from_json(path)` class method. It returns a :code:`Krang` in the state syntesised by the JSON.
 
-.. autofunction:: krangpower.from_dss
-
-A function :code:`from_json(path)` is exposed at the module level. It returns a :code:`Krang` in the state syntesised by the JSON.
-
-.. autofunction:: krangpower.from_json
-
+.. automethod:: krangpower.Krang.from_json
+   :noindex:
 .. note::
 
    Inside the box, :code:`from_json(path)` instantiates an empty :code:`Krang`, adds all the components in the right order of dependency and finally returns it.

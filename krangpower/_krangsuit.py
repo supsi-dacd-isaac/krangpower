@@ -212,6 +212,37 @@ class Krang(object):
         self.command('makebuslist')
 
     # -----------------------------------------------------------------------------------------------------------------
+    # CLASS UTILITY METHODS
+    # -----------------------------------------------------------------------------------------------------------------
+
+    @classmethod
+    def open_ckt(cls, path):
+        """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
+        return _open_ckt(path)
+
+    @classmethod
+    def from_json(cls, path):
+        """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
+        to dependency between object is automatically taken care of."""
+        return _from_json(path)
+
+    @classmethod
+    def from_dss(cls, file_path, target_krang=None, frequency=BASE_FREQUENCY):
+        """from_dss(file_path, target_krang, frequency) allows to create a krang from an existing dss script or to pass
+        commands to a krang from an existing dss script. USE AT YOUR OWN RISK.
+
+        :param file_path: The path of the dss file to utilize
+        :param target_krang:
+
+         - If None, a new krang will be created and initialized with the information from the file (must
+           contain a 'new circuit' command).
+         - If a Krang is passed, the commands in the script will be passed to that Krang.
+
+        :param frequency: the general frequency to use for the krang, if a new one is created.
+        """
+        return _from_dss(file_path, target_krang, frequency)
+
+    # -----------------------------------------------------------------------------------------------------------------
     # DUNDERS AND PRIMITIVE FUNCTIONALITY
     # -----------------------------------------------------------------------------------------------------------------
 
@@ -681,7 +712,6 @@ class Krang(object):
     def save_dss(self, path):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
         echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
-        IMPORTANT NOTE: modifications operated through other means that the text interface won't be included!
         """
         with open(path, 'w') as ofile:
             ofile.write('\n'.join(self.com))
@@ -879,7 +909,7 @@ class _BusView:
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
 # -----------------------------|___/\__,_| \_/ \___|  \___/\/ |_|\___/ \__,_|\__,_|--------------------------
 # -----------------------------------------------------------------------------------------------------------
-def from_json(path):
+def _from_json(path):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
     # load all entities
@@ -1019,7 +1049,8 @@ def declare_deptree(krg: Krang, dep_tree: _DepGraph, element_dict: dict, logger=
     return krg
 
 
-def open_ckt(path):
+# external implementation of loading methods
+def _open_ckt(path):
     """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(LSH_ZIP_NAME) as lsh_file:
@@ -1032,7 +1063,7 @@ def open_ckt(path):
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
         jso = zf.open(fls[0])
-        krg = from_json(jso)
+        krg = _from_json(jso)
 
         # If any AI are present, they are loaded from their pickle file and put inside _ai_list.
         if _FQ_DM_NAME in zf.namelist():
@@ -1056,7 +1087,7 @@ def open_ckt(path):
     return krg
 
 
-def from_dss(file_path, target_krang=None, frequency=BASE_FREQUENCY):
+def _from_dss(file_path, target_krang=None, frequency=BASE_FREQUENCY):
     """from_dss(file_path, target_krang, frequency) allows to create a krang from an existing dss script or to pass
     commands to a krang from an existing dss script. USE AT YOUR OWN RISK.
 

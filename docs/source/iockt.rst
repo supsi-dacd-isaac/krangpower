@@ -6,11 +6,17 @@ A bare JSON_, in fact, contains all the topological information, but references 
 for the smart components and the likes are not included.
 In order to save/load a full pack, the following functions can be used:
 
-.. autoclass:: krangpower.Krang
-   :members: pack_ckt
+Saving
+......
+
+.. automethod:: krangpower.Krang.pack_ckt
    :noindex:
 
-.. autofunction:: krangpower.open_ckt
+Loading
+.......
+
+.. automethod:: krangpower.Krang.open_ckt
+   :noindex:
 
 The files saved are zip archives that contain, aside from the main JSON file, other archives and pickle-files with all the
 necessary information.

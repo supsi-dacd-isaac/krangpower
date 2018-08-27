@@ -214,7 +214,7 @@ def _main():
 
     print('Reloading saved circuit...')
     del eulv
-    eulv_saved = kp.open_ckt(mpck)
+    eulv_saved = kp.Krang.open_ckt(mpck)
 
     print('Some edge coverage...')
     kp.do_edge_tests()
