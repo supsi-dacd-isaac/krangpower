@@ -821,9 +821,12 @@ class Krang(object):
             else:
                 assert self[name].eltype == 'transformer'
                 nw = self[name].NumWindings()
+                bs0, t0 = bus_resolve(buses[0])
+
                 # we ASSUME that there is one primary winding and it's the first
                 for w in range(1, nw):
-                    _update_edge(self, gr, (buses[0], buses[w]), name)
+                    bsw, tw = bus_resolve(buses[w])
+                    _update_edge(self, gr, (bs0, bsw), (t0, tw), name)
 
         # pack all the buses together with the elements
         for n in gr.nodes:
