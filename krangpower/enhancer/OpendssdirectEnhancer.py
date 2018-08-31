@@ -66,7 +66,15 @@ def _couplearray(item):
     return _np.array(item[0::2]) + _np.array(item[1::2]) * 1j
 
 
-def _terminalize(item):
+def _terminalize_cpx(item):
+    return _terminalize(item, _np.complex, 2)
+
+
+def _terminalize_int(item):
+    return _terminalize(item, int, 1)
+
+
+def _terminalize(item, data_type, values_per_item):
 
     # note that, when I pass an item to terminalize, I am taking for granted that I can find nterm and ncond in the
     # respective calls to odr. If you called odr.CktElement.Powers(), for example, I take it that you knew what
@@ -76,14 +84,14 @@ def _terminalize(item):
     nterm = _odr.CktElement.NumTerminals()
     ncond = _odr.CktElement.NumConductors()
 
-    assert len(item) == nterm * ncond * 2
-    cpxr = _np.zeros([nterm, ncond], 'complex')
+    assert len(item) == nterm * ncond * values_per_item
+    cpxr = _np.zeros([nterm, ncond], dtype=data_type)
 
     for idx, couple in enumerate(_pairwise(item)):
         real = couple[0]
         imag = couple[1]
         cpxr[int(idx / ncond), (idx % ncond)] = _np.sum([_np.multiply(1j, imag), real], axis=0)
-        cpxr[int(idx / ncond), (idx % ncond)] = _np.sum([_np.multiply(1j, imag), real], axis=0)
+        # cpxr[int(idx / ncond), (idx % ncond)] = _np.sum([_np.multiply(1j, imag), real], axis=0)
 
     return cpxr
 

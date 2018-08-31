@@ -27,15 +27,16 @@
 "CktElement":
   {"CplxSeqCurrents": ["_couplearray"],
    "CplxSeqVoltages": ["_couplearray"],
-   "Currents": ["_terminalize"],
-   "CurrentsMagAng": ["_terminalize"],
+   "Currents": ["_terminalize_cpx"],
+   "CurrentsMagAng": ["_terminalize_cpx"],
+   "NodeOrder": ["_terminalize_int"],
    "Losses": ["_cpx"],
    "PhaseLosses": ["_couplearray"],
-   "Powers": ["_terminalize"],
+   "Powers": ["_terminalize_cpx"],
    "SeqCurrents": ["_couplearray"],
    "SeqVoltages": ["_couplearray"],
-   "Voltages": ["_terminalize"],
-   "VoltagesMagAng": ["_terminalize"],
+   "Voltages": ["_terminalize_cpx"],
+   "VoltagesMagAng": ["_terminalize_cpx"],
    "Yprim": ["_matricize"]
    }
 }
