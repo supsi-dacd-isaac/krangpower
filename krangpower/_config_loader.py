@@ -32,12 +32,12 @@ CONFIG.read(os.path.join(_THISDIR, 'config/krang_config.cfg'))
 DSSHELP = cfp.RawConfigParser()
 DSSHELP.read(os.path.join(_THISDIR, 'config/DSSHelp.cfg'))
 
-
 # -------------------------------------------------------------
 # CONSTANTS
 # -------------------------------------------------------------
 INTERFACE_METHODS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'interfaces'))
 UNIT_MEASUREMENT_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'measurement_units'))
+BYPASS_REGEX_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'bypass_regex'))
 MANDATORY_UNITS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'mandatory_units'))
 TREATMENTS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'treatments'))
 INTERF_SELECTORS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'interface_selectors'))
@@ -50,6 +50,7 @@ GLOBAL_LOG_LEVEL = getattr(logging, CONFIG.get('log_settings', 'default_logging_
 MAX_LOG_SIZE_MB = CONFIG.getfloat('log_settings', 'max_log_size_mb')
 MAX_HIST_LOG = CONFIG.getint('log_settings', 'max_historical_logs')
 ELK = CONFIG.get('misc_settings', 'graph_element_tag')
+TMK = CONFIG.get('misc_settings', 'graph_terminal_tag')
 DEFAULT_KRANG_NAME = CONFIG.get('misc_settings', 'default_krang_name')
 CMD_LOG_NEWLINE_LEN = CONFIG.getint('misc_settings', 'newline_cmdlog_length')
 DEFAULT_ENH_NAME = CONFIG.get('misc_settings', 'default_enhancer_name')
@@ -58,6 +59,16 @@ LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
 BASE_FREQUENCY = CONFIG.getfloat('electrical', 'frequency_hz')
 
+
+# -------------------------------------------------------------
+# BYPASS REGEXP LOAD
+# -------------------------------------------------------------
+with open(BYPASS_REGEX_PATH, 'r') as rfile:
+    rxps = rfile.read()
+
+BYPASS_REGEX = []
+for rx in rxps.splitlines():
+    BYPASS_REGEX.append(re.compile(rx))
 
 # -------------------------------------------------------------
 #  LOG PATH

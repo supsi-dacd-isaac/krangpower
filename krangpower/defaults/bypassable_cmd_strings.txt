@@ -1,0 +1,4 @@
+solve
+get[^\n]*
+set[^\n]*
+edit[^\n]*

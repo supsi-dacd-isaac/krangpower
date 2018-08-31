@@ -25,7 +25,7 @@ from . import _components as co
 from . import enhancer
 from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
 from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, COMMAND_LOGPATH, MAIN_LOGPATH, \
-    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY
+    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY, TMK, BYPASS_REGEX
 from ._deptree import DepTree as _DepGraph
 from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
 from ._logging_init import mlog, clog, add_filehandler, remove_filehandlers
@@ -105,6 +105,33 @@ def _invalidate_cache(f):
     return cached_invalidator_f
 
 
+def _is_bypassable(cmd_str):
+    for rx in BYPASS_REGEX:
+        if rx.search(cmd_str) is not None:
+            return True
+
+    return False
+
+
+def _invalidate_graphcache_on_command(f_command):
+    # this decorator is meant to be used with those Krang methods that alter the circuit described by the Krang,
+    # thus invalidating the method cache accumulated till that moment
+
+    @wraps(f_command)
+    def cached_invalidator_f(self, cmd_str, echo=True):
+        if not _is_bypassable(cmd_str):
+            if hasattr(self, '_graphcache'):
+                self._graphcache = None
+            elif hasattr(self.oek, '_graphcache'):
+                self.oek._graphcache = None
+            else:
+                raise AttributeError
+        return f_command(self, cmd_str, echo)
+
+    cached_invalidator_f.__name__ = f_command.__name__
+    return cached_invalidator_f
+
+
 def _invalidate_cache_outside(oek):
     # this decorator is meant to be used with functions outside Krang  that nevertheless alter the circuit described by
     # the currently instantiated Krang, thus invalidating the method cache
@@ -136,6 +163,25 @@ def _cache(f):
             except KeyError:
                 value = f(self, *args, **kwargs)
                 self._fncache[f.__name__] = value
+                return value
+        else:
+            return f(self, *args, **kwargs)
+
+    cached_f.__name__ = f.__name__
+    return cached_f
+
+
+def _graph_cache(f):
+    # this decorator is meant to be used with expensive Krang methods that can be cached and don't change value
+    # until the Krang is actively modified
+    @wraps(f)
+    def cached_f(self, *args, **kwargs):
+        if CACHE_ENABLED:
+            if self._graphcache is not None:
+                return self._graphcache
+            else:
+                value = f(self, *args, **kwargs)
+                self._graphcache = value
                 return value
         else:
             return f(self, *args, **kwargs)
@@ -191,6 +237,7 @@ class Krang(object):
         self._csvloadshapes = []
         self._ai_list = []
         self._fncache = {}
+        self._graphcache = None
         self._coords_linked = {}
 
         # file output redirection to the temp folder
@@ -343,6 +390,7 @@ class Krang(object):
 
     @_helpfun(DSSHELP, 'EXECUTIVE')
     @_invalidate_cache
+    @_invalidate_graphcache_on_command
     def command(self, cmd_str: str, echo=True):
         """Performs an opendss textual command and adds the commands to the record Krang.com if echo is True."""
 
@@ -721,28 +769,33 @@ class Krang(object):
     #  GRAPH
     # -----------------------------------------------------------------------------------------------------------------
 
-    @_cache
+    @_graph_cache
     def graph(self):
         """Krang.graph is a Networkx.Graph that contains a description of the circuit. The elements are stored as
         _PackedOpendssElement's in the edge/node property 'el'. More information about how to make use of the graph
         can be found in the dedicated page."""
 
-        def _update_node(myself, graph, bus, myname):
+        def _update_node(myself, graph, bus, terminal, myname):
             try:
                 exel = graph.nodes[bus][ELK]
+
             except KeyError:
-                graph.add_node(bus, **{ELK: [myself[myname]]})
+                graph.add_node(bus, **{ELK: [myself[myname]],
+                                       TMK: {myname: terminal}})
                 return
             exel.append(myself[myname])
+            graph.nodes[bus][TMK].update({myname: terminal})
             return
 
-        def _update_edge(myself, graph, ed, myname):
+        def _update_edge(myself, graph, ed, terminals, myname):
             try:
                 exel = graph.edges[ed][ELK]
             except KeyError:
-                graph.add_edge(*ed, **{ELK: [myself[myname]]})
+                graph.add_edge(*ed, **{ELK: [myself[myname]],
+                                       TMK: {myname: dict(zip(ed, terminals))}})
                 return
             exel.append(myself[myname])
+            graph.edges[ed][TMK].update({myname: dict(zip(ed, terminals))})
             return
 
         gr = nx.Graph()
@@ -753,18 +806,17 @@ class Krang(object):
             except (TypeError, AttributeError):
                 continue
 
-            # todo encode term perms in the graph
             if len(buses) == 1:
-                bs, _ = bus_resolve(buses[0])
+                bs, t = bus_resolve(buses[0])
 
-                _update_node(self, gr, bs, name)
+                _update_node(self, gr, bs, t, name)
 
                 # gr.add_node(bs, **{_elk: self.oe[name]})
             elif len(buses) == 2:
-                bs0, _ = bus_resolve(buses[0])
-                bs1, _ = bus_resolve(buses[1])
+                bs0, t0 = bus_resolve(buses[0])
+                bs1, t1 = bus_resolve(buses[1])
 
-                _update_edge(self, gr, (bs0, bs1), name)
+                _update_edge(self, gr, (bs0, bs1), (t0, t1), name)
 
                 # gr.add_edge(bs0, bs1, **{_elk: self.oe[name]})
             else:
