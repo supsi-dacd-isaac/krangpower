@@ -23,34 +23,30 @@ class GraphView(nx.Graph):
 
         wckgr = weakref.proxy(ckgr)
 
-        gr = wckgr.graph()
+        self.gr = wckgr.graph()
         self.bus_pos = wckgr.bus_coords()
-        stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
-        if stpos == {}:
-            self.pad_pos = nx.spring_layout(gr)
-        else:
-            self.pad_pos = nx.spring_layout(gr, pos=stpos)
-
+        self._cached_pad_pos = None
+            
         self.raw_mode = raw_mode  # when false, getitem behavior is simplified
         """If True, __getitem__ has the same behavior as nx.Graph. If False, __getitem__ returns the values of busfun
         or edgefun directly."""
 
         if busfun is not None:
             self.bus_prop = busfun.__name__
-            for n in gr.nodes:
-                self.add_node(n, **{self.bus_prop: busfun(gr.nodes[n])})
+            for n in self.gr.nodes:
+                self.add_node(n, **{self.bus_prop: busfun(self.gr.nodes[n])})
         else:
             self.bus_prop = None
-            for n in gr.nodes:
+            for n in self.gr.nodes:
                 self.add_node(n)
 
         if edgefun is not None:
             self.edge_prop = edgefun.__name__
-            for e in gr.edges:
-                self.add_edge(*e, **{self.edge_prop: edgefun(gr.edges[e])})
+            for e in self.gr.edges:
+                self.add_edge(*e, **{self.edge_prop: edgefun(self.gr.edges[e])})
         else:
             self.edge_prop = None
-            for e in gr.edges:
+            for e in self.gr.edges:
                 self.add_edge(*e)
 
     def __getitem__(self, item):
@@ -60,6 +56,20 @@ class GraphView(nx.Graph):
             return super().__getitem__(item)
         else:
             return _lean_getitem(item, self)
+        
+    @property
+    def pad_pos(self):
+        if self._cached_pad_pos is None:
+            stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
+            if stpos == {}:
+                self._cached_pad_pos = nx.spring_layout(self.gr)
+            else:
+                self._cached_pad_pos = nx.spring_layout(self.gr, pos=stpos)
+        
+        return self._cached_pad_pos
+    
+    def reset_pad_pos(self):
+        self._cached_pad_pos = None
 
     def get_edge_dict(self, convert_to_unit=None):
         if convert_to_unit is None:

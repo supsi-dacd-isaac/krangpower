@@ -70,6 +70,7 @@ BYPASS_REGEX = []
 for rx in rxps.splitlines():
     BYPASS_REGEX.append(re.compile(rx))
 
+
 # -------------------------------------------------------------
 #  LOG PATH
 # -------------------------------------------------------------
