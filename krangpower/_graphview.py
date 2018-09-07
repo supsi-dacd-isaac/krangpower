@@ -25,7 +25,6 @@ class GraphView(nx.Graph):
 
         self.gr = wckgr.graph()
         self.bus_pos = wckgr.bus_coords()
-        self._cached_pad_pos = None
             
         self.raw_mode = raw_mode  # when false, getitem behavior is simplified
         """If True, __getitem__ has the same behavior as nx.Graph. If False, __getitem__ returns the values of busfun
@@ -59,17 +58,11 @@ class GraphView(nx.Graph):
         
     @property
     def pad_pos(self):
-        if self._cached_pad_pos is None:
-            stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
-            if stpos == {}:
-                self._cached_pad_pos = nx.spring_layout(self.gr)
-            else:
-                self._cached_pad_pos = nx.spring_layout(self.gr, pos=stpos)
-        
-        return self._cached_pad_pos
-    
-    def reset_pad_pos(self):
-        self._cached_pad_pos = None
+        stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
+        if stpos == {}:
+            return nx.spring_layout(self.gr)
+        else:
+            return nx.spring_layout(self.gr, pos=stpos)
 
     def get_edge_dict(self, convert_to_unit=None):
         if convert_to_unit is None:

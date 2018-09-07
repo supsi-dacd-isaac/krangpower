@@ -8,7 +8,7 @@ Krangpower depends on a series of data/configuration files, contained in the :co
 
 .. important::
 
-    As of v0.1.12, these files are not yet complete. In order to contribute to the perfectioning of these files, a detailed knowledge of OpenDSS and meticulous study of its documentation is required.
+    As of v0.2.2, these files are not yet complete. In order to contribute to the perfectioning of these files, a detailed knowledge of OpenDSS and meticulous study of its documentation is required.
     Completing these configuration files is not the current #1 priority, but it will be in the future, when all the important functionality is completely ironed out, and certainly before any development-state changing release.
 
     In the meantime, any help on completing (and double-checking!!) these files is appreciated!
@@ -141,3 +141,18 @@ In vanilla OpenDSS, some element definitions allow you to specify in what units 
 Since in krangpower, physical quantities are provided to the element constructors complete with a pint measurement unit, this specification
 becomes superfluous. This file contains the unit declarations chosen by krangpower for its internal workings;
 and krangpower then converts what the user provides to these units when generating an OpenDSS instruction.
+
+bypassable_cmd_strings.txt
+..........................
+
+This file contains regular expressions that krangpower tries to match to any command sent through :code:`Krang.command()`.
+If the command matches any of these regular expressions, the cached :code:`Krang.graph()` (whose calculation can be very expensive)
+is mantained.
+
+In other words, this file contains regular expressions that identify those commands that have no influence on the graph and
+should not trigger its re-calculation.
+
+splash.txt
+..........
+
+Just a splash screen with the logo.

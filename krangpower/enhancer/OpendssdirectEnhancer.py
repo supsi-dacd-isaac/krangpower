@@ -66,15 +66,6 @@ def _couplearray(item):
 
 
 def _terminalize_cpx(item):
-    return _terminalize(item, _np.complex, 2)
-
-
-def _terminalize_int(item):
-    return _terminalize(item, int, 1)
-
-
-def _terminalize(item, data_type, values_per_item):
-
     # note that, when I pass an item to terminalize, I am taking for granted that I can find nterm and ncond in the
     # respective calls to odr. If you called odr.CktElement.Powers(), for example, I take it that you knew what
     # you were doing. Calls coming from PackedElements, instead, should perform the cktelement selection just before
@@ -83,16 +74,27 @@ def _terminalize(item, data_type, values_per_item):
     nterm = _odr.CktElement.NumTerminals()
     ncond = _odr.CktElement.NumConductors()
 
-    assert len(item) == nterm * ncond * values_per_item
-    cpxr = _np.zeros([nterm, ncond], dtype=data_type)
+    assert len(item) == nterm * ncond * 2
+    cpxr = _np.zeros([nterm, ncond], dtype=_np.complex)
 
     for idx, couple in enumerate(_pairwise(item)):
         real = couple[0]
         imag = couple[1]
         cpxr[int(idx / ncond), (idx % ncond)] = _np.sum([_np.multiply(1j, imag), real], axis=0)
-        # cpxr[int(idx / ncond), (idx % ncond)] = _np.sum([_np.multiply(1j, imag), real], axis=0)
 
     return cpxr
+
+
+def _terminalize_int(item):
+    nterm = _odr.CktElement.NumTerminals()
+    ncond = _odr.CktElement.NumConductors()
+
+    assert len(item) == nterm * ncond * 1
+    int_r = _np.zeros([nterm, ncond], dtype=_np.int)
+    for idx, element in enumerate(item):
+        int_r[int(idx / ncond), (idx % ncond)] = element
+
+    return int_r
 
 
 def _cpx(item):

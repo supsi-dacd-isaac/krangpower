@@ -23,7 +23,7 @@ also is, but the results returned by :code:`krangpower.enhancer` have several ad
 - Structured items such as :code:`opendssdirect.Circuit.SistemY()` are returned as :code:`pandas.DataFrame` for easier manipulation and export
 - Items come, where appropriate, as Quantities (from the pint_ package) with the appropriate measurement unit. This enables easy conversions and secures against miscalculations.
 - Through the exposed function :code:`txt_command`, the OpenDSS text interface is checked for errors (that are normally just returned as strings without raising anything).
-- The exposed a :code:`pack` function that enables easy and intuitive element exploration by returning a PackedOpendssElement_ corresponding to the name passed as argument, either fully qualified or simple.
+- The exposed :code:`pack` function that enables easy and intuitive element exploration by returning a PackedOpendssElement_ corresponding to the name passed as argument, either fully qualified or simple.
 
 Additional functions
 ....................

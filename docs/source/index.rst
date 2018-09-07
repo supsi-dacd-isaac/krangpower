@@ -45,7 +45,7 @@ Run as appropriate for your system:
 
    Krangpower is a python 3.x package; currently, compatibility with python 2.x is not sought after.
 
-Alternatively, if you wish to contribute to the codebase too, you can clone and use the `Github repo`_. As of june 2018, krangpower is in intense development and the Github repo is typically a few days ahead of the pypi index.
+Alternatively, if you wish to contribute to the codebase too, you can clone and use the `Github repo`_. As of june 2018, krangpower is in intense development and the Github repo is typically a few days/weeks ahead of the pypi index.
 
 
 .. _`Github repo`: https://github.com/supsi-dacd-isaac/krangpower
