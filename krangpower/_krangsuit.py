@@ -529,27 +529,30 @@ class Krang(object):
         pwr, lss = myKrang.custom_drag_solve('myKrang["agent_1"].Powers()', 'myKrang.brain.Circuit.Losses()')
 
         (returns two lists with the values assumed by the expressions passed after each solution steps).
+
+        DEPRECATED IN FAVOR OF Krang.evalsolve
+
         """
 
         # we tokenize qties in order to replace the name with self
         r_qties = []
         linq = {}
         for q in qties:
-            rslt = []
+            rsq = []
             tkn = tokenize(io.BytesIO(q.encode('utf-8')).readline)
             for idx, (toknum, tokval, _, _, _) in enumerate(tkn):
                 if idx == 1:  # the content of token number 1 is replaced with "self"
-                    rslt.append((toknum, 'self'))
+                    rsq.append((toknum, 'self'))
                 else:  # everything else is left untouched
-                    rslt.append((toknum, tokval))
-            r_qty = untokenize(rslt).decode('utf-8').replace(' ', '')
+                    rsq.append((toknum, tokval))
+            r_qty = untokenize(rsq).decode('utf-8').replace(' ', '')
             if r_qty not in r_qties:
                 r_qties.append(r_qty)
                 linq[r_qty] = q
 
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(1)
-        rslt = {linq[q]: None for q in r_qties}
+        rslt = {linq[q]: [] for q in r_qties}
 
         for n in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
@@ -563,14 +566,41 @@ class Krang(object):
                     self.command(ai_el.fus(self, ai_el.name))
             self.solve()
             for q in r_qties:
-                rslt[linq[q]] = eval(q)
+                rslt[linq[q]].append(eval(q))
 
         self.brain.Solution.Number(nmbr)
 
         if as_dict:
             return rslt
         else:
-            return (v for q, v in rslt.items())
+            return list(rslt.values())
+
+    def evalsolve(self, *fns, every_steps=1):
+        """Accepts as arguments a series of functions that take a Krang object as input.
+        Returns a list of lists; each list contains the returned values of the corresponding function passed, evaluated
+        at each step."""
+
+        nmbr = self.brain.Solution.Number()
+        self.brain.Solution.Number(every_steps)
+        rslt = [[]] * len(fns)
+
+        for n in _PBar(range(nmbr), level=LOGGING_INFO):
+            for ai_el in self._ai_list:
+                if n == 0:  # it's possible that, at the first step, there's no solution for the ai_el to query.
+                    try:    # So we just pass and the solution will use the default values
+                        self.command(ai_el.fus(self, ai_el.name))
+                    except OSError:
+                        self.snap()
+                        self.command(ai_el.fus(self, ai_el.name))
+                else:  # from the 2nd step on, the command has to work correctly, so no try block.
+                    self.command(ai_el.fus(self, ai_el.name))
+            self.solve()
+            for f_index, fn in enumerate(fns):
+                evaluation = fn(self)
+                rslt[f_index].append(evaluation)
+
+        self.brain.Solution.Number(nmbr)
+        return rslt
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
@@ -895,7 +925,7 @@ class _BusView:
         try:
             assert other.name != ''
         except AssertionError:
-            raise KrangObjAdditionError(other, 'Could not add object {}. Did you name the element before adding it?'
+            raise KrangObjAdditionError(other, 'Could not add object {}. Did you remember to name the element before adding it?'
                                         .format(other))
 
         # we declare possibly undeclared objects that were associated with other (loadshapes...)
