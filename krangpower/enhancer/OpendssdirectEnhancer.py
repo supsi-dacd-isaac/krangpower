@@ -24,6 +24,8 @@ import numpy as _np
 import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
+from ._stdout_hijack import stdout_redirected
+
 from .._aux_fcn import lower as _lower
 from .._aux_fcn import pairwise as _pairwise
 from .._components import LineGeometry
@@ -777,8 +779,9 @@ def txt_command(cmd_str: str, echo=True):
      get_all_names()is triggered**. The log output can be suppressed by setting the keyword argument echo=False; but even
      in this case, if kp.get_log_level() is 0, the log of the command will be forced."""
 
-    #with stdout_redirected2():
-    rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
+    with stdout_redirected():
+        rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
+
     if echo or get_log_level() == 0:
         log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(DEFAULT_ENH_NAME)))
                  + ']-->[' + rslt.replace('\n', '') + ']')
