@@ -16,7 +16,7 @@ class stdout_redirected_linux:
 
     def __enter__(self):
         self.stdout_fileno = sys.stdout.fileno()
-        self.stdout_save = os.dup(stdout_fileno)
+        self.stdout_save = os.dup(self.stdout_fileno)
         self.stdout_pipe = os.pipe()
         os.dup2(self.stdout_pipe[1], self.stdout_fileno)
         os.close(self.stdout_pipe[1])
