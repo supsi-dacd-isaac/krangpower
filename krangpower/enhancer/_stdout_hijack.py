@@ -1,11 +1,24 @@
 import os
 import sys
-import tempfile
-import threading
 from platform import system
+from tempfile import TemporaryFile
+from threading import Thread
+
+from .._config_loader import ODSS_STDOUT_SUPPRESSED
 
 
-class stdout_redirected_linux:
+class NullCm:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+class _stdout_redirected_linux:
+
+    # the point of this class is the temporary redirection of stdout to a pipe that's continuously drained
+    # by a thread. It's clean, straightforward and it doesn't work under Windows.
 
     @staticmethod
     def drain_pipe(pipe_read_side):
@@ -21,12 +34,12 @@ class stdout_redirected_linux:
         os.dup2(self.stdout_pipe[1], self.stdout_fileno)  # hijacks stdout fileno's handler to the pipe's write end
         os.close(self.stdout_pipe[1])  # we need no more the open pipe's write end
 
-        self.t = threading.Thread(target=self.drain_pipe, args=(self.stdout_pipe[0],))
+        self.t = Thread(target=self.drain_pipe, args=(self.stdout_pipe[0],))
         self.t.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.close(self.stdout_fileno)  # this triggers the thread's exit condition
-        self.t.join()
+        self.t.join()  # waits for the thread to exit
 
         # clean up
         os.close(self.stdout_pipe[0])  # pipe's read end
@@ -34,13 +47,13 @@ class stdout_redirected_linux:
         os.close(self.stdout_save)
 
 
-class stdout_redirected_win:
+class _stdout_redirected_win:
 
     def __enter__(self):
         self._org = sys.stdout
         sys.stdout = sys.__stdout__
         fdout = sys.stdout.fileno()
-        self._file = tempfile.TemporaryFile()
+        self._file = TemporaryFile()
         self._dup = None
         if fdout >= 0:
             self._dup = os.dup(fdout)
@@ -56,11 +69,15 @@ class stdout_redirected_win:
         self._file.close()
 
 
-if system() == 'Windows':
-    stdout_redirected = stdout_redirected_win
+# when loading the module, the exposed context manager is chosen accordingly
+if not ODSS_STDOUT_SUPPRESSED:
+    stdout_redirected = NullCm
+
+elif system() == 'Windows':
+    stdout_redirected = _stdout_redirected_win
 
 elif system() == 'Linux':
-    stdout_redirected = stdout_redirected_linux
+    stdout_redirected = _stdout_redirected_linux
 
 else:
     raise OSError('Unsupported system: {}'.format(system()))

@@ -18,13 +18,14 @@ from logging import DEBUG as _DBG_LVL
 from math import sqrt as _sqrt
 from operator import getitem as _getitem, attrgetter as _attrgetter
 from re import sub as _sub
+from re import compile as _re_compile
 from sys import modules as _sys_modules
 
 import numpy as _np
 import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
-from ._stdout_hijack import stdout_redirected
+from ._stdout_hijack import stdout_redirected, NullCm
 
 from .._aux_fcn import lower as _lower
 from .._aux_fcn import pairwise as _pairwise
@@ -156,6 +157,10 @@ def _xycurve_names():
 # <editor-fold desc="Loads and declarations">
 _this_module = _sys_modules[__name__]
 _classmap = _get_classmap()
+
+_command_manager = stdout_redirected
+
+_DISKFULL_RE = _re_compile('Disk Full')
 
 _ID = 'OpendssdirectEnhancer'
 setattr(_this_module, 'utils', _odr.utils)
@@ -779,8 +784,20 @@ def txt_command(cmd_str: str, echo=True):
      get_all_names()is triggered**. The log output can be suppressed by setting the keyword argument echo=False; but even
      in this case, if kp.get_log_level() is 0, the log of the command will be forced."""
 
-    with stdout_redirected():
+    # this context manager has the only purpose to try to redirect the stdout coming from opendss compiled library,
+    # which in this context is a nuisance (for example, it prints "Duty Cycle solution" every time a solution is
+    # launched
+    global _command_manager
+
+    with _command_manager():
         rslt = _this_module.utils.run_command(cmd_str)  # rslt could be an error string too
+
+    if _DISKFULL_RE.search(rslt) is not None:
+        # it may happen that the command manager's stdout redirection meets a "disk full" error for os-related problems,
+        # especially under Windows. In this case, we re-run the command, give up the command manager, send a warning
+        rslt = _this_module.utils.run_command(cmd_str)
+        _command_manager = NullCm
+        mlog.warning('The run_command context manager was suppressed after an error: {}'.format(str(rslt)))
 
     if echo or get_log_level() == 0:
         log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(DEFAULT_ENH_NAME)))

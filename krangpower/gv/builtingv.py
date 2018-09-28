@@ -11,7 +11,8 @@ from .._graphview import GraphView
 from .._krangsuit import Krang, UM
 
 
-__all__ = ['BusVoltageView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView']
+__all__ = ['BusVoltageView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView',
+           'BusTotCurrentView']
 
 
 class VoltageView(GraphView):
@@ -77,6 +78,36 @@ class BusTotPowerView(GraphView):
             return pwr
 
         super().__init__(buspower, None, ckgr)
+
+
+class BusTotCurrentView(GraphView):
+    def __init__(self, ckgr: Krang):
+
+        def buscurr_2_elements(bus):
+
+            fincurr = [0.0 + 0.0j] * 4 * UM.A
+
+            if bus.get('el', None) is not None:
+                for el in bus['el']:
+                    bee = el.BusNames()
+
+                    phase = bee[0].split('.')[1]
+
+                    try:
+                    # here i am guaranteed that the element has one bus and one or more terminals
+                        totcurr += el.Currents()
+                    except NameError:
+                        totcurr = el.Currents()
+
+            try:
+                fincurr[int(phase)-1] = totcurr[0][0]
+                fincurr[3] = totcurr[0][1]
+            except:
+                pass
+
+            return fincurr
+
+        super().__init__(buscurr_2_elements, None, ckgr)
 
 
 class AvgCurrentView(GraphView):

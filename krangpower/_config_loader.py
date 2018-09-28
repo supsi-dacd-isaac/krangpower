@@ -58,6 +58,7 @@ GLOBAL_PRECISION = CONFIG.getint('precision', 'global_precision')
 LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
 BASE_FREQUENCY = CONFIG.getfloat('electrical', 'frequency_hz')
+ODSS_STDOUT_SUPPRESSED = CONFIG.getboolean('misc_settings', 'opendss_stdout_suppression')
 
 
 # -------------------------------------------------------------
