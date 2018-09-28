@@ -552,7 +552,7 @@ class Krang(object):
 
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(1)
-        rslt = {linq[q]: [] for q in r_qties}
+        rslt = {linq[q]: None for q in r_qties}
 
         for n in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
@@ -566,7 +566,7 @@ class Krang(object):
                     self.command(ai_el.fus(self, ai_el.name))
             self.solve()
             for q in r_qties:
-                rslt[linq[q]].append(eval(q))
+                rslt[linq[q]] = eval(q)
 
         self.brain.Solution.Number(nmbr)
 
@@ -575,14 +575,15 @@ class Krang(object):
         else:
             return list(rslt.values())
 
-    def evalsolve(self, *fns, every_steps=1):
+    def evalsolve(self, *fns, every_steps=1, as_df=True):
         """Accepts as arguments a series of functions that take a Krang object as input.
         Returns a list of lists; each list contains the returned values of the corresponding function passed, evaluated
         at each step."""
 
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(every_steps)
-        rslt = [[]] * len(fns)
+        rslt = {fname: [] for fname in [x.__name__ for x in fns]}
+        timestamps = []
 
         for n in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
@@ -595,12 +596,20 @@ class Krang(object):
                 else:  # from the 2nd step on, the command has to work correctly, so no try block.
                     self.command(ai_el.fus(self, ai_el.name))
             self.solve()
-            for f_index, fn in enumerate(fns):
+            timestamps.append(self.brain.Solution.DblHour().to('hour').magnitude)
+            for fn in fns:
                 evaluation = fn(self)
-                rslt[f_index].append(evaluation)
+                rslt[fn.__name__].append(evaluation)
 
         self.brain.Solution.Number(nmbr)
-        return rslt
+
+        if as_df:
+            rslt_df = pandas.DataFrame(index=timestamps, columns=[x.__name__ for x in fns])
+            for fn in fns:
+                rslt_df[fn.__name__] = rslt[fn.__name__]
+            return rslt_df
+        else:
+            return rslt
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
