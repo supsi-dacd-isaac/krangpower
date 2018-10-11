@@ -515,7 +515,7 @@ class Krang(object):
 
     def snap(self):
         """Solves a circuit snapshot."""
-        n = self.get('number')
+        n = self.get('number', 'stepsize')
         self.set(mode='snap')
         self.solve()
         self.set(mode='duty')

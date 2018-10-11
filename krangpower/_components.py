@@ -919,6 +919,20 @@ class CsvLoadshape(_FcsAble):
 
         return super_dikt
 
+    def peek(self):
+        import matplotlib
+        matplotlib.use('QT5agg')
+        import matplotlib.pyplot as plt
+
+        data = np.genfromtxt(self.csv_path, delimiter=',', skip_header=self.shift, names=['kw', 'kvar'])
+        ics = np.asarray(list(range(int(self.npts)))) * self.true_interval.to('hour').magnitude
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+        ax1.plot(ics, data['kw'], color='k', label='kw')
+        ax1.plot(ics, data['kvar'], color='r', label='kvar')
+        ax1.set_title(self.name)
+        plt.show()
+
 
 # SUPPORT OBJECTS
 # -------------------------------------------------------------
@@ -2519,8 +2533,15 @@ class StorageController(_AboveCircuitElement):
 
 def load_entities(path):
 
-    with open(path, 'r') as file:
-        dik = json.load(file)
+    if isinstance(path, str):
+        with open(path, 'r') as file:
+            dik = json.load(file)
+
+    elif isinstance(path, dict):
+        dik = path
+
+    else:
+        raise TypeError
 
     dicky = {}
 

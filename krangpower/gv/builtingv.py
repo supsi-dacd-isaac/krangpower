@@ -94,7 +94,7 @@ class BusTotCurrentView(GraphView):
                     phase = bee[0].split('.')[1]
 
                     try:
-                    # here i am guaranteed that the element has one bus and one or more terminals
+                        # here i am guaranteed that the element has one bus and one or more terminals
                         totcurr += el.Currents()
                     except NameError:
                         totcurr = el.Currents()
