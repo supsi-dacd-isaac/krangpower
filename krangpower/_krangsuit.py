@@ -240,7 +240,10 @@ class Krang(object):
         self._coords_linked = {}
 
         # file output redirection to the temp folder
+        current_cwd = os.getcwd()
+        # this function has the side effect of changing the cwd
         self.brain.Basic.DataPath(TMP_PATH)
+        os.chdir(current_cwd)
 
         # binding the file formatters to the module-wide loggers
         add_filehandler(mlog, MAIN_LOGPATH)
