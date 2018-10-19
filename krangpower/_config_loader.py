@@ -30,7 +30,7 @@ CONFIG.read(os.path.join(_THISDIR, 'config/krang_config.cfg'))
 # HELP LOAD
 # -------------------------------------------------------------
 DSSHELP = cfp.RawConfigParser()
-DSSHELP.read(os.path.join(_THISDIR, 'config/DSSHelp.cfg'))
+DSSHELP.read(os.path.join(_THISDIR, 'defaults/DSSHelp.cfg'))
 
 # -------------------------------------------------------------
 # CONSTANTS

@@ -88,6 +88,7 @@ def _main():
                 ct = content.split('=')
                 skw[ct[0]] = um.parse_expression(ct[1].strip('/n'))
     skw['basekv'] = skw.pop('Voltage')
+    skw['frequency'] = 50.0 * um.Hz
 
     # the transformer file is a nuisance
     print('Instantiating xformer...')
@@ -211,6 +212,8 @@ def _main():
     print('Packing circuit...')
     mpck = eulv.pack_ckt()
     jsn = eulv.save_json()
+
+    eulv.peek()
 
     print('Reloading saved circuit...')
     del eulv

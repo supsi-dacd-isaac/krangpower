@@ -240,10 +240,10 @@ class Krang(object):
         self._coords_linked = {}
 
         # file output redirection to the temp folder
-        current_cwd = os.getcwd()
+        # current_cwd = os.getcwd()
         # this function has the side effect of changing the cwd
-        self.brain.Basic.DataPath(TMP_PATH)
-        os.chdir(current_cwd)
+        # self.brain.Basic.DataPath(TMP_PATH)
+        # os.chdir(current_cwd)
 
         # binding the file formatters to the module-wide loggers
         add_filehandler(mlog, MAIN_LOGPATH)
@@ -876,6 +876,21 @@ class Krang(object):
 
         return gr
 
+    def peek(self):
+        import matplotlib
+        matplotlib.use('Qt5Agg')
+        import matplotlib.pyplot as plt
+
+        self._declare_buscoords()
+
+        stpos = {x: y for x, y in self.bus_coords().items() if y is not None}
+        if stpos == {}:
+            posi = nx.spring_layout(self.graph())
+        else:
+            posi = nx.spring_layout(self.graph(), pos=stpos, fixed=stpos)
+
+        nx.draw_networkx(self.graph(), pos=posi)
+        plt.show()
 
 # -------------------------------------------------------------
 # Single-dispatched __getitem__

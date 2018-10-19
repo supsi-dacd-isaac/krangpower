@@ -785,7 +785,7 @@ class CsvLoadshape(_FcsAble):
         elif os.path.isfile(os.path.join(TMP_PATH, name + '.csv')):
             self.csv_path = os.path.join(TMP_PATH, name + '.csv')
         else:
-            raise IOError('Could not find file {0}'.format(self.csv_path))
+            raise IOError('Could not find file {0}'.format(csv_path))
 
         if name == '':
             self.name = str(os.path.basename(self.csv_path)).split('.')[0]
