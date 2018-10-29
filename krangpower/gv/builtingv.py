@@ -114,6 +114,6 @@ class AvgCurrentView(GraphView):
     def __init__(self, ckgr: Krang):
 
         def edgeavgI(edg):
-            return np.mean(np.sum(np.abs(np.real(edg['el'][0].Currents())), axis=1))
+            return np.sum(np.mean(np.abs(edg['el'][0].Currents()), axis=0))
 
         super().__init__(None, edgeavgI, ckgr)
