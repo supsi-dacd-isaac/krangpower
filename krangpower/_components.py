@@ -265,6 +265,9 @@ def _type_recovery(value, target_type):
             recovered_value = np.matrix(value)
         elif isinstance(value, str):
             recovered_value = target_type(value)
+        elif isinstance(value, np.complex):
+            assert target_type == np.matrix
+            recovered_value = np.matrix([np.real(value), np.imag(value)])
         else:
             raise TypeUnrecoverableError(type(value))
     except AssertionError:

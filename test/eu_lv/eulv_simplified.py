@@ -202,12 +202,43 @@ def _main():
     for lname, ldata in elaborated_lines_dict.items():
         eulv[tuple(ldata['Buses'])] << kp.Line(**ldata['kwargs']).aka(lname) * lc_el[ldata['LineCode']]
 
+    print('Adding loadprofiles...')
+    for lpdata in lp_dict.values():
+        eulv << lpdata
+
+    # loads
+    td = {'A': '1', 'B': '2', 'C': '3'}
+    print('Extracting loads...')
+    loads_dict = dict()
+    with open(os.path.join(eulv_root, 'Loads.csv'), 'r') as ldf:
+        rd = csv.reader(ldf)
+        next(rd)  # first line is a comment
+        next(rd)  # second line is a comment
+        hd = next(rd)  # header without name
+        while True:
+            try:
+                rl = next(rd)
+                raw_load_dict = dict(zip(hd, rl))
+                loads_dict[raw_load_dict['Name']] = {'Bus': raw_load_dict['Bus'] + '.' + td[raw_load_dict['phases']],
+                                                     'duty_name': int(raw_load_dict['Yearly'].split('_')[1]),
+                                                     'kwargs': {
+                                                     'phases': int(raw_load_dict['numPhases']),
+                                                     'conn': raw_load_dict['Connection'],
+                                                     'pf': float(raw_load_dict['PF']),
+                                                     'kW': float(raw_load_dict['kW']),
+                                                     'kV': float(raw_load_dict['kV']),
+                                                     'model': raw_load_dict['Model']}}
+
+            except StopIteration:
+                break
+
+    print('Adding loads...')
+    for ldname, lddata in loads_dict.items():
+        eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs'])(model='2').aka(ldname) * lp_dict[int(lddata['duty_name'])]
+
     print('Linking coordinates...')
     eulv.link_coords(os.path.join(eulv_root, 'Buscoords.csv'))
-
     eulv.snap()
-
-    eulv.save_json()
 
 
 if __name__ == '__main__':

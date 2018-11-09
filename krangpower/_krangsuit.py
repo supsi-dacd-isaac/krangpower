@@ -477,7 +477,7 @@ class Krang(object):
 
     @_helpfun(DSSHELP, 'PLOT')
     def plot(self, object_descriptor):
-        """Wraps the OpenDSS export command. This method has a help attribute that prints to console the available
+        """Wraps the OpenDSS plot command. This method has a help attribute that prints to console the available
          options."""
         self.command('plot ' + object_descriptor)
 
@@ -578,7 +578,7 @@ class Krang(object):
         else:
             return list(rslt.values())
 
-    def evalsolve(self, *fns, every_steps=1, as_df=True):
+    def evalsolve(self, *fns, every_steps=1, always_rebuild_Y=False, as_df=True, detect_multindex=True):
         """Accepts as arguments a series of functions that take a Krang object as input.
         Returns a list of lists; each list contains the returned values of the corresponding function passed, evaluated
         at each step."""
@@ -598,6 +598,10 @@ class Krang(object):
                         self.command(ai_el.fus(self, ai_el.name))
                 else:  # from the 2nd step on, the command has to work correctly, so no try block.
                     self.command(ai_el.fus(self, ai_el.name))
+
+            if always_rebuild_Y:
+                self.command('BuildY')
+
             self.solve()
             timestamps.append(self.brain.Solution.DblHour().to('hour').magnitude)
             for fn in fns:
@@ -607,9 +611,22 @@ class Krang(object):
         self.brain.Solution.Number(nmbr)
 
         if as_df:
-            rslt_df = pandas.DataFrame(index=timestamps, columns=[x.__name__ for x in fns])
-            for fn in fns:
-                rslt_df[fn.__name__] = rslt[fn.__name__]
+            main_col_names = [x.__name__ for x in fns]
+
+            if detect_multindex:
+                complexive_dict = {}
+                for fn_name in main_col_names:
+                    for putative_dict in rslt[fn_name]:
+                        complexive_dict.update({(fn_name, k): v for k, v in putative_dict.items()})
+
+                rslt_df = pandas.DataFrame(complexive_dict)
+
+            else:
+
+                rslt_df = pandas.DataFrame(index=timestamps, columns=main_col_names)
+                for fn in fns:
+                    rslt_df[fn.__name__] = rslt[fn.__name__]
+
             return rslt_df
         else:
             return rslt
