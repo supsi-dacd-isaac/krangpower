@@ -12,7 +12,7 @@ from .._krangsuit import Krang, UM
 
 
 __all__ = ['BusVoltageView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView',
-           'BusTotCurrentView']
+           'BusTotCurrentView', 'EdgeCurrentView']
 
 
 class VoltageView(GraphView):
@@ -129,3 +129,13 @@ class AvgCurrentView(GraphView):
             return np.sum(np.mean(np.abs(edg['el'][0].Currents()), axis=0))
 
         super().__init__(None, edgeavgI, ckgr)
+
+
+class EdgeCurrentView(GraphView):
+    def __init__(self, ckgr: Krang):
+
+        def edgeI(edg):
+            return edg['el'][0].Currents()
+
+        super().__init__(None, edgeI, ckgr)
+
