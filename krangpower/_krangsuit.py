@@ -215,7 +215,8 @@ class Krang(object):
                  name=DEFAULT_KRANG_NAME,
                  voltage_source=co.Vsource(),
                  source_bus_name='sourcebus',
-                 working_frequency=BASE_FREQUENCY):
+                 working_frequency=BASE_FREQUENCY,
+                 redirect_path=False):
 
         # first of all, we double-check that we arrived at initialization with _INSTANCE == None
         assert globals()['_INSTANCE'] is None
@@ -240,7 +241,8 @@ class Krang(object):
         # file output redirection to the temp folder
         # current_cwd = os.getcwd()
         # this function has the side effect of changing the cwd
-        # self.brain.Basic.DataPath(TMP_PATH)
+        if redirect_path:
+            self.brain.Basic.DataPath(TMP_PATH)
         # os.chdir(current_cwd)
 
         # binding the file formatters to the module-wide loggers
