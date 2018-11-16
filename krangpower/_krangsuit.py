@@ -24,10 +24,10 @@ from . import _components as co
 from . import enhancer
 from ._aux_fcn import get_help_out, bus_resolve, diff_dicts
 from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP, COMMAND_LOGPATH, MAIN_LOGPATH, \
-    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY, TMK, BYPASS_REGEX
+    TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY, TMK, BYPASS_REGEX, BCOMMAND_LOGPATH
 from ._deptree import DepTree as _DepGraph
 from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
-from ._logging_init import mlog, clog, add_filehandler, remove_filehandlers
+from ._logging_init import mlog, clog, bclog, add_rotfilehandler, remove_filehandlers, add_comfilehandler
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
 
@@ -226,8 +226,6 @@ class Krang(object):
         self.flags = {'coords_preloaded': False}
         self.id = name
         """Krang.id is a string identifier for the krang that is used in the logs."""
-        self.com = []
-        """Krang.com is a list of all the commands sent to the text interface throughout the Krang's lifespan."""
         self.brain = enhancer
         """Krang.brain points to krangpower.enhancer It has the same interface as OpenDSSDirect.py, but
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
@@ -246,8 +244,9 @@ class Krang(object):
         # os.chdir(current_cwd)
 
         # binding the file formatters to the module-wide loggers
-        add_filehandler(mlog, MAIN_LOGPATH)
-        add_filehandler(clog, COMMAND_LOGPATH)
+        add_rotfilehandler(mlog, MAIN_LOGPATH)
+        add_rotfilehandler(clog, COMMAND_LOGPATH)
+        add_comfilehandler(bclog, BCOMMAND_LOGPATH)
 
         # OpenDSS initialization commands
         self.command('clear')
@@ -302,6 +301,7 @@ class Krang(object):
         # removing the filehandlers from the module-wide loggers
         remove_filehandlers(mlog)
         remove_filehandlers(clog)
+        remove_filehandlers(bclog)
         # resetting the global singleton-controlling variable
         globals()['_INSTANCE'] = None
 
@@ -309,6 +309,12 @@ class Krang(object):
     def name(self):
         """The name of the circuit.."""
         return self.brain.Circuit.Name()
+
+    @property
+    def com(self):
+        """Krang.com is a list of all the commands sent to the text interface throughout the Krang's lifespan."""
+        with open(BCOMMAND_LOGPATH, 'r') as bcfile:
+            return bcfile.read()
 
     @staticmethod
     def get_unit_registry():
@@ -403,8 +409,8 @@ class Krang(object):
                 raise ClearingAttemptError
 
         rslt = self.brain.txt_command(cmd_str, echo)
-        if echo:
-            self.com.append(cmd_str)
+        # if echo:
+        #     self.com.append(cmd_str)
         return rslt
 
     @_helpfun(DSSHELP, 'OPTIONS')
@@ -501,7 +507,7 @@ class Krang(object):
         i = pandas.DataFrame(
             columns=[x.lower() for x in self.brain.Circuit.YNodeOrder()])
 
-        self.brain.log_line('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
+        self.brain.log_line_on_debug_log('Commencing drag_solve of {0} points: the individual "solve" commands will be omitted.'
                             ' Wait for end message...'.format(nmbr))
         for _ in _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
@@ -511,7 +517,7 @@ class Krang(object):
             v = v.append(self.brain.Circuit.YNodeVArray(), ignore_index=True)
             i = i.append(self.brain.Circuit.YCurrents(), ignore_index=True)
 
-        self.brain.log_line('Drag_solve ended')
+        self.brain.log_line_on_debug_log('Drag_solve ended')
         self.brain.Solution.Number(nmbr)
 
         return v, i
@@ -816,12 +822,16 @@ class Krang(object):
         else:
             return None
 
-    def save_dss(self, path):
+    def save_dss(self, path=None):
         """Saves a file with the text commands that were imparted by the Krang.command method aside from those for which
         echo was False. The file output should be loadable and runnable in traditional OpenDSS with no modifications.
         """
+
+        if path is None:
+            return self.com
+
         with open(path, 'w') as ofile:
-            ofile.write('\n'.join(self.com))
+            ofile.write(self.com)
 
     # -----------------------------------------------------------------------------------------------------------------
     #  GRAPH

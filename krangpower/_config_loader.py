@@ -97,7 +97,7 @@ elif platform.system() == 'Linux':
 else:
     raise OSError('Could not find a valid log path.')
 
-# command_log
+# debug command_log
 if platform.system() == 'Windows':
 
     LOG_FOLDER = CONFIG.get('log_settings', 'win_log_folder')
@@ -114,6 +114,27 @@ elif platform.system() == 'Linux':
 
     COMMAND_LOGPATH = os.path.join(LOG_FOLDER,
                                    CONFIG.get('log_settings', 'commands_log_name'))
+else:
+    raise OSError('Could not find a valid log path.')
+
+
+# bare command log
+if platform.system() == 'Windows':
+
+    LOG_FOLDER = CONFIG.get('log_settings', 'win_log_folder')
+    LOG_FOLDER = _WIN_ENV_VAR_REGEX.sub(replace_env, LOG_FOLDER)
+    # basepath = re.sub('(%)([^%]+)(%)', replace_env, basepath)
+
+    BCOMMAND_LOGPATH = os.path.join(LOG_FOLDER,
+                                    '_comlog.log')
+elif platform.system() == 'Linux':
+
+    LOG_FOLDER = CONFIG.get('log_settings', 'linux_log_folder')
+    LOG_FOLDER = _LINUX_ENV_VAR_REGEX.sub(replace_env, LOG_FOLDER)
+    # basepath = re.sub('(\$)([^/|\\]+)', replace_env, basepath)
+
+    BCOMMAND_LOGPATH = os.path.join(LOG_FOLDER,
+                                    '_comlog.log')
 else:
     raise OSError('Could not find a valid log path.')
 

@@ -16,7 +16,7 @@ from ._edge_tests import do_edge_tests
 from ._splash import splash  # ishtar egg
 
 # the enhancer utility functions are double-exposed in krangpower's main namespace
-from .enhancer import get_all_names, txt_command, pack, log_line
+from .enhancer import get_all_names, txt_command, pack, log_line_on_debug_log
 
 # exceptions
 from .enhancer import OpenDSSTextError

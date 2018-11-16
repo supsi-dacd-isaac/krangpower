@@ -34,7 +34,7 @@ from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from .._components import get_classmap as _get_classmap
 from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, \
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
-from .._logging_init import clog, mlog, get_log_level
+from .._logging_init import clog, mlog, bclog, get_log_level
 
 try:
     assert _odr.Basic.Start(0)
@@ -800,8 +800,10 @@ def txt_command(cmd_str: str, echo=True):
         mlog.warning('The run_command context manager was suppressed after an error: {}'.format(str(rslt)))
 
     if echo or get_log_level() == 0:
-        log_line('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(DEFAULT_ENH_NAME)))
-                 + ']-->[' + rslt.replace('\n', '') + ']')
+        log_line_on_debug_log('[' + cmd_str.replace('\n', '\n' + ' ' * (30 + len(DEFAULT_ENH_NAME)))
+                              + ']-->[' + rslt.replace('\n', '') + ']')
+
+        log_bare_command(cmd_str)
 
     if _influences_names(cmd_str):
         _this_module.names_up2date = False
@@ -814,9 +816,15 @@ def txt_command(cmd_str: str, echo=True):
         return rslt
 
 
-def log_line(line: str, lvl=_DBG_LVL):
+def log_line_on_debug_log(line: str, lvl=_DBG_LVL):
     """Logs a line in the command log."""
     clog.log(lvl, '(id:{0})-'.format(_ID) + line)
+# </editor-fold>
+
+
+def log_bare_command(line: str):
+    """Logs a line in the command log."""
+    bclog.log(logging.DEBUG, line)
 # </editor-fold>
 
 

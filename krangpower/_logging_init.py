@@ -32,7 +32,7 @@ def _create_main_logger():
     return main_logger
 
 
-def _create_command_logger(name):
+def _create_command_debug_logger(name):
     logformat = '%(asctime)s - %(message)s'
     cmd_logger = logging.getLogger(name)
     cmd_logger.setLevel(GLOBAL_LOG_LEVEL)
@@ -43,11 +43,23 @@ def _create_command_logger(name):
     return cmd_logger
 
 
-clog = _create_command_logger(DEFAULT_ENH_NAME)
+def _create_bare_command_logger(name):
+    logformat = '%(message)s'
+    bcmd_logger = logging.getLogger(name)
+    bcmd_logger.setLevel(logging.DEBUG)
+    logformatter = logging.Formatter(logformat)
+
+    setattr(bcmd_logger, 'official_formatter', logformatter)
+
+    return bcmd_logger
+
+
+clog = _create_command_debug_logger(DEFAULT_ENH_NAME)
 mlog = _create_main_logger()
+bclog = _create_bare_command_logger('bare_' + DEFAULT_ENH_NAME)
 
 
-def add_filehandler(logger, path):
+def add_rotfilehandler(logger, path):
 
     logformatter = logger.official_formatter
     # this property is expected because it is set in the creation functions
@@ -56,6 +68,23 @@ def add_filehandler(logger, path):
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         fh = RotatingFileHandler(path, maxBytes=MAX_LOG_SIZE_MB * _MiB, backupCount=MAX_HIST_LOG)
+        fh.setFormatter(logformatter)
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
+    except PermissionError:
+        # this is handled to the logger itself for warning
+        logger.warning('Permission to write log file denied')
+
+
+def add_comfilehandler(logger, path):
+
+    logformatter = logger.official_formatter
+    # this property is expected because it is set in the creation functions
+
+    try:
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        fh = logging.FileHandler(path, mode='w')
         fh.setFormatter(logformatter)
         fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
