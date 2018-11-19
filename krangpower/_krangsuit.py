@@ -18,6 +18,7 @@ import canonicaljson
 import networkx as nx
 import numpy as np
 import pandas
+from scipy.sparse import csc_matrix
 
 from . import _busquery as bq
 from . import _components as co
@@ -100,7 +101,6 @@ def _invalidate_cache(f):
             raise AttributeError
         return f(self, *args, **kwargs)
 
-    cached_invalidator_f.__name__ = f.__name__
     return cached_invalidator_f
 
 
@@ -127,26 +127,18 @@ def _invalidate_graphcache_on_command(f_command):
                 raise AttributeError
         return f_command(self, cmd_str, echo)
 
-    cached_invalidator_f.__name__ = f_command.__name__
     return cached_invalidator_f
 
 
 def _invalidate_cache_outside(oek):
     # this decorator is meant to be used with functions outside Krang  that nevertheless alter the circuit described by
     # the currently instantiated Krang, thus invalidating the method cache
-
     def _direct_invalidate_cache(f):
-        @wraps(f)
-        def cached_invalidator_f(self, *args, **kwargs):
-            if hasattr(oek, '_fncache'):
-                oek._fncache = {}
-            else:
-                raise AttributeError
-
-            return f(self, *args, **kwargs)
-
-        cached_invalidator_f.__name__ = f.__name__
-        return cached_invalidator_f
+        if hasattr(oek, '_fncache'):
+            oek._fncache = {}
+        else:
+            raise AttributeError
+        return f
 
     return _direct_invalidate_cache
 
@@ -638,6 +630,31 @@ class Krang(object):
             return rslt_df
         else:
             return rslt
+
+    def Ybus_noload(self):
+        fp0 = self.fingerprint()
+        target_elements = [x for x in self.brain.get_all_names() if x.split('.')[0] in ('load', 'generator')]
+        kw0 = {t: self[t]['kw'] for t in target_elements}
+        kvar0 = {t: self[t]['kvar'] for t in target_elements}
+        pf0 = {t: self[t]['pf'] for t in target_elements}
+
+        for t in target_elements:
+            self[t]['kw'] = 0.0 * UM.kW
+            self[t]['kvar'] = 0.0 * UM.kVA
+
+        # self.brain.Solution.BuildYMatrix(a,b) requires a and b
+        self.command('BuildY')
+        self.snap()  # otherwise it does not really trigger the build
+        assert self.fingerprint() != fp0
+        y0 = csc_matrix(self.brain.Circuit.SystemY().values)
+
+        for t in target_elements:
+            self[t]['kw'] = kw0[t]
+            self[t]['kvar'] = kvar0[t]
+            self[t]['pf'] = pf0[t]
+
+        assert self.fingerprint() == fp0
+        return y0
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
