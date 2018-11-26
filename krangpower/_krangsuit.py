@@ -266,7 +266,7 @@ class Krang(object):
     @classmethod
     def from_json(cls, path):
         """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
-        to dependency between object is automatically taken care of."""
+        to dependency between objects is automatically taken care of."""
         return _from_json(path)
 
     @classmethod
@@ -403,8 +403,6 @@ class Krang(object):
                 raise ClearingAttemptError
 
         rslt = self.brain.txt_command(cmd_str, echo)
-        # if echo:
-        #     self.com.append(cmd_str)
         return rslt
 
     @_helpfun(DSSHELP, 'OPTIONS')
@@ -579,9 +577,21 @@ class Krang(object):
             return list(rslt.values())
 
     def evalsolve(self, *fns, every_steps=1, always_rebuild_Y=False, as_df=True, detect_multindex=True):
-        """Accepts as arguments a series of functions that take a Krang object as input.
-        Returns a list of lists; each list contains the returned values of the corresponding function passed, evaluated
-        at each step."""
+        """Solves the circuit for the set number of steps, evaluating the function passed at each step and returning the
+        results.
+        Accepts as arguments a series of functions that take a Krang object as input.
+        Returns a dictionary or a DF; each item/column contains the returned values of the corresponding function
+        passed, indicized by simulation time.
+
+        :param fns: the functions to evaluate, passed as sequence of *args. The functions have to accept one positional
+         argument of type Krang, as they will be passed this instance.
+        :param every_steps: Every how many steps to perform the evaluation. Default = 1.
+        :param always_rebuild_Y: Whether to impart the 'BuildY' command before solving.
+        :param as_df: Whether to return the results in a dict or in a pandas.DataFrame
+        :param detect_multindex: (NOT YET IMPLEMENTED) if set to True, and so is as_df, evalsolve checks if all the
+         individual results returned by the functions are dicts with the same keys. If so, those keys are used as a
+         multi-index for the DataFrame.
+        """
 
         nmbr = self.brain.Solution.Number()
         self.brain.Solution.Number(every_steps)
@@ -631,29 +641,33 @@ class Krang(object):
         else:
             return rslt
 
+    @_cache
     def Ybus_noload(self):
-        fp0 = self.fingerprint()
+        """Returns the Ybus matrix of the existing circuit with all loads, generators set to 0 kW and 0 kVAr.
+        The Ybus computed in such a way can be used to compute the load/generator injection currents as Ybus_noload * V,
+        where V is the node voltage vector computed in any other condition of load.
+        The matrix is returned in Compressed Sparse Column representation.
+        """
+
         target_elements = [x for x in self.brain.get_all_names() if x.split('.')[0] in ('load', 'generator')]
-        kw0 = {t: self[t]['kw'] for t in target_elements}
-        kvar0 = {t: self[t]['kvar'] for t in target_elements}
-        pf0 = {t: self[t]['pf'] for t in target_elements}
+        if target_elements:
+            # fp0 = self.fingerprint()
+            for t in target_elements:
+                self.command('disable {}'.format(t))
 
-        for t in target_elements:
-            self[t]['kw'] = 0.0 * UM.kW
-            self[t]['kvar'] = 0.0 * UM.kVA
+            self.command('BuildY')
+            self.snap()  # otherwise it does not really trigger the build
 
-        # self.brain.Solution.BuildYMatrix(a,b) requires a and b
-        self.command('BuildY')
-        self.snap()  # otherwise it does not really trigger the build
-        assert self.fingerprint() != fp0
-        y0 = csc_matrix(self.brain.Circuit.SystemY().values)
+            y0 = csc_matrix(self.brain.Circuit.SystemY().values)
 
-        for t in target_elements:
-            self[t]['kw'] = kw0[t]
-            self[t]['kvar'] = kvar0[t]
-            self[t]['pf'] = pf0[t]
+            for t in target_elements:
+                self.command('enable {}'.format(t))
 
-        assert self.fingerprint() == fp0
+            # assert self.fingerprint() == fp0
+            # disable-enable is trustable. No need for lengthy fingerprint comparison
+        else:
+            y0 = csc_matrix(self.brain.Circuit.SystemY().values)
+
         return y0
 
     def solve(self, echo=True):
@@ -1067,7 +1081,7 @@ class _BusView:
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
 # -----------------------------|___/\__,_| \_/ \___|  \___/\/ |_|\___/ \__,_|\__,_|--------------------------
 # -----------------------------------------------------------------------------------------------------------
-def _from_json(path):
+def _from_json(path, redirect_path=False):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
     # load all entities
@@ -1078,7 +1092,7 @@ def _from_json(path):
         master_dict = json.load(path)
 
     # init the krang with the source, then remove it from the dict
-    l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']))
+    l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']), redirect_path=redirect_path)
     # todo see if it's sourcebus
     del master_dict['elements']['vsource.source']
 
@@ -1221,7 +1235,7 @@ def _open_ckt(path):
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
         jso = zf.open(fls[0])
-        krg = _from_json(jso)
+        krg = _from_json(jso, redirect_path=True)
 
         # If any AI are present, they are loaded from their pickle file and put inside _ai_list.
         if _FQ_DM_NAME in zf.namelist():
