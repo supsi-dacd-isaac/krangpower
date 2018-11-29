@@ -940,7 +940,7 @@ class CsvLoadshape(_FcsAble):
 # SUPPORT OBJECTS
 # -------------------------------------------------------------
 
-# note: these classes, along with the Line class, implement only an appropriate part of the underlying OpenDSS
+# note: these optisim, along with the Line class, implement only an appropriate part of the underlying OpenDSS
 # class properties, removing overlap between them.
 
 class LineCode(_NamedDSSentity):

@@ -25,7 +25,7 @@ class GraphView(nx.Graph):
         wckgr = weakref.proxy(ckgr)
 
         self.gr = wckgr.graph()
-        self.no = wckgr.brain.Circuit.AllNodeNames()
+        self.no = wckgr.brain.Circuit.AllBusNames()
         self.bus_pos = wckgr.bus_coords()
             
         self.raw_mode = raw_mode  # when false, getitem behavior is simplified
@@ -80,7 +80,11 @@ class GraphView(nx.Graph):
                 od[nodename] = ud[nodename]
             return od
         else:
-            return {n: self[n].to(convert_to_unit).magnitude for n in self.nodes}
+            ud = {n: self[n].to(convert_to_unit).magnitude for n in self.nodes}
+            od = OrderedDict()
+            for nodename in self.no:
+                od[nodename] = ud[nodename]
+            return od
 
 
 @singledispatch

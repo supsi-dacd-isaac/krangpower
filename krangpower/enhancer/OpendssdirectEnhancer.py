@@ -821,7 +821,6 @@ def log_line_on_debug_log(line: str, lvl=_DBG_LVL):
     clog.log(lvl, '(id:{0})-'.format(_ID) + line)
 # </editor-fold>
 
-
 def log_bare_command(line: str):
     """Logs a line in the command log."""
     bclog.log(logging.DEBUG, line)

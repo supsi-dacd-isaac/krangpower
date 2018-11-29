@@ -152,7 +152,7 @@ def _main():
     # skw, loads_dict, lines_dict, lc_dict, lp_dict, transformer
     print('Creating circuit...')
     SRC = kp.Vsource(**skw)
-    eulv = kp.Krang('eu_lv_test', SRC)
+    eulv = kp.Krang('eu_lv_test', SRC, redirect_path=True)
     eulv.set(basefreq=50.0 * um.Hz, voltagebases=[11.0, 0.416] * um.kV)
     eulv.command('calcvoltagebases')
 
@@ -212,8 +212,6 @@ def _main():
     print('Packing circuit...')
     mpck = eulv.pack_ckt()
     jsn = eulv.save_json()
-
-    eulv.peek()
 
     print('Reloading saved circuit...')
     del eulv

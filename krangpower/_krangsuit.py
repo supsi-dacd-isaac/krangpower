@@ -1081,7 +1081,7 @@ class _BusView:
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
 # -----------------------------|___/\__,_| \_/ \___|  \___/\/ |_|\___/ \__,_|\__,_|--------------------------
 # -----------------------------------------------------------------------------------------------------------
-def _from_json(path, redirect_path=False):
+def _from_json(path, redirect_path=False, final_snap=True):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
     # load all entities
@@ -1153,6 +1153,10 @@ def _from_json(path, redirect_path=False):
     # patch for curing the stepsize bug; this is probably due to stepsize overwriting by other settings
     l_ckt.set(stepsize=master_dict['settings']['values']['stepsize'])
     # patch for curing the stepsize bug
+
+    if final_snap:
+        # this often prevents segfaults when tampering with a krang's elements after loading, but before solving
+        l_ckt.snap()
 
     return l_ckt
 
@@ -1235,7 +1239,7 @@ def _open_ckt(path):
         fls = [x for x in zf.namelist() if x.lower().endswith('.json')]
         assert len(fls) == 1
         jso = zf.open(fls[0])
-        krg = _from_json(jso, redirect_path=True)
+        krg = _from_json(jso, redirect_path=True, final_snap=True)
 
         # If any AI are present, they are loaded from their pickle file and put inside _ai_list.
         if _FQ_DM_NAME in zf.namelist():
