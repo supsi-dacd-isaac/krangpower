@@ -519,7 +519,16 @@ class _PackedOpendssElement:
                     sel(self.fullname)
                 except TypeError:
                     sel(self.name, self.eltype)  # named selector
-            props = _this_module.Element.AllPropertyNames()
+
+            if _this_module.Element.Name().lower() == self.fullname:
+                props = _this_module.Element.AllPropertyNames()
+
+            else:  # something went wrong
+                if self.eltype == 'bus':
+                    props = []
+                else:
+                    raise Exception('PackedOpendssElement {} could not be selected. Please contact the dev')
+
         except AttributeError:
             raise ValueError('{0}-type objects are not dumpable.'.format(self.eltype.upper()))
         return {p: self[p] for p in props}
@@ -533,6 +542,10 @@ class _PackedOpendssElement:
         # the linegeometry internal structure is peculiar and has to be treated differently
         if self.eltype == 'linegeometry':
             return _unpack_linegeom(self)
+
+        # the bus packedelement has no corresponding regular element
+        if self.eltype == 'bus':
+            raise Exception('Buses cannot be unpacked.')
 
         myclass = _classmap[self.eltype]
 

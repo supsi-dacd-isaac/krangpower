@@ -1,37 +1,37 @@
 
-def _main():
+import csv
+import io
+import os
+import sys
+import zipfile
 
-    import csv
-    import io
-    import os
-    import sys
-    import zipfile
+import requests
 
-    import requests
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..\\..\\..\\krangpower'))
+import krangpower as kp
 
-    sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..\\..\\..\\krangpower'))
-    import krangpower as kp
+um = kp.UM
+kp.set_log_level(10)
+test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
 
-    um = kp.UM
-    kp.set_log_level(10)
-    test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
+def download_extract_zip(url):
+    """
+    Download a ZIP file and extract its contents in memory
+    yields (filename, file-like object) pairs
+    """
 
-    def download_extract_zip(url):
-        """
-        Download a ZIP file and extract its contents in memory
-        yields (filename, file-like object) pairs
-        """
+    response = requests.get(url)
+    path = os.path.join(test_dir, 'eulv_originals')
+    with zipfile.ZipFile(io.BytesIO(response.content)) as thezip:
+        thezip.extractall(path)
 
-        response = requests.get(url)
-        path = os.path.join(test_dir, 'eulv_originals')
-        with zipfile.ZipFile(io.BytesIO(response.content)) as thezip:
-            thezip.extractall(path)
+    return path
 
-        return path
+# this script loads the files for the European Low Voltage Feeder, exactly as downloadable as of 21.05.2018 from here
+# http://sites.ieee.org/pes-testfeeders/resources/
+# and then executes the solutions.
 
-    # this script loads the files for the European Low Voltage Feeder, exactly as downloadable as of 21.05.2018 from here
-    # http://sites.ieee.org/pes-testfeeders/resources/
-    # and then executes the solutions.
+def make_circuit(tname, save_json, save_ckt, save_effnodes, insert_loads, simplify, refine, loadmodel='2'):
 
     print('Downloading and extracting data from sites.ieee.org.....')
     data_url = 'http://sites.ieee.org/pes-testfeeders/files/2017/08/European_LV_Test_Feeder_v2.zip'
@@ -125,7 +125,7 @@ def _main():
     # skw, loads_dict, lines_dict, lc_dict, lp_dict, transformer
     print('Creating circuit...')
     SRC = kp.Vsource(**skw)
-    eulv = kp.Krang('eu_lv_simplified', SRC)
+    eulv = kp.Krang(tname, SRC)
     eulv.set(basefreq=50.0 * um.Hz, voltagebases=[11.0, 0.416] * um.kV)
     eulv.command('calcvoltagebases')
 
@@ -138,18 +138,12 @@ def _main():
         lc_el[lcname] = kp.LineCode(lcname, **lcdata)
         eulv << lc_el[lcname]
 
-    print('Lines postelaboration...')
-    import networkx as nx
-    tg = nx.Graph()
-    for lname, line in lines_dict.items():
-        tg.add_edge(*line['Buses'],
-                    linecode=line['LineCode'],
-                    phases=line['kwargs']['phases'],
-                    length=line['kwargs']['length'],
-                    units=line['kwargs']['units'])
-
+    # <editor-fold desc="Customization">
     def degree_two_nodes(grph):
         return [x for x in tg.nodes if grph.degree(x) == 2]
+
+    def degree_one_nodes(grph):
+        return [x for x in tg.nodes if grph.degree(x) == 1]
 
     def edges_analogous(graph, e1, e2):
         if graph.edges[e1]['linecode'] != graph.edges[e2]['linecode']:
@@ -161,50 +155,99 @@ def _main():
 
         return True
 
-    while True:
-        exit1 = False
-        tn = iter(degree_two_nodes(tg))
+    if simplify or refine:
+        print('Lines postelaboration...')
+        import networkx as nx
+        tg = nx.Graph()
+        for lname, line in lines_dict.items():
+            tg.add_edge(*line['Buses'],
+                        linecode=line['LineCode'],
+                        phases=line['kwargs']['phases'],
+                        length=line['kwargs']['length'],
+                        units=line['kwargs']['units'])
+
+    if simplify:
         while True:
-            try:
-                node = next(tn)
-            except StopIteration:
-                exit1 = True
-                break
-            e1, e2 = tg.edges(node)
-            n1, n2 = tg.neighbors(node)
-            if edges_analogous(tg, e1, e2):
-                tg.add_edge(n1,
-                            n2,
-                            phases=tg.edges[e1]['phases'],
-                            linecode=tg.edges[e1]['linecode'],
-                            units=tg.edges[e1]['units'],
-                            length=tg.edges[e1]['length'] + tg.edges[e2]['length'])
-                tg.remove_node(node)
-                break
-            else:
-                continue
+            exit1 = False
+            tn = iter(degree_two_nodes(tg))
+            while True:
+                try:
+                    node = next(tn)
+                except StopIteration:
+                    exit1 = True
+                    break
+                e1, e2 = tg.edges(node)
+                n1, n2 = tg.neighbors(node)
+                if edges_analogous(tg, e1, e2):
+                    tg.add_edge(n1,
+                                n2,
+                                phases=tg.edges[e1]['phases'],
+                                linecode=tg.edges[e1]['linecode'],
+                                units=tg.edges[e1]['units'],
+                                length=tg.edges[e1]['length'] + tg.edges[e2]['length'])
+                    tg.remove_node(node)
+                    break
+                else:
+                    continue
 
-        if exit1:
-            break
+            if exit1:
+                break
 
-    elaborated_lines_dict = {}
-    for e in tg.edges:
-        name = 'line_' + '_'.join(e)
-        elaborated_lines_dict[name] = {}
-        elaborated_lines_dict[name]['kwargs'] = {}
-        elaborated_lines_dict[name]['Buses'] = [*e]
-        elaborated_lines_dict[name]['kwargs']['units'] = tg.edges[e]['units']
-        elaborated_lines_dict[name]['kwargs']['length'] = tg.edges[e]['length']
-        elaborated_lines_dict[name]['kwargs']['phases'] = tg.edges[e]['phases']
-        elaborated_lines_dict[name]['LineCode'] = tg.edges[e]['linecode']
+    # further elaboration: fake-test nodes are removed
+    # reading csv file
+    if refine:
+        with open(os.path.join(eulv_root, 'Buscoords.csv'), 'r') as csvfile:
+            # creating a csv reader object
+            csvreader = csv.reader(csvfile)
+            # extracting each data row one by one
+            next(csvreader)
+            next(csvreader)
+
+            for row in csvreader:
+                bus, x, y = row
+                try:
+                    tg.nodes[bus]['pos'] = (float(x), float(y))
+                except KeyError:
+                    continue
+
+        terminals = degree_one_nodes(tg)
+        terminals_pos = {t: tg.nodes[t]['pos'] for t in terminals}
+        count = 0
+        for n in terminals:
+            positions = nx.get_node_attributes(tg, 'pos')
+            duplicate_nodes = {x: v for x, v in positions.items() if list(positions.values()).count(v) > 1}
+            if terminals_pos[n] in duplicate_nodes.values():
+                tg.remove_node(n)
+                count += 1
+
+    # print(count)
+    # print(len(degree_one_nodes(tg)))
+    # print(len(tg.nodes))
+
+    if simplify or refine:
+        elaborated_lines_dict = {}
+        for e in tg.edges:
+            name = 'line_' + '_'.join(e)
+            elaborated_lines_dict[name] = {}
+            elaborated_lines_dict[name]['kwargs'] = {}
+            elaborated_lines_dict[name]['Buses'] = [*e]
+            elaborated_lines_dict[name]['kwargs']['units'] = tg.edges[e]['units']
+            elaborated_lines_dict[name]['kwargs']['length'] = tg.edges[e]['length']
+            elaborated_lines_dict[name]['kwargs']['phases'] = tg.edges[e]['phases']
+            elaborated_lines_dict[name]['LineCode'] = tg.edges[e]['linecode']
+    else:
+        elaborated_lines_dict = lines_dict
+
+    # </editor-fold>
 
     print('Adding lines...')
     for lname, ldata in elaborated_lines_dict.items():
         eulv[tuple(ldata['Buses'])] << kp.Line(**ldata['kwargs']).aka(lname) * lc_el[ldata['LineCode']]
 
-    print('Adding loadprofiles...')
-    for lpdata in lp_dict.values():
-        eulv << lpdata
+    if insert_loads:
+        print('Adding loadprofiles...')
+        for lpdata in lp_dict.values():
+            eulv << lpdata
 
     # loads
     td = {'A': '1', 'B': '2', 'C': '3'}
@@ -232,15 +275,40 @@ def _main():
             except StopIteration:
                 break
 
-    print('Adding loads...')
-    for ldname, lddata in loads_dict.items():
-        eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs'])(model='2').aka(ldname) * lp_dict[int(lddata['duty_name'])]
+    if insert_loads:
+        print('Adding loads...')
+        for ldname, lddata in loads_dict.items():
+            eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs'])(model=loadmodel).aka(ldname) * lp_dict[int(lddata['duty_name'])]
+        noload = ''
+    else:
+        noload = '_noload'
 
     print('Linking coordinates...')
     eulv.link_coords(os.path.join(eulv_root, 'Buscoords.csv'))
-    eulv.snap()
+
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+
+    if save_ckt:
+        eulv.pack_ckt(os.path.join(this_dir, tname + noload + '.zip'))
+
+    if save_json:
+        eulv.save_json(os.path.join(this_dir, tname + noload + '.json'))
+
+    if save_effnodes:
+        import json
+        effnodes = [lddata['Bus'].split('.')[0] for lddata in loads_dict.values() if lddata['Bus'].split('.')[0] in tg.nodes]
+        with open(os.path.join(this_dir, 'effective_nodes_' + tname + noload + '.json'), 'w+') as f:
+            json.dump(effnodes, f)
+
+    return eulv
 
 
 if __name__ == '__main__':
-    _main()
-
+    eulv = make_circuit('eu_lv_refined',
+                        save_json=True,
+                        save_ckt=False,
+                        save_effnodes=True,
+                        insert_loads=False,
+                        simplify=True,
+                        refine=True
+                        )

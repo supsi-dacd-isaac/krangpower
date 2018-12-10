@@ -28,7 +28,7 @@ from ._config_loader import PINT_QTY_TYPE, ELK, DEFAULT_KRANG_NAME, UM, DSSHELP,
     TMP_PATH, GLOBAL_PRECISION, LSH_ZIP_NAME, DEFAULT_SETTINGS, BASE_FREQUENCY, TMK, BYPASS_REGEX, BCOMMAND_LOGPATH
 from ._deptree import DepTree as _DepGraph
 from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
-from ._logging_init import mlog, clog, bclog, add_rotfilehandler, remove_filehandlers, add_comfilehandler
+from ._logging_init import remove_filehandlers, add_rotfilehandler, mlog, clog, bclog, add_comfilehandler
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
 

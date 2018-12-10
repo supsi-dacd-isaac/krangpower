@@ -8,7 +8,7 @@ Distribution System Simulator based on [OpenDSS](https://sourceforge.net/project
 
 # Design goals
 * Providing an even easier and more intuitive frontend
-* Introducing measurement units through the package [pint](http://pint.readthedocs.io/en/latest/), allowing the user to worry less about errors, to demand the burden of conversion and to correctly interpret the results without recurring to the OpenDSS docs
+* Introducing measurement units through the package [pint](http://pint.readthedocs.io/en/latest/), allowing the user to worry less about errors, to delegate the burden of conversion and to correctly interpret the results without recurring to the OpenDSS docs
 * Returning results in interoperable data structures and containers
 * Enabling advanced analysis modes, for example:
     * Exporting the network topology in a [networkx](https://networkx.github.io/) graph
