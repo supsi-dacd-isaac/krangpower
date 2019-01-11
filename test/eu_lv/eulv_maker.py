@@ -1,4 +1,3 @@
-
 import csv
 import io
 import os
@@ -13,6 +12,7 @@ import krangpower as kp
 um = kp.UM
 kp.set_log_level(10)
 test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
+
 
 def download_extract_zip(url):
     """
@@ -30,6 +30,7 @@ def download_extract_zip(url):
 # this script loads the files for the European Low Voltage Feeder, exactly as downloadable as of 21.05.2018 from here
 # http://sites.ieee.org/pes-testfeeders/resources/
 # and then executes the solutions.
+
 
 def make_circuit(tname, save_json, save_ckt, save_effnodes, insert_loads, simplify, refine, loadmodel='2'):
 
@@ -305,10 +306,12 @@ def make_circuit(tname, save_json, save_ckt, save_effnodes, insert_loads, simpli
 
 if __name__ == '__main__':
     eulv = make_circuit('eu_lv_refined',
-                        save_json=True,
+                        save_json=False,
                         save_ckt=False,
-                        save_effnodes=True,
+                        save_effnodes=False,
                         insert_loads=False,
                         simplify=True,
-                        refine=True
+                        refine=False
                         )
+
+    pass
