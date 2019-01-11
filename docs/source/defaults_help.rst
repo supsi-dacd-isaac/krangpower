@@ -13,7 +13,7 @@ Krangpower depends on a series of data/configuration files, contained in the :co
 
     In the meantime, any help on completing (and double-checking!!) these files is appreciated!
 
-In order to aid the knowledgeable user to comprehend what these files do, here follows a brief explanation of
+In order to aid the knowledgeable user to comprehend what these files do exactly, here follows a brief explanation of
 each one.
 
 association_types.csv
