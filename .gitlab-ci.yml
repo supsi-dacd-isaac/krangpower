@@ -1,9 +1,8 @@
-test:
+py36:
+  image: python:3.6
   script:
-  # this configures Django application to use attached postgres database that is run on `postgres` host
-  - apt-get update -qy
-  - apt-get install -y python-pip
-  - pip install -r requirements.txt
-  - pip install codecov
-  - coverage run --omit=krangpower/method_get.py ./tests.py
-  - codecov
+    - apt-get update -q -y
+    - pip install -r requirements.txt
+    - pip install codecov
+    - coverage run --omit=krangpower/method_get.py ./tests.py
+    - codecov
