@@ -14,6 +14,7 @@ kp.set_log_level(10)
 test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
 
 
+
 def download_extract_zip(url):
     """
     Download a ZIP file and extract its contents in memory
