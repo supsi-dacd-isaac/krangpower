@@ -734,6 +734,11 @@ class Krang(object):
         """Returns a dict with the bus coordinates already loaded in Opendss. Beware that coordinates loaded through
         a link_kml or link_csv are not immediately loaded in the Opendss, but they are just before a solution is
         launched. """
+
+        # why not?
+        if self.flags['coords_preloaded']:
+            self._declare_buscoords()
+
         bp = {}
         for bn in self.brain.Circuit.AllBusNames():
             if self['bus.' + bn].Coorddefined():

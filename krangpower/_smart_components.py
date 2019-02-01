@@ -11,7 +11,7 @@ import pickle
 from abc import abstractmethod
 
 from ._config_loader import UM
-from ._components import Generator, _odssrep, _FcsAble
+from ._components import Generator, _odssrep, FcsAble, FusAble
 from ._aux_fcn import termrep
 
 __all__ = ['DecisionModel', 'FourQ']
@@ -27,7 +27,7 @@ class DecisionModel:
         pass
 
 
-class FourQ(Generator):
+class FourQ(Generator, FusAble):
 
     @classmethod
     def isai(cls):

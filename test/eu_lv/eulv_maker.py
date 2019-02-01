@@ -312,7 +312,7 @@ if __name__ == '__main__':
                         save_effnodes=False,
                         insert_loads=False,
                         simplify=True,
-                        refine=False
+                        refine=True
                         )
 
     pass

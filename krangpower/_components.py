@@ -32,7 +32,7 @@ __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
            'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities', 'LineCode', 'LineGeometry',
            'Isource', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator']
+           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator', 'FusAble']
 
 _muldict = NxTable()
 _fmtdict = NxTable()
@@ -344,16 +344,52 @@ def _get_help(config, cmp):
 # -------------------------------------------------------------
 # GENERIC DSSENTITY AND ITS NAMED VERSION
 # -------------------------------------------------------------
-class _FcsAble:
+class FcsAble:
     def __init__(self):
         self._multiplied_objs = []
+
+    @classmethod
+    def isnamed(cls):
+        """Returns True if the class is a named entity, like a LineCode, False otherwise."""
+        return False
+
+    @classmethod
+    def isabove(cls):
+        """Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise."""
+        return False
+
+    @classmethod
+    def isai(cls):
+        """Returns true if the class is ai-enabled, False otherwise."""
+        return False
 
     @abstractmethod
     def fcs(self, **hookup):
         pass
 
 
-class _DSSentity(_FcsAble):
+class FusAble(FcsAble):
+
+    @classmethod
+    def isabove(cls):
+        return True
+
+    @classmethod
+    def isnamed(cls):
+        """Returns True if the class is a named entity, like a LineCode, False otherwise."""
+        return True
+
+    @classmethod
+    def isai(cls):
+        """Returns true if the class is ai-enabled, False otherwise."""
+        return True
+
+    @abstractmethod
+    def fus(self, oek, myname):
+        pass
+
+
+class _DSSentity(FcsAble):
     def __init__(self, **parameters):
         super().__init__()
         self.term_perm = None
@@ -376,21 +412,6 @@ class _DSSentity(_FcsAble):
     @property
     def eltype(self):
         return self.toe.split('_')[0]
-
-    @classmethod
-    def isnamed(cls):
-        """Returns True if the class is a named entity, like a LineCode, False otherwise."""
-        return False
-
-    @classmethod
-    def isabove(cls):
-        """Returns True if the class is an above-graph component, like a monitor or regulator, False otherwise."""
-        return False
-
-    @classmethod
-    def isai(cls):
-        """Returns true if the class is ai-enabled, False otherwise."""
-        return False
 
     @property
     def fullname(self):
@@ -738,7 +759,7 @@ class Loadshape(_DSSentity):
     pass
 
 
-class CsvLoadshape(_FcsAble):
+class CsvLoadshape(FcsAble):
     """
     Allows to specify a Loadshape that refers to a CSV file. Requires a path.
     The name of the loadshape will be the same as the file basename.
@@ -1316,7 +1337,7 @@ class LineGeometry_C(LineGeometry):
         self.wiretype = 'cncable'
 
 
-class Curve(_FcsAble):
+class Curve(FcsAble):
 
     # todo implement csv and direct data polimorphism
     # todo port loadshape as curve
