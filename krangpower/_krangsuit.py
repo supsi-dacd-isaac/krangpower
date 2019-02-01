@@ -598,7 +598,7 @@ class Krang(object):
         rslt = {fname: [] for fname in [x.__name__ for x in fns]}
         timestamps = []
 
-        for n in _PBar(range(nmbr), level=LOGGING_INFO):
+        for n in range(nmbr):  # _PBar(range(nmbr), level=LOGGING_INFO):
             for ai_el in self._ai_list:
                 if n == 0:  # it's possible that, at the first step, there's no solution for the ai_el to query.
                     try:    # So we just pass and the solution will use the default values
@@ -780,17 +780,17 @@ class Krang(object):
         master_dict = {'cktname': self.name, 'elements': {}, 'settings': {}}
 
         # elements
-        for Nm in _PBar(self.brain.Circuit.AllElementNames(), level=LOGGING_INFO, desc='jsonizing elements...'):
+        for Nm in self.brain.Circuit.AllElementNames(): # _PBar(self.brain.Circuit.AllElementNames(), level=LOGGING_INFO, desc='jsonizing elements...'):
             nm = Nm.lower()
             master_dict['elements'][nm] = self[nm].unpack().jsonize()
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
         # named entities
-        for ne in _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
+        for ne in self._named_entities: # _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # loadshapes
-        for ls in _PBar(self._csvloadshapes, level=LOGGING_INFO, desc='jsonizing loadshapes...'):
+        for ls in self._csvloadshapes: # _PBar(self._csvloadshapes, level=LOGGING_INFO, desc='jsonizing loadshapes...'):
             master_dict['elements'][ls.fullname] = ls.jsonize()
 
         # options

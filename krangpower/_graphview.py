@@ -24,7 +24,9 @@ class GraphView(nx.Graph):
 
         wckgr = weakref.proxy(ckgr)
 
-        self.gr = wckgr.graph()
+        # self.gr = wckgr.graph()
+        self._g_nodes = wckgr.graph().nodes
+        self._g_edges = wckgr.graph().edges
         self.no = wckgr.brain.Circuit.AllBusNames()
         self.bus_pos = wckgr.bus_coords()
             
@@ -34,20 +36,20 @@ class GraphView(nx.Graph):
 
         if busfun is not None:
             self.bus_prop = busfun.__name__
-            for n in self.gr.nodes:
-                self.add_node(n, **{self.bus_prop: busfun(self.gr.nodes[n])})
+            for n in self._g_nodes:
+                self.add_node(n, **{self.bus_prop: busfun(self._g_nodes[n])})
         else:
             self.bus_prop = None
-            for n in self.gr.nodes:
+            for n in self._g_nodes:
                 self.add_node(n)
 
         if edgefun is not None:
             self.edge_prop = edgefun.__name__
-            for e in self.gr.edges:
-                self.add_edge(*e, **{self.edge_prop: edgefun(self.gr.edges[e])})
+            for e in self._g_edges:
+                self.add_edge(*e, **{self.edge_prop: edgefun(self._g_edges[e])})
         else:
             self.edge_prop = None
-            for e in self.gr.edges:
+            for e in self._g_edges:
                 self.add_edge(*e)
 
     def __getitem__(self, item):
@@ -58,13 +60,13 @@ class GraphView(nx.Graph):
         else:
             return _lean_getitem(item, self)
         
-    @property
-    def pad_pos(self):
-        stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
-        if stpos == {}:
-            return nx.spring_layout(self.gr)
-        else:
-            return nx.spring_layout(self.gr, pos=stpos)
+    # @property
+    # def pad_pos(self):
+    #     stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
+    #     if stpos == {}:
+    #         return nx.spring_layout(self.gr)
+    #     else:
+    #         return nx.spring_layout(self.gr, pos=stpos)
 
     def get_edge_dict(self, convert_to_unit=None):
         if convert_to_unit is None:
