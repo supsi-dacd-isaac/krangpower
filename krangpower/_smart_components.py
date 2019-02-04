@@ -29,10 +29,6 @@ class DecisionModel:
 
 class FourQ(Generator, FusAble):
 
-    @classmethod
-    def isai(cls):
-        return True
-
     def __init__(self, **parameters):
         self._dm = None
         super().__init__(**parameters)

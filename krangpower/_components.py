@@ -371,15 +371,6 @@ class FcsAble:
 class FusAble(FcsAble):
 
     @classmethod
-    def isabove(cls):
-        return True
-
-    @classmethod
-    def isnamed(cls):
-        """Returns True if the class is a named entity, like a LineCode, False otherwise."""
-        return True
-
-    @classmethod
     def isai(cls):
         """Returns true if the class is ai-enabled, False otherwise."""
         return True
