@@ -99,6 +99,16 @@ of :code:`krangpower.enhancer` that is performed on load.
 
 **This file is complete**.
 
+dangerous_stacks.txt
+....................
+
+It lists what are the OpenDSS calls that are unsafe to make when a circuit is not yet solved. These calls have an extremely high
+risk of retrieving non-physical results or, worse, cause a segmentation fault.
+Calls listed here are met with an UnsafeCallError raise instead of being performed when the circuit is unsolved; or, if the "force_unsafe_calls" setting is set to True,
+a WARNING is issued and the call is performed anyways.
+
+**This file is complete**.
+
 measurement_units.json
 ......................
 

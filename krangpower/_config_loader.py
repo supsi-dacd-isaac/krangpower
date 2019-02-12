@@ -45,6 +45,7 @@ DEFAULT_SETTINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default
 DEFAULT_ENTITIES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'default_entities'))
 ASSOCIATION_TYPES_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'association_types'))
 ERROR_STRINGS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'error_strings'))
+DANGEROUS_STACKS_PATH = os.path.join(_THISDIR, CONFIG.get('data_files', 'dangerous_stacks'))
 
 GLOBAL_LOG_LEVEL = getattr(logging, CONFIG.get('log_settings', 'default_logging_level'))
 MAX_LOG_SIZE_MB = CONFIG.getfloat('log_settings', 'max_log_size_mb')
@@ -59,6 +60,7 @@ LSH_ZIP_NAME = CONFIG.get('misc_settings', 'inner_loadshape_zip_filename')
 PBAR_ISASCII = CONFIG.getboolean('misc_settings', 'ascii_pbar')
 BASE_FREQUENCY = CONFIG.getfloat('electrical', 'frequency_hz')
 ODSS_STDOUT_SUPPRESSED = CONFIG.getboolean('misc_settings', 'opendss_stdout_suppression')
+C_FORCE_UNSAFE_CALLS = CONFIG.getboolean('misc_settings', 'force_unsafe_calls')
 
 
 # -------------------------------------------------------------
@@ -166,6 +168,12 @@ PINT_QTY_TYPE = type(1 * UM.m)
 # -------------------------------------------------------------
 with open(ERROR_STRINGS_PATH, 'r') as ef:
     ERROR_STRINGS = json.load(ef)
+
+# -------------------------------------------------------------
+#  LIST OF STACKS UNCALLABLE IF UNCONVERGED
+# -------------------------------------------------------------
+with open(DANGEROUS_STACKS_PATH, 'r') as ef:
+    DANGEROUS_STACKS = ef.read().split('\n')
 
 # -------------------------------------------------------------
 #  DICTIONARY OF MANDATORY UNITS

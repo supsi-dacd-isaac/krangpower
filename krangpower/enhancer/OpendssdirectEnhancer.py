@@ -17,8 +17,8 @@ from json import load as _json_load
 from logging import DEBUG as _DBG_LVL
 from math import sqrt as _sqrt
 from operator import getitem as _getitem, attrgetter as _attrgetter
-from re import sub as _sub
 from re import compile as _re_compile
+from re import sub as _sub
 from sys import modules as _sys_modules
 
 import numpy as _np
@@ -26,14 +26,15 @@ import opendssdirect as _odr
 from pandas import DataFrame as _DataFrame
 
 from ._stdout_hijack import stdout_redirected, NullCm
-
 from .._aux_fcn import lower as _lower
 from .._aux_fcn import pairwise as _pairwise
 from .._components import LineGeometry
 from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
 from .._components import get_classmap as _get_classmap
-from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, \
-    UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH
+from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, DANGEROUS_STACKS, \
+    UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH, \
+    C_FORCE_UNSAFE_CALLS as _FORCE_UNSAFE_CALLS
+from .._exceptions import UnsolvedCircuitError
 from .._logging_init import clog, mlog, bclog, get_log_level
 
 try:
@@ -383,8 +384,18 @@ class _FnWrp:
         self.__name__ = self._stk
         self.name = self._stk
 
-    def __call__(self, *args):
-        return self._undfcn(*args)
+    def __call__(self, *args, force=False):
+        if self._stk in DANGEROUS_STACKS and not _this_module.Solution.Converged():
+            if _FORCE_UNSAFE_CALLS:
+                logging.warning('\nUnsafe call to {} was attempted on an unsolved circuit.\n'
+                                '\nRISK OF SEGFAULT OR WRONG/NON-PHYSICAL RESULTS.\n\n'
+                                'Set "force_unsafe_calls" to False in the cfg file to avoid this and raise '
+                                'an error when unsafe calls are made.'.format(self._stk))
+                return self._undfcn(*args)
+            else:
+                raise UnsolvedCircuitError(self._stk)
+        else:
+            return self._undfcn(*args)
 
     def __str__(self):
         return '<function OpendssdirectEnhancer.' + self._stk + '>'

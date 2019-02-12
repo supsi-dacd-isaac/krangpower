@@ -154,7 +154,7 @@ def _main():
     SRC = kp.Vsource(**skw)
     eulv = kp.Krang('eu_lv_test', SRC, redirect_path=True)
     eulv.set(basefreq=50.0 * um.Hz, voltagebases=[11.0, 0.416] * um.kV)
-    eulv.command('calcvoltagebases')
+    # eulv.command('calcvoltagebases')
 
     print('Adding transformer...')
     eulv['sourcebus', '1'] << TR1.aka('TR1')

@@ -72,3 +72,10 @@ class ClearingAttemptError(Exception):
             msg = 'A "clear" command was passed to the text command interface.' \
                   'If you wish a new circuit, delete the existing Krang.'
         super().__init__(msg)
+
+
+class UnsolvedCircuitError(Exception):
+    def __init__(self, property_stack: str, msg=None):
+        if msg is None:
+            msg = 'An attempt to access {} was made before solving the circuit.'.format(property_stack)
+        super().__init__(msg)

@@ -606,7 +606,7 @@ class Krang(object):
                     except OSError:
                         self.snap()
                         self.command(ai_el.fus(self, ai_el.name))
-                else:  # from the 2nd step on, the command has to work correctly, so no try block.
+                else:  # from the 2nd step on, the command HAS to work correctly, so no try block.
                     self.command(ai_el.fus(self, ai_el.name))
 
             if always_rebuild_Y:
