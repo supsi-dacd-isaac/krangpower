@@ -77,5 +77,6 @@ class ClearingAttemptError(Exception):
 class UnsolvedCircuitError(Exception):
     def __init__(self, property_stack: str, msg=None):
         if msg is None:
-            msg = 'An attempt to access {} was made before solving the circuit.'.format(property_stack)
+            msg = 'An attempt to access the calculated property {} was made before solving the circuit.'\
+                .format(property_stack)
         super().__init__(msg)

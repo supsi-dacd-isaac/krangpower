@@ -14,7 +14,6 @@ kp.set_log_level(10)
 test_dir = os.path.join(kp.TMP_PATH, 'eulvtest')
 
 
-
 def download_extract_zip(url):
     """
     Download a ZIP file and extract its contents in memory
@@ -280,7 +279,10 @@ def make_circuit(tname, save_json, save_ckt, save_effnodes, insert_loads, simpli
     if insert_loads:
         print('Adding loads...')
         for ldname, lddata in loads_dict.items():
-            eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs'])(model=loadmodel).aka(ldname) * lp_dict[int(lddata['duty_name'])]
+            if lddata['Bus'].split('.')[0] in eulv.graph().nodes:
+                eulv[(lddata['Bus'],)] << kp.Load(**lddata['kwargs'])(model=loadmodel).aka(ldname) * lp_dict[int(lddata['duty_name'])]
+            else:
+                print('skipped load @refined bus {}'.format(lddata['Bus']))
         noload = ''
     else:
         noload = '_noload'
@@ -306,13 +308,13 @@ def make_circuit(tname, save_json, save_ckt, save_effnodes, insert_loads, simpli
 
 
 if __name__ == '__main__':
-    eulv = make_circuit('eu_lv_refined',
-                        save_json=False,
-                        save_ckt=False,
+    eulv = make_circuit('eu_lv_refined_ns',
+                        save_json=True,
+                        save_ckt=True,
                         save_effnodes=False,
                         insert_loads=False,
-                        simplify=True,
+                        simplify=False,
                         refine=True
                         )
-
+    a = 3
     pass

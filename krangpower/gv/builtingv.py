@@ -88,6 +88,31 @@ class BusTotPowerView(GraphView):
         super().__init__(buspower, None, ckgr)
 
 
+class BusShuntView(GraphView):
+
+    def __init__(self, ckgr: Krang):
+
+        def buspower(bus):
+            pwr = [0.0j] * len(ckgr['bus.' + bus['bus'].name].Voltages()) * UM.kW
+
+            if bus.get('el', None) is not None:
+                for el in bus['el']:
+                    node_index = el.NodeOrder()
+                    powers = el.Powers()
+
+                    for node, powa in zip(node_index[0], powers[0]):
+                        if node == 0:
+                            continue
+                        pwr[node - 1] += powa
+
+            else:
+                pass
+
+            return pwr
+
+        super().__init__(buspower, None, ckgr)
+
+
 class BusSumPowerView(GraphView):
     def __init__(self, ckgr: Krang):
 

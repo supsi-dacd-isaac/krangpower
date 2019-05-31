@@ -88,31 +88,3 @@ class FourQ(Generator, FusAble):
     def define_dm(self, dm):
         assert isinstance(dm, DecisionModel)
         self._dm = dm
-
-#
-# class FourQ3(_FcsAble):
-#
-#     def __init__(self, **parameters):
-#         self.name = ''
-#         super().__init__()
-#
-#     @classmethod
-#     def isai(cls):
-#         return True
-#
-#     def partfcs(self, **hookup):
-#
-#         buses = hookup['buses']
-#         cname = self.name
-#
-#         s1 = 'New ' + 'generator' + '.' + cname  # _ splitting to allow name personalization outside dss
-#         s3 = ' '
-#         idox = 0
-#         for busno in range(1, self.nbuses + 1):
-#                 s3 += 'bus' + str(busno) + '=' + str(buses[busno - 1]) + ' '
-#
-#         s2 = ''
-#         for parameter in self._editedParams:  # printing of non-default parameters only was preferred for better
-#             # readability of the returned string
-#             s2 = s2 + ' ' + parameter + '=' + _odssrep(self[parameter])
-#         return s1 + s3 + s2

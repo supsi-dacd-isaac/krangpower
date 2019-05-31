@@ -216,7 +216,6 @@ class Krang(object):
         globals()['_INSTANCE'] = weakref.ref(self)
 
         # public attributes
-        self.flags = {'coords_preloaded': False}
         self.id = name
         """Krang.id is a string identifier for the krang that is used in the logs."""
         self.brain = enhancer
@@ -224,6 +223,7 @@ class Krang(object):
         can pack objects and returns enhanced data structures such as pint qtys and numpy arrays."""
 
         # private attributes
+        self._flags = {'coords_preloaded': False}
         self._csvloadshapes = []
         self._ai_list = []
         self._fncache = {}
@@ -664,7 +664,7 @@ class Krang(object):
                 self.command('enable {}'.format(t))
 
             # assert self.fingerprint() == fp0
-            # disable-enable is trustable. No need for lengthy fingerprint comparison
+            # disable-enable is trustworthy. No need for lengthy fingerprint comparison
         else:
             y0 = csc_matrix(self.brain.Circuit.SystemY().values)
 
@@ -672,7 +672,7 @@ class Krang(object):
 
     def solve(self, echo=True):
         """Imparts the solve command to OpenDSS."""
-        if self.flags['coords_preloaded']:
+        if self._flags['coords_preloaded']:
             self._declare_buscoords()
         self.command('solve', echo)
 
@@ -705,7 +705,7 @@ class Krang(object):
                     row = next(bcr)
                 except StopIteration:
                     break
-        self.flags['coords_preloaded'] = True
+        self._flags['coords_preloaded'] = True
         return
 
     @_invalidate_cache
@@ -721,7 +721,7 @@ class Krang(object):
                     continue  # we ignore buses present in coords linked, but not generated
             else:
                 continue
-        self.flags['coords_preloaded'] = False
+        self._flags['coords_preloaded'] = False
 
     @_invalidate_cache
     def link_coords(self, csv_path):
@@ -736,7 +736,7 @@ class Krang(object):
         launched. """
 
         # why not?
-        if self.flags['coords_preloaded']:
+        if self._flags['coords_preloaded']:
             self._declare_buscoords()
 
         bp = {}
@@ -1017,7 +1017,8 @@ class _BusView:
         try:
             assert other.name != ''
         except AssertionError:
-            raise KrangObjAdditionError(other, 'Could not add object {}. Did you remember to name the element before adding it?'
+            raise KrangObjAdditionError(other, 'Could not add object {}. Did you remember to'
+                                               ' name the element before adding it?'
                                         .format(other))
 
         # we declare possibly undeclared objects that were associated with other (loadshapes...)
