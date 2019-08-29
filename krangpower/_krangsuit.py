@@ -38,14 +38,18 @@ _FQ_DM_NAME = 'dm.pkl'
 CACHE_ENABLED = True
 _INSTANCE = None  # krang singleton support variable
 
-_CIRCUIT_INIT_RE = re.compile('(new *(object *=)? *circuit\.)'
-                              '([^(\n| )]+)'
-                              '( *)'
-                              '(\n *[~|more] *)?'
-                              '([^(\n)]+)?',
+_CIRCUIT_INIT_RE = re.compile('(new *(object *=)? *circuit\.)' # beginning of declaration
+                              '([^(\n| )]+)'  # circuit name
+                              '([^!|\n]+)?' # first parameters
+                              '( *(![^\n]+)?)'  # optional first comment
+                              '(\n *(![^\n]+)*)*'  # optional sequence of newlines/comments
+                              '((more|~ * [^\n]+\n)*)',  # optional continuation blocks
+
                               re.IGNORECASE)
 
-_CLEAR_RE = re.compile('^ *clear', re.IGNORECASE)
+_MORE_RE = re.compile('(more|~ *)', re.IGNORECASE)
+
+_CLEAR_RE = re.compile('\n *clear', re.IGNORECASE)
 
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -456,6 +460,9 @@ class Krang(object):
                 r_opts[op] *= UM.parse_units(DEFAULT_SETTINGS['units'][op])
 
         return r_opts
+
+    def get1(self, opt):
+        return self.get(opt)[opt]
 
     @_helpfun(DSSHELP, 'EXPORT')
     def export(self, object_descriptor):
@@ -1290,7 +1297,18 @@ def _from_dss(file_path, target_krang=None, frequency=BASE_FREQUENCY):
         # we extract the initialization parameters from here
         spawn = _CIRCUIT_INIT_RE.search(dss_script_content)
         extr_name = spawn.group(3)
-        extr_vsource_params = {k: v for k, v in [x.split('=') for x in spawn.group(6).split(' ')]}
+
+        if spawn.group(4) is not None:
+            extr_vsource_p0 = {k.lower(): v for k, v in [x.split('=') for x in spawn.group(4).split()]}
+        else:
+            extr_vsource_p0 = {}
+
+        if spawn.group(9) is not None:
+            extr_vsource_p1 = {k.lower(): v for k, v in [x.split('=') for x in _MORE_RE.sub('', spawn.group(9)).split()]}
+        else:
+            extr_vsource_p1 = {}
+
+        extr_vsource_params = {**extr_vsource_p0, **extr_vsource_p1}
 
         if 'bus1' in extr_vsource_params.keys():
             extr_basebus_name = extr_vsource_params['bus1']

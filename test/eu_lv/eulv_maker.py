@@ -316,5 +316,3 @@ if __name__ == '__main__':
                         simplify=False,
                         refine=True
                         )
-    a = 3
-    pass

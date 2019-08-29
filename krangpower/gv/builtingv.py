@@ -11,7 +11,7 @@ from .._graphview import GraphView
 from .._krangsuit import Krang, UM
 
 
-__all__ = ['BusVoltageView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView',
+__all__ = ['BusVoltageView', 'PlusPowerView', 'MinusPowerView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView',
            'BusTotCurrentView', 'EdgeCurrentView', 'BusSumPowerView']
 
 
@@ -53,9 +53,10 @@ class CurrentView(GraphView):
 
 
 class BaseVoltageView(GraphView):
-    def __init__(self, ckgr: Krang, voltage_bases):
+    def __init__(self, ckgr: Krang, voltage_bases=None):
 
-        ckgr.set(voltagebases=voltage_bases)
+        if voltage_bases is not None:
+            ckgr.set(voltagebases=voltage_bases)
         ckgr.command('calcvoltagebases')
 
         def basebuskV(bus):
@@ -84,6 +85,64 @@ class BusTotPowerView(GraphView):
                 pass
 
             return pwr
+
+        super().__init__(buspower, None, ckgr)
+
+
+class PlusPowerView(GraphView):
+    def __init__(self, ckgr: Krang):
+
+        def buspower(bus):
+            pwr_plus = [0.0j] * UM.kW
+
+            if bus.get('el', None) is not None:
+                for el in bus['el']:
+                    mult = 1
+                    if el.type == 'capacitor':
+                        continue
+                    if el.type == 'load':
+                        mult = -1
+                    r_po = mult * el.kW()
+                    i_po = mult * el.kvar()
+
+                    if r_po.magnitude >= 0.0:
+                        pwr_plus += r_po
+
+                    if i_po.magnitude >= 0.0:
+                        pwr_plus += 1j * i_po
+            else:
+                pass
+
+            return pwr_plus
+
+        super().__init__(buspower, None, ckgr)
+
+
+class MinusPowerView(GraphView):
+    def __init__(self, ckgr: Krang):
+
+        def buspower(bus):
+            pwr_minus = [0.0j] * UM.kW
+
+            if bus.get('el', None) is not None:
+                for el in bus['el']:
+                    mult = 1
+                    if el.type == 'capacitor':
+                        continue
+                    if el.type == 'load':
+                        mult = -1
+                    r_po = mult * el.kW()
+                    i_po = mult * el.kvar()
+
+                    if r_po.magnitude < 0.0:
+                        pwr_minus += r_po
+
+                    if i_po.magnitude < 0.0:
+                        pwr_minus += 1j * i_po
+            else:
+                pass
+
+            return pwr_minus
 
         super().__init__(buspower, None, ckgr)
 

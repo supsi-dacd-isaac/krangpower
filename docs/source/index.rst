@@ -58,6 +58,7 @@ Contents
    :maxdepth: 2
 
    usage
+   example_smart
    reference_components
    io
    iockt

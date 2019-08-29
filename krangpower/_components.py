@@ -438,6 +438,44 @@ class _DSSentity(FcsAble):
 
         return cpy
 
+    def __imul__(self, other):
+
+        try:
+            i2 = other.eltype
+        except AttributeError:
+            i2 = other[0].eltype  # happens for lists of components
+
+        try:
+            prop_to_set = _muldict[self.toe, i2]
+            prop_fmt = _fmtdict[self.toe, i2]
+        except KeyError:
+            try:
+                oname = other.name
+            except AttributeError:
+                oname = ''
+            raise AssociationError(i2, oname, self.eltype, self.name)
+
+        # support for setting ATTRIBUTES of the object, beginning with '.'
+        if prop_to_set.startswith('.'):
+            attr_to_set = prop_to_set[1:]
+            if prop_fmt == 'self':  # this means that the value to be set is the object itself
+                setattr(self, attr_to_set, other)
+            else:
+                setattr(self, attr_to_set, getattr(other, prop_fmt))
+
+        # support for setting PROPERTIES of the object
+        else:
+            if isinstance(other, list):
+                self[prop_to_set] = [getattr(o, prop_fmt) for o in other]
+                self._multiplied_objs.extend(other)
+            else:
+                self[prop_to_set] = getattr(other, prop_fmt)
+                self._multiplied_objs.append(other)
+
+            # if we set a property, we also memorize object in this list, so, when declaring the object, we can
+            # also automatically declare objects that were multiplied. this is not needed for attributes!
+            # self._multiplied_objs.extend(other)
+
     def __mul__(self, other):
         """Associates the multiplier with this object according to the built-in association rules."""
         
