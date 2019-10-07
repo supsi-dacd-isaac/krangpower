@@ -33,8 +33,8 @@ def _main():
     # http://sites.ieee.org/pes-testfeeders/resources/
     # and then executes the solutions.
 
-    print('Downloading and extracting data from sites.ieee.org.....')
-    data_url = 'http://sites.ieee.org/pes-testfeeders/files/2017/08/European_LV_Test_Feeder_v2.zip'
+    data_url = 'http://www.ewh.ieee.org/soc/pes/dsacom/testfeeders/European_LV_Test_Feeder_v2.zip'
+    print('Downloading and extracting data for ieee lv test case.....')
     eulv_root = os.path.join(download_extract_zip(data_url), 'European_LV_CSV')
     print('Finished')
 
