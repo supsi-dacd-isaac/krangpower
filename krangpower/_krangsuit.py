@@ -31,7 +31,6 @@ from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAt
 from ._logging_init import remove_filehandlers, add_rotfilehandler, mlog, clog, bclog, add_comfilehandler
 from ._pbar import PBar as _PBar
 from .enhancer.OpendssdirectEnhancer import pack
-from ._krg2cdf import krg2cdf as _krg2cdf
 
 # __all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
