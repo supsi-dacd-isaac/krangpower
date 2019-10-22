@@ -723,16 +723,24 @@ def _unpack_linegeom(pckob):
 
     nmc = {cc.split('.', 1)[1]: cc.split('.', 1)[0] for cc in get_all_names()}
 
+    cnv = {
+        'tsdata': 'tscable',
+        'wiredata': 'wire',
+        'cndata': 'cncable'
+    }
+
     x = []
     h = []
+    units = []
     wrcn = []
 
     for cd in range(nc):
         pckob['cond'] = cd + 1
-        cabtype = nmc[pckob['wire']]
-        wrcn.append(pckob['wire'])
-        x.append(pckob['x'].to('m').magnitude[0, 0])
-        h.append(pckob['h'].to('m').magnitude[0, 0])
+        cabtype = cnv[nmc[pckob['wire'].lower()]]
+        wrcn.append(pckob['wire'].lower())
+        units.append(pckob['units'][0].lower())  # everything is converted to meters
+        x.append(pckob['x'].magnitude[0, 0])
+        h.append(pckob['h'].magnitude[0, 0])
 
     naive_props = pckob.dump()
     del naive_props['x']
@@ -750,6 +758,7 @@ def _unpack_linegeom(pckob):
 
     naive_props['x'] = _np.asmatrix(x)
     naive_props['h'] = _np.asmatrix(h)
+    naive_props['units'] = units
     naive_props[cabtype] = wrcn
 
     return LineGeometry(pckob.name, **naive_props)

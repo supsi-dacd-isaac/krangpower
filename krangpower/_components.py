@@ -385,10 +385,10 @@ class _DSSentity(FcsAble):
         super().__init__()
         self.term_perm = None
         self.name = ''
-        self.toe = self.__class__.__name__.lower()
         self._params = None
         self._editedParams = None
         self._default_units = None
+        self._toe = self.__class__.__name__.lower()
 
         self._load_default_parameters()
 
@@ -399,6 +399,14 @@ class _DSSentity(FcsAble):
 
     def __repr__(self):
         return '<' + self.__str__() + '(@' + str(hex(id(self))) + ')>'
+
+    @property
+    def toe(self):
+        return self._toe
+
+    @toe.setter
+    def toe(self, value):
+        self._toe = value
 
     @property
     def eltype(self):
@@ -1230,8 +1238,18 @@ class LineGeometry(_NamedDSSentity):
         #         assert len(self._params[p]) == ncond
 
     @property
+    def toe(self):
+
+        wdic = { None: '',
+                'wire': '_o',
+                'tscable': '_t',
+                'cncable': '_c'}
+
+        return 'linegeometry' + wdic[self.wiretype]
+
+    @property
     def specialparams(self):
-        return self.wiretype, 'x', 'h'
+        return self.wiretype, 'x', 'h', 'units'
 
     def fcs(self, **hookup):
 
@@ -1245,7 +1263,7 @@ class LineGeometry(_NamedDSSentity):
             s2 += ' ' + parameter + '=' + _odssrep(self[parameter])
 
         for ind in range(0, self['nconds']):
-            s2 += '\n~ cond={0} units=m '.format(ind + 1)
+            s2 += '\n~ cond={0} '.format(ind + 1)
             for parameter in self.specialparams:
                 if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
@@ -1269,12 +1287,25 @@ class LineGeometry(_NamedDSSentity):
         wire_set = pts.intersection(ccs)
         if len(wire_set) == 0:
             pass
-        elif len(wire_set) == 1:
+        elif len(wire_set) >= 1:
             if self.wiretype is not None:
                 raise ValueError('The cable type for linegeometry.{} is already set!'.format(self.name))
-            self.wiretype = list(wire_set)[0]
+
+            fired = False
+            for ct in wire_set:
+                if kwargs[ct][0] != '' or len(kwargs[ct]) > 1:
+                    if fired:
+                        raise ValueError('Tried to set more than one cabletype')
+                    fired = True
+                    self.wiretype = ct
+                else:
+                    del kwargs[ct]
+
+            assert fired
+
+            # self.wiretype = list(wire_set)[0]
         else:
-            raise ValueError('Tried to set more than one cabletype')
+            raise ValueError('')
 
         super()._setparameters(**kwargs)
 
@@ -1333,8 +1364,8 @@ class LineGeometry_T(LineGeometry):
     """
 
     def __init__(self, name, **parameters):
-        super().__init__(name, **parameters)
         self.wiretype = 'tscable'
+        super().__init__(name, **parameters)
 
 
 class LineGeometry_C(LineGeometry):

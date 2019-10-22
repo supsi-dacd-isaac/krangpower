@@ -12,7 +12,7 @@ from .._krangsuit import Krang, UM
 
 
 __all__ = ['BusVoltageView', 'PlusPowerView', 'MinusPowerView', 'VoltageView', 'CurrentView', 'BaseVoltageView', 'BusTotPowerView', 'AvgCurrentView',
-           'BusTotCurrentView', 'EdgeCurrentView', 'BusSumPowerView']
+           'BusTotCurrentView', 'EdgeCurrentView', 'BusSumPowerView', 'AmpaView']
 
 
 class VoltageView(GraphView):
@@ -24,6 +24,19 @@ class VoltageView(GraphView):
             return edg['el'][0].Voltages()
 
         super().__init__(busV, edgeV, ckgr)
+
+
+class AmpaView(GraphView):
+    def __init__(self, ckgr: Krang):
+
+        def edgeamp(edg):
+            lines = [x for x in edg['el'] if x.eltype == 'line']
+            if lines:
+                return lines[0]['Normamps'].magnitude
+            else:
+                return None
+
+        super().__init__(None, edgeamp, ckgr)
 
 
 class BusVoltageView(GraphView):

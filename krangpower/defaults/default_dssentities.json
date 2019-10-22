@@ -292,14 +292,6 @@
             "nconds": 1,
             "cond": 0,
             "nphases": 1,
-            "cncable": [
-                "",
-                ""
-            ],
-            "tscable": [
-                "",
-                ""
-            ],
             "x": [
                 [
                     0
@@ -310,6 +302,7 @@
                     0
                 ]
             ],
+            "units": ["m"],
             "reduce": "",
             "spacing": ""
         },
@@ -318,13 +311,14 @@
             "h": ["m"]
         },
         "associated": {"wire": [""],
-                       "tsdata": [""],
-                       "cndata": [""]}
+                       "tscable": [""],
+                       "cncable": [""]}
     },
     "default_linegeometry_o": {
         "type": "linegeometry_o",
         "properties": {
             "nconds": 1,
+            "cond": 0,
             "nphases": 1,
             "x": [
                 [
@@ -350,11 +344,8 @@
         "type": "linegeometry_c",
         "properties": {
             "nconds": 1,
+            "cond": 0,
             "nphases": 1,
-            "cncable": [
-                "",
-                ""
-            ],
             "x": [
                 [
                     0
@@ -379,11 +370,8 @@
         "type": "linegeometry_t",
         "properties": {
             "nconds": 1,
+            "cond": 0,
             "nphases": 1,
-            "tscable": [
-                "",
-                ""
-            ],
             "x": [
                 [
                     0

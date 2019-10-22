@@ -16,7 +16,7 @@ class DepTree(nx.DiGraph):
 
     @property
     def leaves(self):
-        return [x for x in self.nodes() if self.out_degree(x) == 0]
+        return [x for x in self.nodes() if not nx.descendants(self, x)]
 
     def trim(self):
         self.remove_nodes_from(self.leaves)

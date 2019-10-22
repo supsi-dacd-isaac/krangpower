@@ -1188,7 +1188,7 @@ def construct_deptree(element_dict: dict):
         else:
             # if an element parameter depends on another name, or a list of other names, we create all the edges
             # necessary
-            types_dict = {d['name'].lower(): d['type'].lower() for d in element_dict.values()}
+            types_dict = {d['name'].lower(): d['type'].lower().split('_')[0] for d in element_dict.values()}
             for dvalue in jobj['depends'].values():
                 if isinstance(dvalue, list):
                     for dv in dvalue:
@@ -1222,7 +1222,7 @@ def declare_deptree(krg: Krang, dep_tree: _DepGraph, element_dict: dict, logger=
             try:
                 jobj = copy.deepcopy(element_dict[nm.lower()])
             except KeyError:
-                mdmod = {k.split('.')[1]: v for k, v in element_dict.items()}
+                mdmod = {k.split('.')[1].lower(): v for k, v in element_dict.items()}
                 try:
                     jobj = copy.deepcopy(mdmod[nm.lower()])
                 except KeyError:
