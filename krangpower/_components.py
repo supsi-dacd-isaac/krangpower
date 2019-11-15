@@ -602,6 +602,13 @@ class _DSSentity(FcsAble):
                     raise ValueError('There is no unit for {0}. This should not happen, contact the dev.'
                                      .format(self.toe))
                 value = value_raw.to(unt).magnitude
+            elif isinstance(value_raw, np.matrix):
+                try:
+                    unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
+                    mag = np.vectorize(lambda x: x.to(unt).magnitude)
+                    value = mag(value_raw)
+                except (KeyError, AttributeError):
+                    value = value_raw
             else:
                 value = value_raw
 
@@ -1243,7 +1250,10 @@ class LineGeometry(_NamedDSSentity):
         wdic = { None: '',
                 'wire': '_o',
                 'tscable': '_t',
-                'cncable': '_c'}
+                'cncable': '_c',
+                 'tsdata': '_t',
+                 'cndata': '_c'
+                }
 
         return 'linegeometry' + wdic[self.wiretype]
 
@@ -1265,15 +1275,21 @@ class LineGeometry(_NamedDSSentity):
         for ind in range(0, self['nconds']):
             s2 += '\n~ cond={0} '.format(ind + 1)
             for parameter in self.specialparams:
+
                 if isinstance(self[parameter], PINT_QTY_TYPE):
                     true_param = self[parameter].magnitude
                 else:
                     true_param = self[parameter]
 
-                if isinstance(true_param, np.matrix):
-                    idx = 0, ind  # matricial indicization necessary
+                if len(true_param) == 1 and not isinstance(true_param, np.matrix):  # todo patch for units
+                    rind = 0
                 else:
-                    idx = ind
+                    rind = ind
+
+                if isinstance(true_param, np.matrix):
+                    idx = 0, rind  # matricial indicization necessary
+                else:
+                    idx = rind
                 # try:
                 #     # for fullnames of the wires
                 #     s2 += str(parameter) + '=' + str(true_param[idx]).split('.')[1] + ' '
@@ -1283,7 +1299,7 @@ class LineGeometry(_NamedDSSentity):
 
     def _setparameters(self, **kwargs):
         pts = set(kwargs.keys())
-        ccs = {'wire', 'cncable', 'tscable'}
+        ccs = {'wire', 'cncable', 'tscable', 'cndata', 'tsdata'}
         wire_set = pts.intersection(ccs)
         if len(wire_set) == 0:
             pass
