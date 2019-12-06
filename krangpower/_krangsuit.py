@@ -30,7 +30,7 @@ from ._deptree import DepTree as _DepGraph
 from ._exceptions import KrangInstancingError, KrangObjAdditionError, ClearingAttemptError
 from ._logging_init import remove_filehandlers, add_rotfilehandler, mlog, clog, bclog, add_comfilehandler
 from ._pbar import PBar as _PBar
-from .enhancer.OpendssdirectEnhancer import pack
+from .enhancer.OpendssdirectEnhancer import pack, UnsolvedCircuitError
 
 # __all__ = ['Krang', 'from_json', 'CACHE_ENABLED', 'open_ckt']
 _FQ_DM_NAME = 'dm.pkl'
@@ -233,6 +233,7 @@ class Krang(object):
         self._fncache = {}
         self._graphcache = None
         self._coords_linked = {}
+        self._newton_forced_times = 0
 
         # file output redirection to the temp folder
         # current_cwd = os.getcwd()
@@ -618,11 +619,20 @@ class Krang(object):
 
             if always_rebuild_Y:
                 self.command('BuildY')
-
             self.solve()
             timestamps.append(self.brain.Solution.DblHour().to('hour').magnitude)
             for fn in fns:
-                evaluation = fn(self)
+                try:  # is there a way to do this at a lower level?
+                    evaluation = fn(self)
+                except UnsolvedCircuitError:
+                    self.set(algorithm='Newton')
+                    self._newton_forced_times += 1
+                    self.solve()
+                    evaluation = fn(self)  # if it screws up again, this raises
+                    mlog.warning('I had to set algorithm=Newton for '
+                                 'convergence difficulties ({} times)! Keep an eye!'
+                                 .format(self._newton_forced_times))
+                    self.set(algorithm='normal')
                 rslt[fn.__name__].append(evaluation)
 
         self.brain.Solution.Number(nmbr)
