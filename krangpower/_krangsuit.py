@@ -625,9 +625,11 @@ class Krang(object):
                 try:  # is there a way to do this at a lower level?
                     evaluation = fn(self)
                 except UnsolvedCircuitError:
+                    time0 = self.get1('time')
                     self.set(algorithm='Newton')
                     self._newton_forced_times += 1
                     self.solve()
+                    self.set(time=time0)  # resets the time to the previous one to compensate for the failed solve
                     evaluation = fn(self)  # if it screws up again, this raises
                     mlog.warning('I had to set algorithm=Newton for '
                                  'convergence difficulties ({} times)! Keep an eye!'
