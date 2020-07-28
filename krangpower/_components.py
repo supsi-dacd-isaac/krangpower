@@ -128,9 +128,9 @@ def _odssrep(data_raw):
 
         return '[' + ss[:-2] + ']'  # shaves last "| "
 
-    elif isinstance(data, np.matrix) and data.shape[0] != 1:
+    elif isinstance(data, np.ndarray) and data.shape[0] != 1:
 
-        order = data.diagonal().size
+        order = np.diag(data).size
         ss = ''
 
         if issym(data):
@@ -148,7 +148,7 @@ def _odssrep(data_raw):
 
         return '[' + ss[:-2] + ']'  # shaves last "| "
 
-    elif isinstance(data, np.matrix) and data.shape[0] == 1:  # i.e, a floatarray or intarray
+    elif isinstance(data, np.ndarray) and data.shape[0] == 1:  # i.e, a floatarray or intarray
         return str(data)[1:-1]
 
     elif isinstance(data, list):
@@ -162,7 +162,7 @@ def _odssrep(data_raw):
 
 
 # <editor-fold desc="AUX CLASSES">
-class SnpMatrix(np.matrix):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
+class SnpMatrix(np.ndarray):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
     """_SnpMatrix extends numpy.matrix. numpy.matrix can be initialized by a 'v11,v12;v21,v22'- like string; _SnpMatrix,
     in addition to this, can be initialized by a 'v11;v21,v22'-like string, representing the tril of a symmetrical
     matrix."""
@@ -261,13 +261,13 @@ def _type_recovery(value, target_type):
             recovered_value = float(value)
 
         elif isinstance(value, (list, np.ndarray)):
-            assert target_type == np.matrix
-            recovered_value = np.matrix(value)
+            assert target_type == np.ndarray
+            recovered_value = np.ndarray(value)
         elif isinstance(value, str):
             recovered_value = target_type(value)
         elif isinstance(value, np.complex):
-            assert target_type == np.matrix
-            recovered_value = np.matrix([np.real(value), np.imag(value)])
+            assert target_type == np.ndarray
+            recovered_value = np.ndarray([np.real(value), np.imag(value)])
         else:
             raise TypeUnrecoverableError(type(value))
     except AssertionError:
@@ -602,7 +602,7 @@ class _DSSentity(FcsAble):
                     raise ValueError('There is no unit for {0}. This should not happen, contact the dev.'
                                      .format(self.toe))
                 value = value_raw.to(unt).magnitude
-            elif isinstance(value_raw, np.matrix):
+            elif isinstance(value_raw, np.ndarray):
                 try:
                     unt = _resolve_unit(self._default_units[parameter.lower()], self._get_prop_from_matchobj)
                     mag = np.vectorize(lambda x: x.to(unt).magnitude)
@@ -629,7 +629,7 @@ class _DSSentity(FcsAble):
                                                                                 type(value),
                                                                                 target_type))
 
-            if isinstance(value, np.matrix):
+            if isinstance(value, np.ndarray):
                 test = np.array_equal(value, DEFAULT_COMP['default_' + self.toe][default_dict][parameter])
             elif isinstance(value, list):
                 test = value == DEFAULT_COMP['default_' + self.toe][default_dict][parameter.lower()]
@@ -658,7 +658,7 @@ class _DSSentity(FcsAble):
 
         unt = self._default_units.get(param, None)
         if unt is not None:
-            if isinstance(target_list[param], np.matrix):
+            if isinstance(target_list[param], np.ndarray):
                 unit_matrix = np.eye(len(target_list[param])) * _resolve_unit(unt, self._get_prop_from_matchobj)
                 return target_list[param] * unit_matrix
             else:
@@ -713,7 +713,7 @@ class _DSSentity(FcsAble):
             if not all_params:
                 if parameter not in self._editedParams:
                     continue
-            if isinstance(value, np.matrix):
+            if isinstance(value, np.ndarray):
                 pls_flat[parameter] = np.round(value, GLOBAL_PRECISION).tolist()
             elif isinstance(value, float):
                 pls_flat[parameter] = np.round(value, GLOBAL_PRECISION)
@@ -1281,12 +1281,12 @@ class LineGeometry(_NamedDSSentity):
                 else:
                     true_param = self[parameter]
 
-                if len(true_param) == 1 and not isinstance(true_param, np.matrix):  # todo patch for units
+                if len(true_param) == 1 and not isinstance(true_param, np.ndarray):  # todo patch for units
                     rind = 0
                 else:
                     rind = ind
 
-                if isinstance(true_param, np.matrix):
+                if isinstance(true_param, np.ndarray):
                     idx = 0, rind  # matricial indicization necessary
                 else:
                     idx = rind
@@ -1467,7 +1467,7 @@ class Curve(FcsAble):
 
             self.npts = len(self._dict['x'])
 
-        elif isinstance(data, np.matrix):  # a matrix in which each row is x,y,z
+        elif isinstance(data, np.ndarray):  # a matrix in which each row is x,y,z
             self._dict['x'] = np.asarray(data[0, :])
 
             try:
@@ -1740,11 +1740,10 @@ class Transformer(_DSSentity):  # remember that transformer is special, because 
                 else:
                     true_param = self[parameter]
 
-                if isinstance(true_param, np.matrix):
-                    idx = 0, ind  # matricial indicization necessary
-                else:
-                    idx = ind
-                s2 += str(parameter).strip('s') + '=' + str(true_param[idx]) + ' '
+                try:
+                    s2 += str(parameter).strip('s') + '=' + str(true_param[0, ind]) + ' '
+                except:
+                    s2 += str(parameter).strip('s') + '=' + str(true_param[ind]) + ' '
 
         return s1 + s2
 

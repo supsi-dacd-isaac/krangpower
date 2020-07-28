@@ -89,7 +89,7 @@ def matrix_from_json(value):
 
     def desym(lol):
         size = len(lol)
-        dsm = np.matrix(np.zeros([size, size]))
+        dsm = np.zeros([size, size])
         for r in range(size):
             for c in range(r+1):
                 dsm[r, c] = lol[r][c]
@@ -100,7 +100,7 @@ def matrix_from_json(value):
     if isinstance(value[0], str):
         return value
     else:
-        try_mtx = np.matrix(value)
+        try_mtx = np.asarray(value)
         if try_mtx.dtype == 'object':
             return desym(value)
         else:

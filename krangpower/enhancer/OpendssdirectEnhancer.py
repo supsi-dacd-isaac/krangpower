@@ -238,7 +238,7 @@ def _cast_dumbstring(string: str, data_type):
             return _np.NaN
         else:
             return data_type(string)
-    elif data_type == _np.matrix:
+    elif data_type == _np.ndarray:
         return SnpMatrix(string
                          .replace(' |', ';')
                          .replace('|', ';')
@@ -579,7 +579,7 @@ class _PackedOpendssElement:
             dep_prop = {k.lower(): v for k, v in all_props.items() if k.lower() in valid_props.keys()}
         else:
             dep_prop = {k.lower(): v for k, v in all_props.items() if
-                        k.lower() in valid_props.keys() and _np.matrix(v != valid_props[k.lower()]).any()}
+                        k.lower() in valid_props.keys() and _np.ndarray(v != valid_props[k.lower()]).any()}
 
         # the _DssEntity is instantiated with the properties in dep_prop.
         if myclass.isnamed():
@@ -756,8 +756,8 @@ def _unpack_linegeom(pckob):
     del naive_props['emergamps']
     del naive_props['like']
 
-    naive_props['x'] = _np.asmatrix(x)
-    naive_props['h'] = _np.asmatrix(h)
+    naive_props['x'] = _np.asarray(x)
+    naive_props['h'] = _np.asarray(h)
     naive_props['units'] = units
     naive_props[cabtype] = wrcn
 

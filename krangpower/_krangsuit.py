@@ -320,7 +320,6 @@ class Krang(object):
         """Retrieves krangpower's UnitRegistry."""
         return UM
 
-    @property
     def _named_entities(self):
         nms = [x for x in self.brain.get_all_names()
                if x.split('.', 1)[0] in ('tsdata', 'cndata', 'linecode', 'wiredata', 'linegeometry')]
@@ -805,7 +804,7 @@ class Krang(object):
             master_dict['elements'][nm]['topological'] = self[nm].topological
 
         # named entities
-        for ne in self._named_entities: # _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
+        for ne in self._named_entities(): # _PBar(self._named_entities, level=LOGGING_INFO, desc='jsonizing named entities...'):
             master_dict['elements'][ne.fullname] = ne.jsonize()
 
         # loadshapes
