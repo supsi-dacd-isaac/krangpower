@@ -39,6 +39,7 @@ setup(
     author_email='federico.rosato@supsi.ch',
 
     license='MIT',
+    include_package_data=True,
 
     packages=['krangpower', 'krangpower.enhancer', 'test', 'krangpower.gv',
               'test.eu_lv', 'test.usage_1', 'test.example_smart'],  # find_packages(),
@@ -60,22 +61,8 @@ setup(
     # have to be included in MANIFEST.in as well.
     package_data={
         'krangpower': [
-            'defaults/association_types.csv',
-            'defaults/bypassable_cmd_strings.txt',
-            'defaults/dangerous_stacks.txt',
-            'defaults/default_dssentities.json',
-            'defaults/default_settings.json',
-            'defaults/DSSHelp.cfg'
-            'defaults/error_strings.json',
-            'defaults/interf_sel.json',
-            'defaults/interfaces.json',
-            'defaults/mandatory_unit_dec.json',
-            'defaults/measurement_units.json',
-            'defaults/splash.txt',
-            'defaults/treatments.json',
-
-            'config/krang_config.cfg',
-
+            'defaults/*',
+            'config/*',
         ]
     },
 
