@@ -1,5 +1,5 @@
 canonicaljson
-OpenDSSDirect.py
+OpenDSSDirect.py==0.10.0
 networkx
 pint
 numpy
