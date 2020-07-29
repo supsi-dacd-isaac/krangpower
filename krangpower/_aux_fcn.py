@@ -100,7 +100,19 @@ def matrix_from_json(value):
     if isinstance(value[0], str):
         return value
     else:
-        try_mtx = np.asarray(value)
+        side = len(value)
+        sside = max([len(x) for x in value])
+        ty = type(value[0][0])
+        try_mtx = np.empty((side, sside), dtype=ty)
+
+        for x in range(side):
+            try_mtx[x, 0:len(value[x])] = np.asarray(value[x])
+
+        if len(value[0]) < sside:
+            tril = np.tril(try_mtx, -1)
+            try_mtx = try_mtx + tril.transpose()
+
+        # try_mtx = np.asarray(value)
         if try_mtx.dtype == 'object':
             return desym(value)
         else:
