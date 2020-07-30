@@ -21,7 +21,7 @@ import numpy as np
 import scipy.io as sio
 from pandas import read_csv
 
-from ._aux_fcn import termrep, is_numeric_data, is_timestamp, matrix_from_json
+from ._aux_fcn import termrep, is_numeric_data, is_timestamp, matrix_from_json, from_ragged
 from ._config_loader import PINT_QTY_TYPE, DEFAULT_ENTITIES_PATH, ASSOCIATION_TYPES_PATH, \
     UM, DEFAULT_COMP, DSSHELP, GLOBAL_PRECISION, TMP_PATH, MANDATORY_UNITS
 from ._exceptions import AssociationError, TypeUnrecoverableError, RecoveryTargetError, TypeRecoveryError
@@ -32,7 +32,7 @@ __all__ = ['CsvLoadshape', 'LineGeometry_C', 'LineGeometry_T', 'LineGeometry_O',
            'LineCode_A', 'LineCode_S', 'Line', 'WireData', 'CNData', 'TSData', 'Curve', 'PtCurve', 'EffCurve',
            'Vsource', 'dejsonize', 'SnpMatrix', 'load_entities', 'LineCode', 'LineGeometry',
            'Isource', 'Load', 'Transformer', 'Capacitor', 'Capcontrol', 'Regcontrol', 'Reactor',
-           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator', 'FusAble']
+           'Monitor', 'StorageController', 'Storage', 'PvSystem', 'Generator', 'FusAble', 'matricize_str']
 
 _muldict = NxTable()
 _fmtdict = NxTable()
@@ -109,7 +109,7 @@ def _odssrep(data_raw):
         return str(data)
 
     elif isinstance(data, SnpMatrix):
-
+        print('snp deprecated')
         order = data.diagonal().size
         ss = ''
 
@@ -162,6 +162,31 @@ def _odssrep(data_raw):
 
 
 # <editor-fold desc="AUX CLASSES">
+
+def matricize_str(data, dtype=None):
+    if dtype is None:
+        c_dtype = float
+    else:
+        c_dtype = dtype
+
+    x = [c_dtype(l) for l in data.replace(',', ';').split(';')]
+
+    y = [[c_dtype(l) for l in row.split(',')] for row in data.split(';')]
+    return from_ragged(y)
+
+
+    # order_r = (-1 + np.sqrt(1 + 8 * len(x))) / 2
+    # order = int(order_r)
+    # assert order == order_r  # if not, sthg is horribly wrong
+    # matrox = np.zeros([order, order])
+    # ind = np.tril_indices(order)  # returns tuple with 2 int np.arrays containing the indices
+    # for k, (r, c) in enumerate(zip(*ind)):
+    #     matrox[r, c] = x[k]
+    #     if r != c:  # don't write two times on the diagonal
+    #         matrox[c, r] = x[k]
+    # return matrox
+
+
 class SnpMatrix(np.ndarray):  # extends np.matrix, allowing to instantiate a symmetrical mtx by passing a tril string.
     """_SnpMatrix extends numpy.matrix. numpy.matrix can be initialized by a 'v11,v12;v21,v22'- like string; _SnpMatrix,
     in addition to this, can be initialized by a 'v11;v21,v22'-like string, representing the tril of a symmetrical
@@ -170,13 +195,13 @@ class SnpMatrix(np.ndarray):  # extends np.matrix, allowing to instantiate a sym
     def __new__(subtype, data, dtype=None, copy=True):
         try:
             return super().__new__(subtype, data, dtype, copy)
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             if dtype is None:
                 c_dtype = float
             else:
                 c_dtype = dtype
 
-            if str(e) == 'Rows not the same size.' and isinstance(data, str):
+            if isinstance(data, str):
                 x = [c_dtype(l) for l in data.replace(',', ';').split(';')]
                 order_r = (-1 + np.sqrt(1 + 8 * len(x))) / 2
                 order = int(order_r)
@@ -236,9 +261,9 @@ def dejsonize(obj_repr: dict):
                     obj_repr['type'], obj_repr['name'], prop))
                 value = DEFAULT_COMP['default_' + obj_repr['type']]['units'][prop]
 
-        if isinstance(obj_repr['properties'][prop], np.matrix):
-            unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
-            obj_repr['properties'][prop] = np.multiply(obj_repr['properties'][prop], unit_matrix)
+        if isinstance(obj_repr['properties'][prop], np.ndarray):
+            # unit_matrix = np.eye(len(obj_repr['properties'][prop])) * _resolve_unit(value, propgetter)
+            obj_repr['properties'][prop] *= _resolve_unit(value, propgetter)  # np.multiply(obj_repr['properties'][prop], unit_matrix)
         elif obj_repr['properties'][prop] is None:
             pass
         else:
@@ -262,12 +287,12 @@ def _type_recovery(value, target_type):
 
         elif isinstance(value, (list, np.ndarray)):
             assert target_type == np.ndarray
-            recovered_value = np.ndarray(value)
+            recovered_value = np.asarray(value)
         elif isinstance(value, str):
             recovered_value = target_type(value)
         elif isinstance(value, np.complex):
             assert target_type == np.ndarray
-            recovered_value = np.ndarray([np.real(value), np.imag(value)])
+            recovered_value = np.asarray([np.real(value), np.imag(value)])
         else:
             raise TypeUnrecoverableError(type(value))
     except AssertionError:
@@ -658,11 +683,12 @@ class _DSSentity(FcsAble):
 
         unt = self._default_units.get(param, None)
         if unt is not None:
-            if isinstance(target_list[param], np.ndarray):
-                unit_matrix = np.eye(len(target_list[param])) * _resolve_unit(unt, self._get_prop_from_matchobj)
-                return target_list[param] * unit_matrix
-            else:
-                return target_list[param] * _resolve_unit(unt, self._get_prop_from_matchobj)
+            return target_list[param] * _resolve_unit(unt, self._get_prop_from_matchobj)
+            # if isinstance(target_list[param], np.ndarray) and len(target_list[param].shape) >= 2 and target_list[param].shape[0] == target_list[param].shape[1]:
+            #     unit_matrix = np.eye(target_list[param].shape[0]) * _resolve_unit(unt, self._get_prop_from_matchobj)
+            #     return target_list[param] * unit_matrix
+            # else:
+            #     return target_list[param] * _resolve_unit(unt, self._get_prop_from_matchobj)
         else:
             return target_list[param]
 

@@ -85,7 +85,7 @@ def pairwise(iterable):
     return zip(a, a)
 
 
-def matrix_from_json(value):
+def from_ragged(value):
 
     def desym(lol):
         size = len(lol)
@@ -97,26 +97,33 @@ def matrix_from_json(value):
 
         return dsm
 
+    side = len(value)
+    sside = max([len(x) for x in value])
+    ty = type(value[0][0])
+    try_mtx = np.empty((side, sside), dtype=ty)
+
+    for x in range(side):
+        try_mtx[x, 0:len(value[x])] = np.asarray(value[x])
+
+    if len(value[0]) < sside:
+        tril = np.tril(try_mtx, -1)
+        try_mtx = try_mtx + tril.transpose()
+
+    # try_mtx = np.asarray(value)
+    if try_mtx.dtype == 'object':
+        return desym(value)
+    else:
+        return try_mtx
+
+
+def matrix_from_json(value):
+
     if isinstance(value[0], str):
         return value
+    elif isinstance(value[0], (float, int)):
+        return np.asarray(value)
     else:
-        side = len(value)
-        sside = max([len(x) for x in value])
-        ty = type(value[0][0])
-        try_mtx = np.empty((side, sside), dtype=ty)
-
-        for x in range(side):
-            try_mtx[x, 0:len(value[x])] = np.asarray(value[x])
-
-        if len(value[0]) < sside:
-            tril = np.tril(try_mtx, -1)
-            try_mtx = try_mtx + tril.transpose()
-
-        # try_mtx = np.asarray(value)
-        if try_mtx.dtype == 'object':
-            return desym(value)
-        else:
-            return try_mtx
+        return from_ragged(value)
 
 
 @lru_cache(8)

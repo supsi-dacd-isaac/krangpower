@@ -29,7 +29,7 @@ from ._stdout_hijack import stdout_redirected, NullCm
 from .._aux_fcn import lower as _lower
 from .._aux_fcn import pairwise as _pairwise
 from .._components import LineGeometry
-from .._components import _resolve_unit, _type_recovery, _odssrep, SnpMatrix
+from .._components import _resolve_unit, _type_recovery, _odssrep, matricize_str
 from .._components import get_classmap as _get_classmap
 from .._config_loader import DEFAULT_ENH_NAME, UNIT_MEASUREMENT_PATH, TREATMENTS_PATH, ERROR_STRINGS, DANGEROUS_STACKS, \
     UM as _UM, INTERFACE_METHODS_PATH, DEFAULT_COMP as _DEFAULT_COMP, PINT_QTY_TYPE, INTERF_SELECTORS_PATH, \
@@ -239,13 +239,16 @@ def _cast_dumbstring(string: str, data_type):
         else:
             return data_type(string)
     elif data_type == _np.ndarray:
-        return SnpMatrix(string
-                         .replace(' |', ';')
-                         .replace('|', ';')
-                         .replace('[', '')
-                         .replace(' ]', '')
-                         .replace(']', '')
-                         .replace(' ', ','))
+        try:
+            return _np.asarray(eval(string))
+        except:
+            return matricize_str(string
+                             .replace('   ', ' ').replace('  ', ' ')
+                             .replace(' | ', ';').replace('| ', ';').replace(' |', ';').replace('|', ';')
+                             .replace('[  ', '').replace('[ ', '').replace('[', '')
+                             .replace('  ]', '').replace(' ]', '').replace(']', '')
+                             .replace(', ', ',')
+                             .replace(' ', ','))
     elif data_type == list:
         dp_str = _sub('[\,|\ ]*(\]|"|\))', '', string)
         dp_str = _sub('(\[|"|\()\ *', '', dp_str)
@@ -579,7 +582,7 @@ class _PackedOpendssElement:
             dep_prop = {k.lower(): v for k, v in all_props.items() if k.lower() in valid_props.keys()}
         else:
             dep_prop = {k.lower(): v for k, v in all_props.items() if
-                        k.lower() in valid_props.keys() and _np.ndarray(v != valid_props[k.lower()]).any()}
+                        k.lower() in valid_props.keys() and _np.asarray(v != valid_props[k.lower()]).any()}
 
         # the _DssEntity is instantiated with the properties in dep_prop.
         if myclass.isnamed():
@@ -739,8 +742,8 @@ def _unpack_linegeom(pckob):
         cabtype = cnv[nmc[pckob['wire'].lower()]]
         wrcn.append(pckob['wire'].lower())
         units.append(pckob['units'][0].lower())  # everything is converted to meters
-        x.append(pckob['x'].magnitude[0, 0])
-        h.append(pckob['h'].magnitude[0, 0])
+        x.append(pckob['x'].magnitude)
+        h.append(pckob['h'].magnitude)
 
     naive_props = pckob.dump()
     del naive_props['x']
