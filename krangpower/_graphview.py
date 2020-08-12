@@ -9,6 +9,12 @@ import weakref
 from functools import singledispatch
 from collections import OrderedDict
 
+# import matplotlib
+# matplotlib.use('Qt5Agg')
+from matplotlib.cm import get_cmap, ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib import pyplot as plt
+
 import networkx as nx
 
 from ._krangsuit import Krang
@@ -87,6 +93,69 @@ class GraphView(nx.Graph):
             for nodename in self.no:
                 od[nodename] = ud[nodename]
             return od
+
+    def plot(self,
+             nodelist=None,
+             edgelist=None,
+             cmap_node='jet',
+             cmap_edge='jet',
+             **kwargs):
+
+        stpos = {x: y for x, y in self.bus_pos.items() if y is not None}
+        if stpos == {}:
+            posi = nx.spring_layout(self)
+        else:
+            posi = nx.spring_layout(self, pos=stpos, fixed=stpos)
+
+        if nodelist is None:
+            nodelist = list(self.nodes)
+        if edgelist is None:
+            edgelist = list(self.edges)
+
+        if self.bus_prop is not None:
+
+            nd = self.get_node_dict()
+
+            colors = [nd[x].magnitude for x in nodelist]
+            unit = next(iter(nd.values())).units
+            vmin = min(colors)
+            vmax = max(colors)
+            mcm = get_cmap(cmap_node)
+
+            vmin = 242.45
+            vmax= 242.55
+
+            norm = Normalize(vmin=vmin, vmax=vmax)
+            sm = ScalarMappable(norm=norm, cmap=cmap_node)
+            sm.set_array(colors)
+
+            nx.draw_networkx_nodes(self,
+                                   pos=posi,
+                                   nodelist=nodelist,
+                                   node_color=colors,
+                                   vmin=vmin, vmax=vmax,
+                                   cmap=mcm,
+                                   # style=(5, (5, 1)),
+                                   **kwargs)
+
+            cb = plt.colorbar(sm)
+            cb.set_label(str(unit))
+            # cb.set_array(colors)
+
+        self._multiline_edge_plot(1, edgelist, posi)
+        # plt.title(self.__class__.__name__)
+        # plt.gca().axis('off')
+        # plt.show(block=False)
+
+    def _multiline_edge_plot(self, n, edgelist, posi, edge_color='k', base_color='w', base_width=0.8):
+        fw = 2*n-1
+        iswhite = [edge_color, base_color]
+        for idl, ll in enumerate(range(fw, 0, -2)):
+            nx.draw_networkx_edges(self,
+                                   pos=posi,
+                                   edgelist=edgelist,
+                                   width=ll*base_width,
+                                   edge_color=iswhite[idl % 2])
 
 
 @singledispatch

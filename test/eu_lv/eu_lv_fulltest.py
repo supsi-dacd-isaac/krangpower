@@ -209,6 +209,10 @@ def _main():
     print('     Circuit.AllBusVolts():     ' + str(eulv.brain.Circuit.AllBusVolts())[1:100])
     print('     Circuit.AllElementLosses():' + str(eulv.brain.Circuit.AllElementLosses())[1:100])
 
+    loadednodes = [x.split('.')[0] for x in eulv.Loads['bus1'].values]
+    h = kp.gv.BusVoltageView(eulv)
+    h.plot(nodelist=loadednodes, with_labels=False, node_shape='h')
+
     print('Packing circuit...')
     mpck = eulv.pack_ckt()
     jsn = eulv.save_json()

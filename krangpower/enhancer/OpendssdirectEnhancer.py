@@ -767,20 +767,33 @@ def _unpack_linegeom(pckob):
     return LineGeometry(pckob.name, **naive_props)
 
 
+# Caching
+ALL_NAMES = []
+BARE_NAMES_DICT = {}
+
+
 # <editor-fold desc="Exposed functions">
 def pack(item):
     """Returns a PackedOpendssElement corresponding to item."""
-    try:
-        assert item.lower() in map(lambda name: name.lower(), _this_module.get_all_names())
-    except AssertionError:
+
+    itlo = item.lower()
+
+    all_names = globals()['ALL_NAMES']
+    bare_names_dict = globals()['BARE_NAMES_DICT']
+
+    if not (itlo in all_names or itlo in bare_names_dict.keys()):
+        all_names = map(lambda name: name.lower(), _this_module.get_all_names())
         bare_names_dict = {name.lower().split('.', 1)[1]: name.lower() for name in _this_module.get_all_names()}
-        try:
-            assert item.lower() in bare_names_dict.keys()
-        except AssertionError:
-            raise KeyError('Element {0} was not found in the circuit'.format(item))
-        else:
-            fullitem = bare_names_dict[item.lower()]
-    else:
+
+        globals()['ALL_NAMES'] = all_names
+        globals()['BARE_NAMES_DICT'] = bare_names_dict
+
+        assert itlo in all_names or itlo in bare_names_dict.keys(),\
+            'Element {0} was not found in the circuit'.format(item)
+
+    try:
+        fullitem = bare_names_dict[item.lower()]
+    except KeyError:
         fullitem = item.lower()
 
     return _PackedOpendssElement(*fullitem.split('.', 1))

@@ -212,7 +212,8 @@ class Krang(object):
                  voltage_source=co.Vsource(),
                  source_bus_name='sourcebus',
                  working_frequency=BASE_FREQUENCY,
-                 redirect_path=False):
+                 redirect_path=False,
+                 override_log=False):
 
         # first of all, we double-check that we arrived at initialization with _INSTANCE == None
         assert globals()['_INSTANCE'] is None
@@ -243,9 +244,10 @@ class Krang(object):
         # os.chdir(current_cwd)
 
         # binding the file formatters to the module-wide loggers
-        add_rotfilehandler(mlog, MAIN_LOGPATH)
-        add_rotfilehandler(clog, COMMAND_LOGPATH)
-        add_comfilehandler(bclog, BCOMMAND_LOGPATH)
+        if not override_log:
+            add_rotfilehandler(mlog, MAIN_LOGPATH)
+            add_rotfilehandler(clog, COMMAND_LOGPATH)
+            add_comfilehandler(bclog, BCOMMAND_LOGPATH)
 
         # OpenDSS initialization commands
         self.command('clear')
@@ -264,15 +266,15 @@ class Krang(object):
     # -----------------------------------------------------------------------------------------------------------------
 
     @classmethod
-    def open_ckt(cls, path):
+    def open_ckt(cls, path, strict=True):
         """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
-        return _open_ckt(path)
+        return _open_ckt(path, strict)
 
     @classmethod
-    def from_json(cls, path):
+    def from_json(cls, path, override_log=False):
         """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
         to dependency between objects is automatically taken care of."""
-        return _from_json(path)
+        return _from_json(path, override_log=override_log)
 
     @classmethod
     def from_dss(cls, file_path, target_krang=None, frequency=BASE_FREQUENCY):
@@ -1109,7 +1111,7 @@ class _BusView:
 #                              \__ \ (_| |\ V /  __/ | (_>  < | | (_) | (_| | (_| |
 # -----------------------------|___/\__,_| \_/ \___|  \___/\/ |_|\___/ \__,_|\__,_|--------------------------
 # -----------------------------------------------------------------------------------------------------------
-def _from_json(path, redirect_path=False, final_snap=True):
+def _from_json(path, redirect_path=False, final_snap=True, override_log=False):
     """Loads circuit data from a json structured like the ones returned by Krang.save_json. Declaration precedence due
     to dependency between object is automatically taken care of."""
     # load all entities
@@ -1120,7 +1122,8 @@ def _from_json(path, redirect_path=False, final_snap=True):
         master_dict = json.load(path)
 
     # init the krang with the source, then remove it from the dict
-    l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']), redirect_path=redirect_path)
+    l_ckt = Krang(master_dict['cktname'], co.dejsonize(master_dict['elements']['vsource.source']),
+                  redirect_path=redirect_path, override_log=override_log)
     # todo see if it's sourcebus
     del master_dict['elements']['vsource.source']
 
@@ -1254,7 +1257,7 @@ def declare_deptree(krg: Krang, dep_tree: _DepGraph, element_dict: dict, logger=
 
 
 # external implementation of loading methods
-def _open_ckt(path):
+def _open_ckt(path,strict=True):
     """Loads a ckt package saved through Krang.pack_ckt() and returns a Krang."""
     with zipfile.ZipFile(path, mode='r') as zf:
         with zf.open(LSH_ZIP_NAME) as lsh_file:
@@ -1276,7 +1279,7 @@ def _open_ckt(path):
 
         # If present, we load the md5 checksum that was packed with the zip file when it was created.
         # If not (for example, in manually edited packs), we jump
-        if 'krang_hash.md5' in zf.namelist():
+        if 'krang_hash.md5' in zf.namelist() and strict:
             with zf.open('krang_hash.md5', 'r') as md5_file:
                 kranghash = md5_file.read().decode('utf-8')
 

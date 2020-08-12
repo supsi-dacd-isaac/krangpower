@@ -42,6 +42,7 @@ class AmpaView(GraphView):
 class BusVoltageView(GraphView):
     def __init__(self, ckgr: Krang):
         def avgbusV(bus):
+            # print(bus)
             return np.mean(np.abs(bus['bus'].Voltages()))
 
         super().__init__(avgbusV, None, ckgr)
