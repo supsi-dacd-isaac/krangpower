@@ -1312,7 +1312,7 @@ class LineGeometry(_NamedDSSentity):
                 else:
                     rind = ind
 
-                if isinstance(true_param, np.ndarray):
+                if isinstance(true_param, np.ndarray) and true_param.ndim == 2:
                     idx = 0, rind  # matricial indicization necessary
                 else:
                     idx = rind

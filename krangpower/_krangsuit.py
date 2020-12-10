@@ -737,7 +737,7 @@ class Krang(object):
                 try:
                     self['bus.' + busname].X(coords[0])
                     self['bus.' + busname].Y(coords[1])
-                except KeyError:
+                except (KeyError, AssertionError):
                     continue  # we ignore buses present in coords linked, but not generated
             else:
                 continue
