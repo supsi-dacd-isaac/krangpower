@@ -25,7 +25,7 @@ def main():
                          taps=[1.0, 1.0, 1.0],
                          pctrs=[1.0, 1.0, 1.0])
     twc['a', 'b', 'c'] << trf.aka('trf')  # the first winding is considered primary
-    twc['b', 'bb'] << kp.Line(length=10.0 * um.m).aka('lbb')
+    twc['b', 'box_element'] << kp.Line(length=10.0 * um.m).aka('lbb')
     twc['c', 'cc'] << kp.Line(length=15.0 * um.m).aka('lcc')
 
     # -------------------------------------------------------
@@ -52,7 +52,7 @@ def main():
                    -round(10.0 * random(), decimals=3) * um.kW
 
     fq = kp.FourQ(kv=2.0 * um.kV)
-    twc['bb', ] << fq.aka('myfq') * MyDM()
+    twc['box_element', ] << fq.aka('myfq') * MyDM()
 
     twc.set(number=6, stepsize=2 * um.min)
 

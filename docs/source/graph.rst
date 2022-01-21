@@ -57,15 +57,15 @@ Example:
     >>>                     taps=[1.0, 1.0, 1.0],
     >>>                     pctrs=[1.0, 1.0, 1.0]).aka('trf')
     >>> twc['a', 'b', 'c'] << trf
-    >>> twc['b', 'bb'] << kp.Line(units= 'm', length=10.0 * um.m).aka('lbb')
+    >>> twc['b', 'box_element'] << kp.Line(units= 'm', length=10.0 * um.m).aka('lbb')
     >>> twc['c', 'cc'] << kp.Line(units= 'm', length=15.0 * um.m).aka('lcc')
-    >>> twc['bb',] << kp.Load(kv=2.0 * um.kV, kw = 5.0 * um.kW).aka('loadlow')
+    >>> twc['box_element',] << kp.Load(kv=2.0 * um.kV, kw = 5.0 * um.kW).aka('loadlow')
     >>> twc['cc',] << kp.Load(kv=3.0 * um.kV, kw = 35.0 * um.kW).aka('loadhi')
     >>> twc.solve()
     >>> bvo = kp.gv.VoltageView(twc)
-    >>> print(round(bvo['bb'], 2))
+    >>> print(round(bvo['box_element'], 2))
     [ 974.96 -581.68j -991.23 -553.5j    16.27+1135.18j] volt
-    >>> print(round(bvo['b','bb'], 2))
+    >>> print(round(bvo['b','box_element'], 2))
     [[ 977.18 -581.47j -992.16 -555.52j   14.98+1137.j  ] [ 974.96 -581.68j -991.23 -553.5j    16.27+1135.18j]] volt
 
 
